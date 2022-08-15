@@ -6,6 +6,8 @@
         xmlns:local="clr-namespace:HA_Desktop_Companion"
         mc:Ignorable="d"
         Title="MainWindow" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing">
+
+
     <Grid Background="#FF03A9F4">
         <Grid.RowDefinitions>
             <RowDefinition Height="50*"/>
@@ -16,9 +18,12 @@
             <ColumnDefinition Width="50*"/>
             <ColumnDefinition Width="100*"/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="apiBaseUrl" Margin="5,5,5,5" TextWrapping="Wrap" Text="TextBox" Grid.Column="1"/>
-        <Button x:Name="registration" Content="Register" Margin="0,6,5,7" Click="registration_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Right" Width="65"/>
-        <Image x:Name="HALogo" Margin="8,5,9,5" Source="/ha_logo.png" OpacityMask="Red" Grid.RowSpan="3"/>
-        <PasswordBox x:Name="apiToken" Grid.Column="1" Grid.Row="1" Margin="5,5,5,5"/>
+        <TextBox x:Name="apiBaseUrl" Margin="5,5,5,5" TextWrapping="Wrap" Grid.Column="1" Foreground="White" Background="#FF186384" BorderThickness="0" VerticalContentAlignment="Center">
+            
+        </TextBox>
+        <PasswordBox x:Name="apiToken" Grid.Column="1" Grid.Row="1" Margin="5,5,5,5" Background="#FF186384" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center"/>
+        <Button x:Name="registration" Content="Register" Margin="111,6,0,7" Click="registration_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Left" Width="65" BorderThickness="0"/>
+        <Image x:Name="HALogo" Margin="8,5,9,5" Source="/ha_logo.png" Grid.RowSpan="3"/>
+        <Button x:Name="close" Content="Close" Margin="182,6,5,7" Click="close_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="1" Grid.Row="2"  BorderThickness="0"/>
     </Grid>
 </Window>

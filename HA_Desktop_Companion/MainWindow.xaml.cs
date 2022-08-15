@@ -93,11 +93,11 @@ namespace HA_Desktop_Companion
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            /*ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
+            ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
             ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
             ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
-            ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());*/
+            ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
         }
 
         public static double GetBatteryPercent()
@@ -263,6 +263,11 @@ namespace HA_Desktop_Companion
 
             if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
             else return "";
+        }
+
+        private void close_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Application.Current.Shutdown();
         }
     }
 }
