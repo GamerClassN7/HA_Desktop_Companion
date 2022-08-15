@@ -11,6 +11,8 @@ Feel Free to contribute Any time :)
 - is_charging
 - wifi_ssid
 
+![image](https://user-images.githubusercontent.com/22167469/184626954-f727a699-79cc-4345-9c32-ff6dd912937d.png)
+
 ## Feaures Plans:
 - Simple configuration of sensors in Yaml
 - Improvement Debug mode
