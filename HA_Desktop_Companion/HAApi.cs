@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Windows;
 
 namespace HA_Desktop_Companion
 {
@@ -29,6 +34,9 @@ namespace HA_Desktop_Companion
 
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
+            File.WriteAllText(@".\Body_WH.txt", webhookUrlEndpoint);
+
+
             try
             {
                 using (var httpClient = new HttpClient())
@@ -38,19 +46,23 @@ namespace HA_Desktop_Companion
                         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
                         request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
                         request.Content = JsonContent.Create(body);
+                        Debug.WriteLine(JsonSerializer.Serialize(body));
 
                         var response = httpClient.Send(request);
 
                         using (HttpContent content = response.Content)
                         {
                             string result = content.ReadAsStringAsync().Result;
+                            Debug.WriteLine(result);
                             var values = JsonSerializer.Deserialize<JsonObject>(result)!;
                             return values;
                         }
+                
                     }
                 }
             } catch (Exception e) {
-                throw new InvalidOperationException(@"HA Request Failed!" + this.base_url, e);
+                
+                throw new InvalidOperationException(@"HA Request Failed!", e);
             }
         }
 
@@ -74,19 +86,34 @@ namespace HA_Desktop_Companion
             return HARequest(token, "/api/mobile_app/registrations", body);
         }
 
-        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state)
+        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")
         {
-            System.Threading.Thread.Sleep(1000);
+
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("unique_id", uniqueID);
+            data.Add("name", uniqueName);
+            data.Add("type", "sensor");
+            data.Add("state", state);
+
+            if (deviceClass != "")
+                data.Add("device_class", deviceClass);
+
+            if (units != "")
+                data.Add("unit_of_measurement", units);
+
+            if (entityCategory != "")
+                data.Add("entity_category", entityCategory);
+
+            if (icon != "")
+                data.Add("icon", icon);
+
             var body = new {
-                data = new {
-                    unique_id = uniqueID,
-                    name = uniqueName,
-                    device_class = "battery",
-                    type = "sensor",
-                    state = state,
-                },
+                data = data,
                 type = "register_sensor"
             };
+
+
+            System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
 
@@ -96,9 +123,6 @@ namespace HA_Desktop_Companion
             var body = new {
                 data = new[] {
                     new {
-                        attributes = new {
-                            hello = "world"
-                        },
                         unique_id = uniqueID,
                         state =state,
                         type = "sensor",

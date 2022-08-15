@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Security;
+using System.Runtime.InteropServices;
 using System.Text;
 
 
@@ -31,15 +32,15 @@ namespace HA_Desktop_Companion
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string decodedApiToken = ToInsecureString(DecryptString(Properties.Settings.Default.apiToken));
-            string webhook_id = Properties.Settings.Default.apiWebhookId;
+            string decodedWebhookId = ToInsecureString(DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
 
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
 
-            if (webhook_id != "")
+            if (decodedWebhookId != "")
             {
-                ApiConnectiom = new HAApi(base_url, decodedApiToken, webhook_id);
+                ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId);
                 StartWatchdog();
                 //registration.IsEnabled = false;
             }
@@ -53,9 +54,6 @@ namespace HA_Desktop_Companion
 
         private void registration_Click(object sender, RoutedEventArgs e)
         {
-            Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
-            Properties.Settings.Default.apiToken = EncryptString(ToSecureString(apiToken.Password));
-            Properties.Settings.Default.Save();
 
             string hostname = System.Net.Dns.GetHostName() + "_debug";
             string maufactorer = queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
@@ -65,11 +63,18 @@ namespace HA_Desktop_Companion
             Title = hostname;
 
             ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
+           
+            Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
+            Properties.Settings.Default.apiToken = EncryptString(ToSecureString(apiToken.Password));
+            Properties.Settings.Default.apiWebhookId = EncryptString(ToSecureString(ApiConnectiom.webhook_id));
 
-            ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown");
-            ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown");
-            ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown");
-            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown");
+            Properties.Settings.Default.Save();
+
+            ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mid:battery", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mid:battery-minus", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mid:power-plug-off", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mid:wifi", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mid:application", "diagnostic");
 
             StartWatchdog();
             //registration.IsEnabled = false;
@@ -77,10 +82,11 @@ namespace HA_Desktop_Companion
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
+            /*ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
             ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
             ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
+            ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());*/
         }
 
         public static double GetBatteryPercent()
@@ -230,5 +236,22 @@ namespace HA_Desktop_Companion
 
         /*string[] drives = Environment.GetLogicalDrives();
         Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
+
+        private string ActiveWindowTitle()
+        {
+            [DllImport("user32.dll")]
+            static extern IntPtr GetForegroundWindow();
+            [DllImport("user32.dll")]
+            static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
+
+            const int nChar = 256;
+            StringBuilder ss = new StringBuilder(nChar);
+
+            IntPtr handle = IntPtr.Zero;
+            handle = GetForegroundWindow();
+
+            if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
+            else return "";
+        }
     }
 }
