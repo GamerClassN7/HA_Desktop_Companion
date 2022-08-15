@@ -5,6 +5,11 @@ Cause i dont like existing implementation using MQTT and other stuff i tuk instp
 
 Feel Free to contribute Any time :)
 
+## Senzors Implemented Right Now:
+- battery_level
+- battery_state
+- is_charging
+- wifi_ssid
 
 ## Feaures Plans:
 - Simple configuration of sensors in Yaml
