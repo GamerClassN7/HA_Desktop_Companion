@@ -34,9 +34,6 @@ namespace HA_Desktop_Companion
 
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
-            File.WriteAllText(@".\Body_WH.txt", webhookUrlEndpoint);
-
-
             try
             {
                 using (var httpClient = new HttpClient())
@@ -61,9 +58,14 @@ namespace HA_Desktop_Companion
                     }
                 }
             } catch (Exception e) {
-                
-                throw new InvalidOperationException(@"HA Request Failed!", e);
+                using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                {
+                    sw.WriteLine(e.Message);
+                }
+                //throw new InvalidOperationException(@"HA Request Failed!", e);
             }
+
+            return JsonSerializer.Deserialize<JsonObject>("{}");
         }
 
         public JsonObject HADevicRegistration(string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)

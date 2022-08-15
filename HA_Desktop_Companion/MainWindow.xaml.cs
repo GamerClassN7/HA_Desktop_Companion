@@ -40,9 +40,20 @@ namespace HA_Desktop_Companion
 
             if (decodedWebhookId != "")
             {
-                ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId);
-                StartWatchdog();
-                //registration.IsEnabled = false;
+                try
+                {
+                    ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId);
+                    string hostname = System.Net.Dns.GetHostName() + "_debug";
+                    Title = hostname;
+
+                    StartWatchdog();
+                
+                    registration.IsEnabled = false;
+                }
+                catch (Exception)
+                {
+                    registration.IsEnabled = true;
+                }
             }
         }
 
