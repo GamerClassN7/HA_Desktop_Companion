@@ -8,10 +8,16 @@
     <UseWindowsForms>True</UseWindowsForms>
     <AssemblyVersion>0.0.0.1</AssemblyVersion>
     <FileVersion>0.0.0.1</FileVersion>
+    <ApplicationIcon>ha_logo.ico</ApplicationIcon>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="ha_logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ha_logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
