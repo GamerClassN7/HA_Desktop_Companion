@@ -11,7 +11,7 @@ namespace HA_Desktop_Companion
     public partial class App : Application
     {
         Forms.NotifyIcon trayIcon;
-
+        //https://github.com/Monbsoft/MachineMonitor/blob/master/src/MachineMonitor/App.xaml.cs
         protected override void OnStartup(StartupEventArgs e)
         {
             trayIcon =  new Forms.NotifyIcon();
