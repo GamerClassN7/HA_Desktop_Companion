@@ -17,6 +17,7 @@ namespace HA_Desktop_Companion
         public string base_url = "";
         public string token = "";
         public string webhook_id = "";
+        public Dictionary<string, object> entities = new Dictionary<string, object>();
 
         public HAApi(string baseUrl, string apiToken, string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)
         {
@@ -113,6 +114,7 @@ namespace HA_Desktop_Companion
                 type = "register_sensor"
             };
 
+            entities.Add(uniqueID, data);
 
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
@@ -120,15 +122,19 @@ namespace HA_Desktop_Companion
 
         public JsonObject HASendSenzorData(string uniqueID, string state)
         {
+            Dictionary<string, string> entityTemplate = (Dictionary<string, string>)entities[uniqueID];
 
-            var body = new {
-                data = new[] {
-                    new {
-                        unique_id = uniqueID,
-                        state =state,
-                        type = "sensor",
-                    }
-                },
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            data.Add("unique_id", uniqueID);
+            data.Add("type", "sensor");
+            data.Add("state", state);
+
+            if (entityTemplate.ContainsKey("icon") && entityTemplate["icon"] != "")
+                data.Add("icon", entityTemplate["icon"]);
+
+            var body = new
+            {
+                data = new[] { data, },
                 type = "update_sensor_states"
             };
 

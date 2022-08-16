@@ -43,7 +43,7 @@ namespace HA_Desktop_Companion
                 try
                 {
                     ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId);
-                    string hostname = System.Net.Dns.GetHostName() + "_debug";
+                    string hostname = System.Net.Dns.GetHostName() + "";
                     Title = hostname;
 
                     StartWatchdog();
@@ -66,7 +66,7 @@ namespace HA_Desktop_Companion
         private void registration_Click(object sender, RoutedEventArgs e)
         {
 
-            string hostname = System.Net.Dns.GetHostName() + "_debug2";
+            string hostname = System.Net.Dns.GetHostName() + "";
             string maufactorer = queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
             string model = queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
             string os = queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
@@ -87,8 +87,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "timestamp", "seconds", "mdi:clock", "diagnostic");
-
+            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
 
             StartWatchdog();
             //registration.IsEnabled = false;
