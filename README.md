@@ -5,12 +5,16 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 
 Feel free to contribute any time :)
 
+## NOTICE
+in order to run this applikaction you need to hawe [.NET Desktop Runtime (v6.0.7 or later)](https://download.visualstudio.microsoft.com/download/pr/b4a17a47-2fe8-498d-b817-30ad2e23f413/00020402af25ba40990c6cc3db5cb270/windowsdesktop-runtime-6.0.8-win-x64.exe) installed!
+If you dont want to install it you can dowload _Self_Containef.zip Whitch have runtime inside of EXE File (100MB) Big Beacuse whole runtime is inside of it.
+
 ## Installation
 1) Extract the zip file to some folder on your system, 
 2) Run `HA_Desktop_Companion.exe`
 3) Fill in "URL" & "API Token"
 4) Click "Register"
-2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`
+2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
 
 ## Sensors implemented currently:
 - battery_level
