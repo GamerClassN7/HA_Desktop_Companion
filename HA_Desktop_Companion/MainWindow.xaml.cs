@@ -87,6 +87,8 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "", "°C", "mdi:clock", "diagnostic");
+
 
 
             StartWatchdog();
@@ -101,6 +103,8 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
+            ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
+
         }
 
         public static double GetBatteryPercent()
@@ -270,6 +274,14 @@ namespace HA_Desktop_Companion
             if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
             else return "";
         }
+
+        public static TimeSpan GetUpTime()
+        {
+            [DllImport("kernel32")]
+            extern static UInt64 GetTickCount64();
+            return TimeSpan.FromMilliseconds(GetTickCount64());
+        }
+
 
         private void close_Click(object sender, RoutedEventArgs e)
         {
