@@ -96,6 +96,7 @@ namespace HA_Desktop_Companion
         public JsonObject HADevicRegistration(string deviceID, string deviceName, string model, string manufacturer, string os, string osVersion)
         {
             string app_version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+
             var body = new
             {
                 device_id = deviceID,
@@ -141,8 +142,14 @@ namespace HA_Desktop_Companion
             };
 
             //Add Entity to Catalog
-            Dictionary<string, string> entiry = new Dictionary<string, string>(data);
-            entiry.Add("last_value", state);
+            Dictionary<string, string> entiry = new()
+            {
+                { "last_value", state }
+            };
+
+            if (icon != "")
+                entiry.Add("icon", icon);
+
             entitiesCatalog.Add(uniqueID, entiry);
 
             System.Threading.Thread.Sleep(1000);
