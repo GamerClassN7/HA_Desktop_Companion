@@ -141,6 +141,7 @@ namespace HA_Desktop_Companion
 
             //Make Use of reflections
             //var type = Type.GetType(type_name);
+            //ApiConnectiom.HASendSenzorLocation();
 
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {

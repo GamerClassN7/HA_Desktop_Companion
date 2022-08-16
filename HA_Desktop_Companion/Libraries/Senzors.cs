@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace HA_Desktop_Companion.Libraries
@@ -63,5 +66,19 @@ namespace HA_Desktop_Companion.Libraries
             extern static UInt64 GetTickCount64();
             return (TimeSpan.FromMilliseconds(GetTickCount64()));
         }
+
+        /*public static string queryLocationByIP()
+        {
+            try
+            {
+                string info = new WebClient().DownloadString("http://ipinfo.io/");
+                Debug.WriteLine(JsonSerializer.Deserialize<JsonObject>(info)["loc"]);
+                return (string) JsonSerializer.Deserialize<JsonObject>(info)["loc"];
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }*/
     }
 }

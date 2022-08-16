@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HA_Desktop_Companion.Libraries;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -20,7 +21,7 @@ namespace HA_Desktop_Companion
         public string remote_ui_url = "";
         public string cloudhook_url = "";
 
-        public Dictionary<string, object> entities = new();
+        public Dictionary<string, object> entitiesCatalog = new();
 
         public HAApi(string baseUrl, string apiToken, string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)
         {
@@ -47,6 +48,7 @@ namespace HA_Desktop_Companion
             {
                 string rootUrl = base_url;
 
+                //TODO: Cascade reference of url
                 /*if (remote_ui_url != "")
                     rootUrl = remote_ui_url;*/
 
@@ -138,9 +140,10 @@ namespace HA_Desktop_Companion
                 type = "register_sensor"
             };
 
+            //Add Entity to Catalog
             Dictionary<string, string> entiry = new Dictionary<string, string>(data);
             entiry.Add("last_value", state);
-            entities.Add(uniqueID, entiry);
+            entitiesCatalog.Add(uniqueID, entiry);
 
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
@@ -149,14 +152,15 @@ namespace HA_Desktop_Companion
         public JsonObject HASendSenzorData(string uniqueID, string state)
         {
             Dictionary<string, string> entityTemplate = new() { };
-            if (entities.ContainsKey(uniqueID))
+            if (entitiesCatalog.ContainsKey(uniqueID))
             {
-                entityTemplate = (Dictionary<string, string>) entities[uniqueID];
+                entityTemplate = (Dictionary<string, string>) entitiesCatalog[uniqueID];
                 if (entityTemplate["last_value"] == state) {
                     Debug.WriteLine("Same Value as last one skipping");
                     return JsonSerializer.Deserialize<JsonObject>("{}");
                 }
                 entityTemplate["last_value"] = state;
+                entitiesCatalog[uniqueID] = entityTemplate;
             }
 
             Dictionary<string, string> data = new()
@@ -177,5 +181,24 @@ namespace HA_Desktop_Companion
 
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
+
+        /*public JsonObject HASendSenzorLocation()
+        {
+            Dictionary<string, object> data = new()
+            {
+                { "gps", new[] {
+                    float.Parse(Senzors.queryLocationByIP().Split(",")[0]),
+                    float.Parse(Senzors.queryLocationByIP().Split(",")[1])
+                }},
+            };
+
+            var body = new
+            {
+                data = new[] { data, },
+                type = "update_location"
+            };
+
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }*/
     }
 }
