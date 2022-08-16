@@ -19,6 +19,7 @@ Feel free to contribute any time :)
 - wifi_ssid
 - cpi_temp
 - current_active_window
+- uptime
 
 ## Screenshots
 

@@ -36,27 +36,26 @@ namespace HA_Desktop_Companion
         {
             try
             {
-                using (var httpClient = new HttpClient())
-                {
-                    using (var request = new HttpRequestMessage(new HttpMethod("POST"), base_url + webhookUrlEndpoint))
-                    {
-                        request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
-                        request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
-                        request.Content = JsonContent.Create(body);
-                        Debug.WriteLine(JsonSerializer.Serialize(body));
+                using var httpClient = new HttpClient();
 
-                        var response = httpClient.Send(request);
+                using var request = new HttpRequestMessage(new HttpMethod("POST"), base_url + webhookUrlEndpoint);
+                request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
+                request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
+                request.Content = JsonContent.Create(body);
+                Debug.WriteLine("HTTP SEND:" + JsonSerializer.Serialize(body));
 
-                        using (HttpContent content = response.Content)
-                        {
-                            string result = content.ReadAsStringAsync().Result;
-                            Debug.WriteLine(result);
-                            var values = JsonSerializer.Deserialize<JsonObject>(result)!;
-                            return values;
-                        }
-                
-                    }
-                }
+                var response = httpClient.Send(request);
+                Debug.WriteLine("HTTP CODE:" + response.StatusCode.ToString());
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    return JsonSerializer.Deserialize<JsonObject>("{}");
+
+                string result = response.Content.ReadAsStringAsync().Result;
+                Debug.WriteLine("HTTP RECIEVE:" + result);
+
+                var values = JsonSerializer.Deserialize<JsonObject>(result)!;
+                return values;
+               
             } catch (Exception e) {
                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
