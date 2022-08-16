@@ -17,42 +17,67 @@ namespace HA_Desktop_Companion
         public string base_url = "";
         public string token = "";
         public string webhook_id = "";
+        public string remote_ui_url = "";
+        public string cloudhook_url = "";
+
         public Dictionary<string, object> entities = new Dictionary<string, object>();
 
         public HAApi(string baseUrl, string apiToken, string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)
         {
             base_url = baseUrl;
             token = apiToken;
-            webhook_id = HADevicRegistration(deviceID, deviceName, model, manufactorer, os, osVersion)["webhook_id"].ToString();
+            var response = HADevicRegistration(deviceID, deviceName, model, manufactorer, os, osVersion);
+            webhook_id = response["webhook_id"].ToString();
+            remote_ui_url = (string) response["remote_ui_url"];
+            cloudhook_url = (string) response["cloudhook_url"];
         }
 
-        public HAApi(string baseUrl, string apiToken, string webhookId)
+        public HAApi(string baseUrl, string apiToken, string webhookId, string remoteUiUrl = "", string cloudhookUrl = "")
         {
             base_url = baseUrl;
             webhook_id = webhookId;
             token = apiToken;
+            remote_ui_url = remoteUiUrl;
+            cloudhook_url = cloudhookUrl;
         }
 
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
             try
             {
+                string rootUrl = base_url;
+
+                /*if (remote_ui_url != "")
+                    rootUrl = remote_ui_url;*/
+
                 using var httpClient = new HttpClient();
 
-                using var request = new HttpRequestMessage(new HttpMethod("POST"), base_url + webhookUrlEndpoint);
+                using var request = new HttpRequestMessage(new HttpMethod("POST"), rootUrl + webhookUrlEndpoint);
                 request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
                 request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
                 request.Content = JsonContent.Create(body);
                 Debug.WriteLine("HTTP SEND:" + JsonSerializer.Serialize(body));
+                /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                {
+                    sw.WriteLine(JsonSerializer.Serialize(body));
+                }*/
 
                 var response = httpClient.Send(request);
                 Debug.WriteLine("HTTP CODE:" + response.StatusCode.ToString());
+                 /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                {
+                    sw.WriteLine(response.StatusCode.ToString());
+                }*/
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     return JsonSerializer.Deserialize<JsonObject>("{}");
 
                 string result = response.Content.ReadAsStringAsync().Result;
                 Debug.WriteLine("HTTP RECIEVE:" + result);
+                 /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                {
+                    sw.WriteLine(result);
+                }*/
 
                 var values = JsonSerializer.Deserialize<JsonObject>(result)!;
                 return values;

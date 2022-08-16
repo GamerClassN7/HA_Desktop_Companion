@@ -12,7 +12,7 @@ using System.Security.Cryptography;
 using System.Security;
 using System.Runtime.InteropServices;
 using System.Text;
-
+using System.Text.RegularExpressions;
 
 namespace HA_Desktop_Companion
 {
@@ -34,6 +34,9 @@ namespace HA_Desktop_Companion
             string decodedApiToken = ToInsecureString(DecryptString(Properties.Settings.Default.apiToken));
             string decodedWebhookId = ToInsecureString(DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
+            string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
+            string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
+
 
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
@@ -42,7 +45,7 @@ namespace HA_Desktop_Companion
             {
                 try
                 {
-                    ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId);
+                    ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
                     string hostname = System.Net.Dns.GetHostName() + "";
                     Title = hostname;
 
@@ -78,15 +81,23 @@ namespace HA_Desktop_Companion
             Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
             Properties.Settings.Default.apiToken = EncryptString(ToSecureString(apiToken.Password));
             Properties.Settings.Default.apiWebhookId = EncryptString(ToSecureString(ApiConnectiom.webhook_id));
+            Properties.Settings.Default.apiRemoteUiUrl = ApiConnectiom.remote_ui_url;
+            Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
 
             Properties.Settings.Default.Save();
 
-            ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mdi:battery", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mdi:power-plug-off", "diagnostic");
+            MessageBox.Show((Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2).ToString());
+            if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+            {
+                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mdi:battery", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mdi:power-plug-off", "diagnostic");
+            }
+
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
             ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", "Unknown", "", "kilobytes", "mdi:clock", "diagnostic");
 
@@ -101,12 +112,16 @@ namespace HA_Desktop_Companion
             //Make Use of reflections
             //var type = Type.GetType(type_name);
 
-            ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
-            ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
-            ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
+            if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+            {
+                ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
+                ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
+                ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
+            }
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
+            ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent().ToString());
             ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
         }
@@ -125,20 +140,20 @@ namespace HA_Desktop_Companion
 
         public static string GetBatteryStatus()
         {
-            Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
-            StatusCodes.Add(1, "Discharging");
-            StatusCodes.Add(2, "On AC");
-            StatusCodes.Add(3, "Fully Charged");
-            StatusCodes.Add(4, "Low");
-            StatusCodes.Add(5, "Critical");
-            StatusCodes.Add(6, "Charging");
-            StatusCodes.Add(7, "Charging and High");
-            StatusCodes.Add(8, "Charging and Low");
-            StatusCodes.Add(9, "Undefined");
-            StatusCodes.Add(10, "Partially Charged");
-
             try
             {
+                Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
+                StatusCodes.Add(1, "Discharging");
+                StatusCodes.Add(2, "On AC");
+                StatusCodes.Add(3, "Fully Charged");
+                StatusCodes.Add(4, "Low");
+                StatusCodes.Add(5, "Critical");
+                StatusCodes.Add(6, "Charging");
+                StatusCodes.Add(7, "Charging and High");
+                StatusCodes.Add(8, "Charging and Low");
+                StatusCodes.Add(9, "Undefined");
+                StatusCodes.Add(10, "Partially Charged");
+
                 int state = Int32.Parse(queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
                 if (state <= StatusCodes.Count)
                 {
@@ -169,24 +184,30 @@ namespace HA_Desktop_Companion
 
         private string getWifiSSID()
         {
-            var process = new Process
+            try
             {
-                StartInfo = {
-                FileName = "netsh.exe",
-                Arguments = "wlan show interfaces",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-                }
-            };
-            process.Start();
-
-            foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
-            {
-                if (item.Contains("SSID") && !item.Contains("BSSID"))
+                var process = new Process
                 {
-                    return item;
+                    StartInfo = {
+                    FileName = "netsh.exe",
+                    Arguments = "wlan show interfaces",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                    }
+                };
+                process.Start();
+
+                foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                {
+                    if (item.Contains("SSID") && !item.Contains("BSSID"))
+                    {
+                        return item;
+                    }
                 }
+            }
+            catch (Exception)
+            {
             }
             return "";
         }
@@ -199,8 +220,28 @@ namespace HA_Desktop_Companion
             catch (Exception)
             {
             }
+
+            try
+            {
+                return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.THM0\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+            }
+            catch (Exception)
+            {
+            }
             return 0;
 
+        }
+
+        private double GetCPUUsagePercent()
+        {
+            try
+            {
+                return (Convert.ToInt32(Int16.Parse(queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2"))));
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
         }
 
         private double GetFreeRam()
@@ -293,6 +334,7 @@ namespace HA_Desktop_Companion
                 {
                     if (output[line].Contains(selector))
                     {
+                        Regex.Replace(output[line + 1], @"\t|\n|\r", "");
                         return output[line + 1];
                     }
 

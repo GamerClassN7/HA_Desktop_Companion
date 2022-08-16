@@ -58,5 +58,29 @@ namespace HA_Desktop_Companion.Properties {
                 this["apiWebhookId"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string apiRemoteUiUrl {
+            get {
+                return ((string)(this["apiRemoteUiUrl"]));
+            }
+            set {
+                this["apiRemoteUiUrl"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string apiCloudhookUrl {
+            get {
+                return ((string)(this["apiCloudhookUrl"]));
+            }
+            set {
+                this["apiCloudhookUrl"] = value;
+            }
+        }
     }
 }
