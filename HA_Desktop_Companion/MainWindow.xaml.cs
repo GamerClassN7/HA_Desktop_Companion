@@ -13,6 +13,8 @@ using System.Security;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Win32;
+using System.IO;
 
 namespace HA_Desktop_Companion
 {
@@ -85,6 +87,14 @@ namespace HA_Desktop_Companion
             Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
 
             Properties.Settings.Default.Save();
+
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
+                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
+                key.Close();
+            }
 
             MessageBox.Show((Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2).ToString());
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
