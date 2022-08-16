@@ -5,13 +5,27 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 
 Feel free to contribute any time :)
 
+## Installation
+1) Extract the zip file to some folder on your system, 
+2) Run `HA_Desktop_Companion.exe`
+3) Fill in "URL" & "API Token"
+4) Click "Register"
+2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`
+
 ## Sensors implemented currently:
 - battery_level
 - battery_state
 - is_charging
 - wifi_ssid
+- cpi_temp
+- current_active_window
 
-![image](https://user-images.githubusercontent.com/22167469/184626954-f727a699-79cc-4345-9c32-ff6dd912937d.png)
+## Screenshots
+
+![image](https://user-images.githubusercontent.com/22167469/184820849-c2932b91-a4ee-4c0d-a220-58ab01444c29.png)
+
+![image](https://user-images.githubusercontent.com/22167469/184820793-09eac437-ff73-4015-b2e6-9dcf952bcafe.png)
+
 
 ## Future plans:
 - Simple configuration of sensors in YAML

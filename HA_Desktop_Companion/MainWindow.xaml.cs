@@ -48,11 +48,11 @@ namespace HA_Desktop_Companion
 
                     StartWatchdog();
                 
-                    registration.IsEnabled = false;
+                    //registration.IsEnabled = false;
                 }
                 catch (Exception)
                 {
-                    registration.IsEnabled = true;
+                    //registration.IsEnabled = true;
                 }
             }
         }
@@ -66,7 +66,7 @@ namespace HA_Desktop_Companion
         private void registration_Click(object sender, RoutedEventArgs e)
         {
 
-            string hostname = System.Net.Dns.GetHostName() + "_debug";
+            string hostname = System.Net.Dns.GetHostName() + "_debug2";
             string maufactorer = queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
             string model = queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
             string os = queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
@@ -81,11 +81,13 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mid:battery", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mid:battery-minus", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mid:power-plug-off", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mid:wifi", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mid:application", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mdi:battery", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mdi:power-plug-off", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
+
 
             StartWatchdog();
             //registration.IsEnabled = false;
@@ -98,6 +100,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
+            ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
         }
 
         public static double GetBatteryPercent()
@@ -161,6 +164,9 @@ namespace HA_Desktop_Companion
             return "";
         }
 
+        private double getCPUTemperature() {
+            return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+        }
         public static string EncryptString(SecureString input)
         {
             byte[] encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToInsecureString(input)), entropy, DataProtectionScope.CurrentUser);
