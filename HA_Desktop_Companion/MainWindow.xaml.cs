@@ -33,6 +33,19 @@ namespace HA_Desktop_Companion
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            /*
+                AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
+                WindowsPrincipal currentPrincipal = (WindowsPrincipal) Thread.CurrentPrincipal;
+
+                if (currentPrincipal.IsInRole("Administrators"))
+                {
+                    // continue programm
+                }
+                else
+                {
+                    // throw exception/show errorMessage - exit programm
+                }
+             */
             string decodedApiToken = ToInsecureString(DecryptString(Properties.Settings.Default.apiToken));
             string decodedWebhookId = ToInsecureString(DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
@@ -79,7 +92,7 @@ namespace HA_Desktop_Companion
             Title = hostname;
 
             ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
-           
+
             Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
             Properties.Settings.Default.apiToken = EncryptString(ToSecureString(apiToken.Password));
             Properties.Settings.Default.apiWebhookId = EncryptString(ToSecureString(ApiConnectiom.webhook_id));
@@ -88,20 +101,14 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
-            {
-                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
-                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
-                key.Close();
-            }
+            RegisterAutostart();
 
             MessageBox.Show((Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2).ToString());
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
-                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level","Unknown", "battery", "%", "mdi:battery", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", "Unknown", "battery", "%", "mdi:battery", "diagnostic");
                 ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
-                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "" , "mdi:power-plug-off", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "", "mdi:power-plug-off", "diagnostic");
             }
 
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
@@ -110,10 +117,23 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
             ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", "Unknown", "", "kilobytes", "mdi:clock", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", "Unknown", "firmware", "", "mdi:package", "diagnostic");
+
 
 
             StartWatchdog();
             //registration.IsEnabled = false;
+        }
+
+        private static void RegisterAutostart()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
+                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
+                key.Close();
+            }
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -134,6 +154,8 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent().ToString());
             ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
+            ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
+
         }
 
         public static double GetBatteryPercent()
@@ -229,15 +251,15 @@ namespace HA_Desktop_Companion
             }
             catch (Exception)
             {
+                try
+                {
+                    return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.THM0\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+                }
+                catch (Exception)
+                {
+                }
             }
 
-            try
-            {
-                return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.THM0\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
-            }
-            catch (Exception)
-            {
-            }
             return 0;
 
         }
