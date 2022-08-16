@@ -20,7 +20,7 @@ namespace HA_Desktop_Companion
         public string remote_ui_url = "";
         public string cloudhook_url = "";
 
-        public Dictionary<string, object> entities = new Dictionary<string, object>();
+        public Dictionary<string, object> entities = new();
 
         public HAApi(string baseUrl, string apiToken, string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)
         {
@@ -83,17 +83,15 @@ namespace HA_Desktop_Companion
                 return values;
                
             } catch (Exception e) {
-                using (StreamWriter sw = File.AppendText(".\\log.txt"))
-                {
-                    sw.WriteLine(e.Message);
-                }
+                using StreamWriter sw = File.AppendText(".\\log.txt");
+                sw.WriteLine(e.Message);
                 //throw new InvalidOperationException(@"HA Request Failed!", e);
             }
 
             return JsonSerializer.Deserialize<JsonObject>("{}");
         }
 
-        public JsonObject HADevicRegistration(string deviceID, string deviceName, string model, string manufactorer, string os, string osVersion)
+        public JsonObject HADevicRegistration(string deviceID, string deviceName, string model, string manufacturer, string os, string osVersion)
         {
             string app_version = Assembly.GetEntryAssembly().GetName().Version.ToString();
             var body = new
@@ -101,10 +99,10 @@ namespace HA_Desktop_Companion
                 device_id = deviceID,
                 app_id = "ha_desktop_companion",
                 app_name = "HA Desktop Companion",
-                app_version = app_version,
+                app_version,
                 device_name = deviceName,
-                manufacturer = manufactorer,
-                model = model,
+                manufacturer,
+                model,
                 os_name = os,
                 os_version = osVersion,
                 supports_encryption = false,
@@ -115,12 +113,13 @@ namespace HA_Desktop_Companion
 
         public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")
         {
-
-            Dictionary<string, string> data = new Dictionary<string, string>();
-            data.Add("unique_id", uniqueID);
-            data.Add("name", uniqueName);
-            data.Add("type", "sensor");
-            data.Add("state", state);
+            Dictionary<string, string> data = new()
+            {
+                { "unique_id", uniqueID },
+                { "name", uniqueName },
+                { "type", "sensor" },
+                { "state", state }
+            };
 
             if (deviceClass != "")
                 data.Add("device_class", deviceClass);
@@ -134,12 +133,14 @@ namespace HA_Desktop_Companion
             if (icon != "")
                 data.Add("icon", icon);
 
-            var body = new {
-                data = data,
+            object body = new {
+                data,
                 type = "register_sensor"
             };
 
-            entities.Add(uniqueID, data);
+            Dictionary<string, string> entiry = new Dictionary<string, string>(data);
+            entiry.Add("last_value", state);
+            entities.Add(uniqueID, entiry);
 
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
@@ -147,16 +148,23 @@ namespace HA_Desktop_Companion
 
         public JsonObject HASendSenzorData(string uniqueID, string state)
         {
-            Dictionary<string, string> entityTemplate = new Dictionary<string, string> { };
+            Dictionary<string, string> entityTemplate = new() { };
             if (entities.ContainsKey(uniqueID))
             {
                 entityTemplate = (Dictionary<string, string>) entities[uniqueID];
+                if (entityTemplate["last_value"] == state) {
+                    Debug.WriteLine("Same Value as last one skipping");
+                    return JsonSerializer.Deserialize<JsonObject>("{}");
+                }
+                entityTemplate["last_value"] = state;
             }
 
-            Dictionary<string, string> data = new Dictionary<string, string>();
-            data.Add("unique_id", uniqueID);
-            data.Add("type", "sensor");
-            data.Add("state", state);
+            Dictionary<string, string> data = new()
+            {
+                { "unique_id", uniqueID },
+                { "type", "sensor" },
+                { "state", state }
+            };
 
             if (entityTemplate.ContainsKey("icon") && entityTemplate["icon"] != "")
                 data.Add("icon", entityTemplate["icon"]);
