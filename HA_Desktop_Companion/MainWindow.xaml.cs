@@ -88,6 +88,8 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", "Unknown", "", "kilobytes", "mdi:clock", "diagnostic");
+
 
             StartWatchdog();
             //registration.IsEnabled = false;
@@ -95,6 +97,10 @@ namespace HA_Desktop_Companion
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
+
+            //Make Use of reflections
+            //var type = Type.GetType(type_name);
+
             ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
             ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
             ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
@@ -102,7 +108,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
             ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
-
+            ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
         }
 
         public static double GetBatteryPercent()
@@ -195,6 +201,19 @@ namespace HA_Desktop_Companion
             }
             return 0;
 
+        }
+
+        private double GetFreeRam()
+        {
+            // kilobytes
+            try
+            {
+                return Int32.Parse(queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2"));
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
         }
         public static string EncryptString(SecureString input)
         {
