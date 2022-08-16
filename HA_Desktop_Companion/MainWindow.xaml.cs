@@ -111,8 +111,8 @@ namespace HA_Desktop_Companion
                 ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "", "mdi:power-plug-off", "diagnostic");
             }
 
-            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
+            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
@@ -242,7 +242,7 @@ namespace HA_Desktop_Companion
             catch (Exception)
             {
             }
-            return "";
+            return "Not available";
         }
 
         private double getCPUTemperature() {
