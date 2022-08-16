@@ -122,7 +122,11 @@ namespace HA_Desktop_Companion
 
         public JsonObject HASendSenzorData(string uniqueID, string state)
         {
-            Dictionary<string, string> entityTemplate = (Dictionary<string, string>)entities[uniqueID];
+            Dictionary<string, string> entityTemplate = new Dictionary<string, string> { };
+            if (entities.ContainsKey(uniqueID))
+            {
+                entityTemplate = (Dictionary<string, string>) entities[uniqueID];
+            }
 
             Dictionary<string, string> data = new Dictionary<string, string>();
             data.Add("unique_id", uniqueID);

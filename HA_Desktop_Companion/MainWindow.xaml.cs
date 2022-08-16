@@ -107,7 +107,14 @@ namespace HA_Desktop_Companion
 
         public static double GetBatteryPercent()
         {
-            return Int32.Parse(queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2"));
+            try { 
+                return Int32.Parse(queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2"));
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
+
         }
 
         public static string GetBatteryStatus()
@@ -124,22 +131,34 @@ namespace HA_Desktop_Companion
             StatusCodes.Add(9, "Undefined");
             StatusCodes.Add(10, "Partially Charged");
 
-            int state = Int32.Parse(queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
-            if (state <= StatusCodes.Count)
+            try
             {
-                return StatusCodes[state];
+                int state = Int32.Parse(queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
+                if (state <= StatusCodes.Count)
+                {
+                    return StatusCodes[state];
+                }
+            }
+            catch (Exception)
+            {
             }
             return "Unknown";
         }
 
         public static string GetPowerLineStatus()
         {
-            if (Boolean.Parse(queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi")))
+            try
             {
-                return "plugged in";
+                if (Boolean.Parse(queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi")))
+                {
+                    return "plugged in";
+                }
+            }
+            catch (Exception)
+            {
             }
 
-            return "plugged in";
+            return "unplugged in";
         }
 
         private string getWifiSSID()
@@ -167,7 +186,15 @@ namespace HA_Desktop_Companion
         }
 
         private double getCPUTemperature() {
-            return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+            try
+            {
+                return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
+
         }
         public static string EncryptString(SecureString input)
         {
@@ -241,15 +268,18 @@ namespace HA_Desktop_Companion
             string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             process.Dispose();
 
-            for (int line = 0; line < output.Length; line++)
+            try
             {
-                if (output[line].Contains(selector))
+                for (int line = 0; line < output.Length; line++)
                 {
-                    return output[line + 1];
+                    if (output[line].Contains(selector))
+                    {
+                        return output[line + 1];
+                    }
+
                 }
-
             }
-
+            catch (Exception) {}
             return "";
         }
 
