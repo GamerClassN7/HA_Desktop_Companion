@@ -14,6 +14,7 @@ in order to run this applikaction you need to hawe [.NET Desktop Runtime (v6.0.7
 3) Fill in "URL" & "API Token"
 4) Click "Register"
 2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`
+  - if you want app to start on computer boot
 
 ## Sensors implemented currently:
 - battery_level
