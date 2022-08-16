@@ -33,6 +33,19 @@ namespace HA_Desktop_Companion
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            /*
+                AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
+                WindowsPrincipal currentPrincipal = (WindowsPrincipal) Thread.CurrentPrincipal;
+
+                if (currentPrincipal.IsInRole("Administrators"))
+                {
+                    // continue programm
+                }
+                else
+                {
+                    // throw exception/show errorMessage - exit programm
+                }
+             */
             string decodedApiToken = ToInsecureString(DecryptString(Properties.Settings.Default.apiToken));
             string decodedWebhookId = ToInsecureString(DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
