@@ -11,7 +11,12 @@ Feel free to contribute any time :)
 - is_charging
 - wifi_ssid
 
-![image](https://user-images.githubusercontent.com/22167469/184626954-f727a699-79cc-4345-9c32-ff6dd912937d.png)
+## Screenshots
+
+![image](https://user-images.githubusercontent.com/22167469/184820849-c2932b91-a4ee-4c0d-a220-58ab01444c29.png)
+
+![image](https://user-images.githubusercontent.com/22167469/184820793-09eac437-ff73-4015-b2e6-9dcf952bcafe.png)
+
 
 ## Future plans:
 - Simple configuration of sensors in YAML
