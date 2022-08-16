@@ -90,7 +90,6 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "timestamp", "seconds", "mdi:clock", "diagnostic");
 
 
-
             StartWatchdog();
             //registration.IsEnabled = false;
         }
@@ -281,7 +280,6 @@ namespace HA_Desktop_Companion
             extern static UInt64 GetTickCount64();
             return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
         }
-
 
         private void close_Click(object sender, RoutedEventArgs e)
         {
