@@ -10,15 +10,19 @@ Feel free to contribute any time :)
 2) Run `HA_Desktop_Companion.exe`
 3) Fill in "URL" & "API Token"
 4) Click "Register"
-2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup`
+2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
 
 ## Sensors implemented currently:
 - battery_level
 - battery_state
 - is_charging
 - wifi_ssid
-- cpi_temp
+- cpu_temp
 - current_active_window
+- uptime
+- camera_in_use
+- cpu_temperature (only native api supported)
+- free_ram
 
 ## Screenshots
 
