@@ -20,7 +20,7 @@ namespace HA_Desktop_Companion
         public string webhook_id = "";
         public string remote_ui_url = "";
         public string cloudhook_url = "";
-        public bool debug = false;
+        private bool debug = false;
 
         public Dictionary<string, object> entitiesCatalog = new();
 
@@ -47,6 +47,7 @@ namespace HA_Desktop_Companion
         {
             debug = true;
         }
+        
         private string HAResolveUri()
         {
             string resultUrl = base_url;
@@ -62,6 +63,7 @@ namespace HA_Desktop_Companion
 
             return resultUrl;
         }
+        
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
             try
@@ -189,14 +191,15 @@ namespace HA_Desktop_Companion
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
-        
-        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, int state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")
+
+        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, int state, string deviceClass = "", string units = "", string icon = "", string entityCategory = "")
         {
             object body = HAGenericSenzorRegistrationBody(uniqueID, uniqueName, state, "sensor", deviceClass, entityCategory, icon, units);
 
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
+        
         private object HAGenericSenzorDataBody(string uniqueID, object state, string icon = "")
         {
             Dictionary<string, object> entityTemplate = new() { };
