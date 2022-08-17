@@ -15,6 +15,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using System.IO;
+using HA_Desktop_Companion.Libraries;
 
 namespace HA_Desktop_Companion
 {
@@ -29,6 +30,18 @@ namespace HA_Desktop_Companion
         public MainWindow()
         {
             InitializeComponent();
+            AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
+        }
+
+        private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
+        {
+            var ex = (Exception)e.ExceptionObject;
+            MessageBox.Show(ex.ToString());
+            using (StreamWriter sw = File.AppendText(@"C:\Users\JonatanRek\Desktop\log.txt"))
+            {
+                sw.WriteLine(JsonSerializer.Serialize(ex.ToString()));
+            }
+            //Environment.Exit(System.Runtime.InteropServices.Marshal.GetHRForException(ex));
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -113,6 +126,7 @@ namespace HA_Desktop_Companion
 
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
+            ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", "Unknown", "", "", "mdi:camera", "");
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
@@ -151,11 +165,14 @@ namespace HA_Desktop_Companion
             }
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
+            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryWebCamUseStatus().ToString());
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent().ToString());
             ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
+
+            
 
         }
 
@@ -336,6 +353,11 @@ namespace HA_Desktop_Companion
 
         public void StartWatchdog()
         {
+            if ((debug.IsChecked ?? false))
+            {
+                ApiConnectiom.enableDebug();
+            }
+
             DispatcherTimer watchdogTimer = new DispatcherTimer();
             watchdogTimer.Tick += new EventHandler(dispatcherTimer_Tick);
             watchdogTimer.Interval = new TimeSpan(0, 0, 10);
@@ -367,8 +389,7 @@ namespace HA_Desktop_Companion
                 {
                     if (output[line].Contains(selector))
                     {
-                        Regex.Replace(output[line + 1], @"\t|\n|\r", "");
-                        return output[line + 1];
+                        return Regex.Replace(output[line + 1], @"\t|\n|\r", "");
                     }
 
                 }

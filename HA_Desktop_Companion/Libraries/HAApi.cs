@@ -20,6 +20,7 @@ namespace HA_Desktop_Companion
         public string webhook_id = "";
         public string remote_ui_url = "";
         public string cloudhook_url = "";
+        public bool debug = false;
 
         public Dictionary<string, object> entitiesCatalog = new();
 
@@ -42,15 +43,31 @@ namespace HA_Desktop_Companion
             cloudhook_url = cloudhookUrl;
         }
 
+        public void enableDebug()
+        {
+            debug = true;
+        }
+        private string HAResolveUri()
+        {
+            string resultUrl = base_url;
+            //TODO: Cascade reference of url
+
+            if (!string.IsNullOrEmpty(remote_ui_url))
+                resultUrl = remote_ui_url;
+
+            if (resultUrl.ToString().EndsWith("/"))
+            {
+                resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
+            }
+
+            return resultUrl;
+        }
+
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
             try
             {
-                string rootUrl = base_url;
-
-                //TODO: Cascade reference of url
-                /*if (remote_ui_url != "")
-                    rootUrl = remote_ui_url;*/
+                string rootUrl = HAResolveUri();
 
                 using var httpClient = new HttpClient();
 
@@ -59,27 +76,27 @@ namespace HA_Desktop_Companion
                 request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
                 request.Content = JsonContent.Create(body);
                 Debug.WriteLine("HTTP SEND:" + JsonSerializer.Serialize(body));
-                /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
                     sw.WriteLine(JsonSerializer.Serialize(body));
-                }*/
+                }
 
                 var response = httpClient.Send(request);
                 Debug.WriteLine("HTTP CODE:" + response.StatusCode.ToString());
-                 /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
                     sw.WriteLine(response.StatusCode.ToString());
-                }*/
+                }
 
                 if (response.StatusCode == System.Net.HttpStatusCode.OK)
                     return JsonSerializer.Deserialize<JsonObject>("{}");
 
                 string result = response.Content.ReadAsStringAsync().Result;
                 Debug.WriteLine("HTTP RECIEVE:" + result);
-                 /*using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
                     sw.WriteLine(result);
-                }*/
+                }
 
                 var values = JsonSerializer.Deserialize<JsonObject>(result)!;
                 return values;
@@ -111,7 +128,8 @@ namespace HA_Desktop_Companion
                 supports_encryption = false,
             };
 
-            return HARequest(token, "/api/mobile_app/registrations", body);
+            JsonObject response = HARequest(token, "/api/mobile_app/registrations", body);
+            return response;
         }
 
         public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")

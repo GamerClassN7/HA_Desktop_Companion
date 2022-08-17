@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Windows;
 
 namespace HA_Desktop_Companion.Libraries
 {
@@ -80,5 +83,32 @@ namespace HA_Desktop_Companion.Libraries
                 return null;
             }
         }*/
+
+        public static bool queryWebCamUseStatus()
+        {
+            using (var rootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\"))
+            {
+                if (rootKey != null)
+                {
+                    foreach (var subKeyName in rootKey.GetSubKeyNames())
+                    {
+                        using (var subKey = rootKey.OpenSubKey(subKeyName))
+                        {
+                            if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
+                            {
+                                var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
+                                if (endTime == 0)
+                                {
+                                    MessageBox.Show(subKeyName);
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }
