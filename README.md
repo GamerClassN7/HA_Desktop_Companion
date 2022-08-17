@@ -30,6 +30,9 @@ Feel free to contribute any time :)
 
 ![image](https://user-images.githubusercontent.com/22167469/185061529-9868070a-cf1e-4531-877e-443c1b1be1e4.png)
 
+##Automation Ideas:
+Pause TTS when camera is in use (usefull when working from home) credits: [Hellis81](https://community.home-assistant.io/u/Hellis81)
+
 ## Future plans:
 - Simple configuration of sensors in YAML
 - Improved debug mode
