@@ -8,8 +8,6 @@ using System.Text.Json.Nodes;
 using System.Reflection;
 using System.Windows.Threading;
 using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Security;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,7 +22,6 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
-        static byte[] entropy = Encoding.Unicode.GetBytes("SaLtY bOy 6970 ePiC");
         public static HAApi ApiConnectiom;
 
         public MainWindow()
@@ -69,8 +66,8 @@ namespace HA_Desktop_Companion
                     // throw exception/show errorMessage - exit programm
                 }
              */
-            string decodedApiToken = ToInsecureString(DecryptString(Properties.Settings.Default.apiToken));
-            string decodedWebhookId = ToInsecureString(DecryptString(Properties.Settings.Default.apiWebhookId));
+            string decodedApiToken = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiToken));
+            string decodedWebhookId = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
             string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
@@ -108,17 +105,17 @@ namespace HA_Desktop_Companion
         {
 
             string hostname = System.Net.Dns.GetHostName() + "";
-            string maufactorer = queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
-            string model = queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
-            string os = queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
+            string maufactorer = Sensors.queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
+            string model = Sensors.queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
+            string os = Sensors.queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
 
             Title = hostname;
 
             ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
 
             Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
-            Properties.Settings.Default.apiToken = EncryptString(ToSecureString(apiToken.Password));
-            Properties.Settings.Default.apiWebhookId = EncryptString(ToSecureString(ApiConnectiom.webhook_id));
+            Properties.Settings.Default.apiToken = Encryption.EncryptString(Encryption.ToSecureString(apiToken.Password));
+            Properties.Settings.Default.apiWebhookId = Encryption.EncryptString(Encryption.ToSecureString(ApiConnectiom.webhook_id));
             Properties.Settings.Default.apiRemoteUiUrl = ApiConnectiom.remote_ui_url;
             Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
 
@@ -126,7 +123,7 @@ namespace HA_Desktop_Companion
 
             RegisterAutostart();
 
-            if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
                 ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", 0, "battery", "%", "mdi:battery", "diagnostic");
                 ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
@@ -171,7 +168,7 @@ namespace HA_Desktop_Companion
             //var type = Type.GetType(type_name);
             //ApiConnectiom.HASendSenzorLocation();
 
-            if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
                 ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent());
                 ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
@@ -179,24 +176,24 @@ namespace HA_Desktop_Companion
             }
 
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
-            ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
+            ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.queryActiveWindowTitle());
 
-            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryConsetStore("webcam"));
-            ApiConnectiom.HASendSenzorData("microphone_in_use", Senzors.queryConsetStore("microphone"));
-            ApiConnectiom.HASendSenzorData("location_in_use", Senzors.queryConsetStore("location"));
+            ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.queryConsetStore("webcam"));
+            ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.queryConsetStore("microphone"));
+            ApiConnectiom.HASendSenzorData("location_in_use", Sensors.queryConsetStore("location"));
 
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature());
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam());
 
-            ApiConnectiom.HASendSenzorData("uptime", GetUpTime());
+            ApiConnectiom.HASendSenzorData("uptime", (int) Sensors.queryMachineUpTime().TotalSeconds);
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
         }
 
         public static double GetBatteryPercent()
         {
             try { 
-                return Int32.Parse(queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2"));
+                return Int32.Parse(Sensors.queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2"));
             }
             catch (Exception)
             {
@@ -221,7 +218,7 @@ namespace HA_Desktop_Companion
                 StatusCodes.Add(9, "Undefined");
                 StatusCodes.Add(10, "Partially Charged");
 
-                int state = Int32.Parse(queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
+                int state = Int32.Parse(Sensors.queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
                 if (state <= StatusCodes.Count)
                 {
                     return StatusCodes[state];
@@ -237,7 +234,7 @@ namespace HA_Desktop_Companion
         {
             try
             {
-                return Boolean.Parse(queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi"));
+                return Boolean.Parse(Sensors.queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi"));
                
             }
             catch (Exception)
@@ -280,13 +277,13 @@ namespace HA_Desktop_Companion
         private double getCPUTemperature() {
             try
             {
-                return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+                return (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
             }
             catch (Exception)
             {
                 try
                 {
-                    return (Math.Round(Int32.Parse(queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.THM0\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+                    return (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.THM0\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
                 }
                 catch (Exception)
                 {
@@ -301,7 +298,7 @@ namespace HA_Desktop_Companion
         {
             try
             {
-                return (Convert.ToInt32(Int16.Parse(queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2"))));
+                return (Convert.ToInt32(Int16.Parse(Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2"))));
             }
             catch (Exception)
             {
@@ -314,56 +311,12 @@ namespace HA_Desktop_Companion
             // kilobytes
             try
             {
-                return Int32.Parse(queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2"));
+                return Int32.Parse(Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2"));
             }
             catch (Exception)
             {
             }
             return 0;
-        }
-        public static string EncryptString(SecureString input)
-        {
-            byte[] encryptedData = ProtectedData.Protect(Encoding.Unicode.GetBytes(ToInsecureString(input)), entropy, DataProtectionScope.CurrentUser);
-            return Convert.ToBase64String(encryptedData);
-        }
-
-        public static SecureString DecryptString(string encryptedData)
-        {
-            try
-            {
-                byte[] decryptedData = ProtectedData.Unprotect(Convert.FromBase64String(encryptedData), entropy, DataProtectionScope.CurrentUser);
-                return ToSecureString(Encoding.Unicode.GetString(decryptedData));
-            }
-            catch
-            {
-                return new SecureString();
-            }
-        }
-
-        public static SecureString ToSecureString(string input)
-        {
-            SecureString secure = new SecureString();
-            foreach (char c in input)
-            {
-                secure.AppendChar(c);
-            }
-            secure.MakeReadOnly();
-            return secure;
-        }
-
-        public static string ToInsecureString(SecureString input)
-        {
-            string returnValue = string.Empty;
-            IntPtr ptr = System.Runtime.InteropServices.Marshal.SecureStringToBSTR(input);
-            try
-            {
-                returnValue = System.Runtime.InteropServices.Marshal.PtrToStringBSTR(ptr);
-            }
-            finally
-            {
-                System.Runtime.InteropServices.Marshal.ZeroFreeBSTR(ptr);
-            }
-            return returnValue;
         }
 
         public void StartWatchdog()
@@ -381,64 +334,8 @@ namespace HA_Desktop_Companion
             registration.Content = "Registered";
         }
 
-        public static string queryWMIC(string path, string selector, string wmiNmaespace = @"\\root\wmi")
-        {
-            var process = new Process
-            {
-                StartInfo = {
-                    FileName = "wmic.exe",
-                    Arguments = ("/namespace:\"" + wmiNmaespace + "\" path " + path + " get " + selector),
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            process.Dispose();
-
-            try
-            {
-                for (int line = 0; line < output.Length; line++)
-                {
-                    if (output[line].Contains(selector))
-                    {
-                        return Regex.Replace(output[line + 1], @"\t|\n|\r", "");
-                    }
-
-                }
-            }
-            catch (Exception) {}
-            return "";
-        }
-
         /*string[] drives = Environment.GetLogicalDrives();
         Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
-
-        private string ActiveWindowTitle()
-        {
-            [DllImport("user32.dll")]
-            static extern IntPtr GetForegroundWindow();
-            [DllImport("user32.dll")]
-            static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
-
-            const int nChar = 256;
-            StringBuilder ss = new StringBuilder(nChar);
-
-            IntPtr handle = IntPtr.Zero;
-            handle = GetForegroundWindow();
-
-            if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
-            else return "";
-        }
-
-        public static int GetUpTime()
-        {
-            [DllImport("kernel32")]
-            extern static UInt64 GetTickCount64();
-            return (int) (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
-        }
 
         private void close_Click(object sender, RoutedEventArgs e)
         {

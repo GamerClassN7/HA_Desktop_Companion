@@ -12,7 +12,7 @@ using System.Windows;
 
 namespace HA_Desktop_Companion.Libraries
 {
-    class Senzors
+    class Sensors
     {
         public static string queryWMIC(string path, string selector, string wmiNmaespace = @"\\root\wmi")
         {
@@ -62,6 +62,7 @@ namespace HA_Desktop_Companion.Libraries
             if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
             else return "";
         }
+
 
         public static TimeSpan queryMachineUpTime()
         {
