@@ -62,7 +62,6 @@ namespace HA_Desktop_Companion
 
             return resultUrl;
         }
-
         private JsonObject HARequest(string token, string webhookUrlEndpoint, object body)
         {
             try
@@ -75,6 +74,7 @@ namespace HA_Desktop_Companion
                 request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
                 request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
                 request.Content = JsonContent.Create(body);
+
                 Debug.WriteLine("HTTP SEND:" + JsonSerializer.Serialize(body));
                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
@@ -83,7 +83,7 @@ namespace HA_Desktop_Companion
 
                 var response = httpClient.Send(request);
                 Debug.WriteLine("HTTP CODE:" + response.StatusCode.ToString());
-                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
                     sw.WriteLine(response.StatusCode.ToString());
                 }
@@ -93,7 +93,7 @@ namespace HA_Desktop_Companion
 
                 string result = response.Content.ReadAsStringAsync().Result;
                 Debug.WriteLine("HTTP RECIEVE:" + result);
-                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                using (StreamWriter sw = File.AppendText(".\\log.txt"))
                 {
                     sw.WriteLine(result);
                 }
@@ -132,35 +132,36 @@ namespace HA_Desktop_Companion
             return response;
         }
 
-        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")
+        private object HAGenericSenzorRegistrationBody(string unique_id, string name, object state, string type = "sensor", string device_class = "", string entity_category = "", string icon = "", string unit_of_measurement = "" )
         {
-            Dictionary<string, string> data = new()
+            Dictionary<string, object> data = new ()
             {
-                { "unique_id", uniqueID },
-                { "name", uniqueName },
-                { "type", "sensor" },
+                { "unique_id", unique_id },
+                { "name", name },
+                { "type", type },
                 { "state", state }
             };
 
-            if (deviceClass != "")
-                data.Add("device_class", deviceClass);
+            if (device_class != "")
+                data.Add("device_class", device_class);
 
-            if (units != "")
-                data.Add("unit_of_measurement", units);
+            if (unit_of_measurement != "")
+                data.Add("unit_of_measurement", unit_of_measurement);
 
-            if (entityCategory != "")
-                data.Add("entity_category", entityCategory);
+            if (entity_category != "")
+                data.Add("entity_category", entity_category);
 
             if (icon != "")
                 data.Add("icon", icon);
 
-            object body = new {
+            object body = new
+            {
                 data,
                 type = "register_sensor"
             };
 
             //Add Entity to Catalog
-            Dictionary<string, string> entiry = new()
+            Dictionary<string, object> entiry = new()
             {
                 { "last_value", state }
             };
@@ -168,19 +169,43 @@ namespace HA_Desktop_Companion
             if (icon != "")
                 entiry.Add("icon", icon);
 
-            entitiesCatalog.Add(uniqueID, entiry);
+            entitiesCatalog.Add(unique_id, entiry);
+
+            return body;
+        }
+        
+        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, string state, string deviceClass = "", string units = "", string icon = "", string entityCategory = "")
+        {
+            object body = HAGenericSenzorRegistrationBody(uniqueID, uniqueName, state, "sensor", deviceClass, entityCategory, icon, units);
 
             System.Threading.Thread.Sleep(1000);
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
 
-        public JsonObject HASendSenzorData(string uniqueID, string state)
+        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, bool state = false, string deviceClass = "", string units = "", string icon = "", string entityCategory = "")
         {
-            Dictionary<string, string> entityTemplate = new() { };
+            object body = HAGenericSenzorRegistrationBody(uniqueID, uniqueName, state, "binary_sensor", deviceClass, entityCategory, icon, units);
+
+            System.Threading.Thread.Sleep(1000);
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }
+        
+        public JsonObject HASenzorRegistration(string uniqueID, string uniqueName, int state, string deviceClass = "", string units= "", string icon = "", string entityCategory = "")
+        {
+            object body = HAGenericSenzorRegistrationBody(uniqueID, uniqueName, state, "sensor", deviceClass, entityCategory, icon, units);
+
+            System.Threading.Thread.Sleep(1000);
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }
+        private object HAGenericSenzorDataBody(string uniqueID, object state, string icon = "")
+        {
+            Dictionary<string, object> entityTemplate = new() { };
+
             if (entitiesCatalog.ContainsKey(uniqueID))
             {
-                entityTemplate = (Dictionary<string, string>) entitiesCatalog[uniqueID];
-                if (entityTemplate["last_value"] == state) {
+                entityTemplate = (Dictionary<string, object>)entitiesCatalog[uniqueID];
+                if (entityTemplate["last_value"] == state)
+                {
                     Debug.WriteLine("Same Value as last one skipping");
                     return JsonSerializer.Deserialize<JsonObject>("{}");
                 }
@@ -188,7 +213,7 @@ namespace HA_Desktop_Companion
                 entitiesCatalog[uniqueID] = entityTemplate;
             }
 
-            Dictionary<string, string> data = new()
+            Dictionary<string, object> data = new()
             {
                 { "unique_id", uniqueID },
                 { "type", "sensor" },
@@ -203,6 +228,34 @@ namespace HA_Desktop_Companion
                 data = new[] { data, },
                 type = "update_sensor_states"
             };
+
+            return body;
+        }
+
+        public JsonObject HASendSenzorData(string uniqueID, string state)
+        {
+           object body = HAGenericSenzorDataBody(uniqueID, state);
+
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }
+
+        public JsonObject HASendSenzorData(string uniqueID, bool state)
+        {
+            object body = HAGenericSenzorDataBody(uniqueID, state);
+
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }
+
+        public JsonObject HASendSenzorData(string uniqueID, int state)
+        {
+            object body = HAGenericSenzorDataBody(uniqueID, state);
+
+            return HARequest(token, "/api/webhook/" + webhook_id, body);
+        }
+
+        public JsonObject HASendSenzorData(string uniqueID, double state)
+        {
+            object body = HAGenericSenzorDataBody(uniqueID, (float) state);
 
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }

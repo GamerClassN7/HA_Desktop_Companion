@@ -86,43 +86,29 @@ namespace HA_Desktop_Companion.Libraries
 
         public static bool queryConsetStore(string category = "webcam")
         {
-            using (var rootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\"+ category + @"\"))
+            string[] consentStores = {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\" ,
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\NonPackaged" 
+            };
+
+            foreach (string path in consentStores)
             {
-                if (rootKey != null)
+                using (var rootKey = Registry.CurrentUser.OpenSubKey(path))
                 {
-                    foreach (var subKeyName in rootKey.GetSubKeyNames())
+                    if (rootKey != null)
                     {
-
-                        using (var subKey = rootKey.OpenSubKey(subKeyName))
+                        foreach (var subKeyName in rootKey.GetSubKeyNames())
                         {
-                            if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
-                            {
-                                var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
-                                if (endTime == 0)
-                                {
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
-            using (var nonPackagedRootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\NonPackaged"))
-            {
-                if (nonPackagedRootKey != null)
-                {
-                    foreach (var subKeyName in nonPackagedRootKey.GetSubKeyNames())
-                    {
-
-                        using (var subKey = nonPackagedRootKey.OpenSubKey(subKeyName))
-                        {
-                            if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
+                            using (var subKey = rootKey.OpenSubKey(subKeyName))
                             {
-                                var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
-                                if (endTime == 0)
+                                if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
                                 {
-                                    return true;
+                                    var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
+                                    if (endTime == 0)
+                                    {
+                                        return true;
+                                    }
                                 }
                             }
                         }

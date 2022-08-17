@@ -128,24 +128,24 @@ namespace HA_Desktop_Companion
 
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
-                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", "Unknown", "battery", "%", "mdi:battery", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", 0, "battery", "%", "mdi:battery", "diagnostic");
                 ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
-                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", "Unknown", "battery", "", "mdi:power-plug-off", "diagnostic");
+                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", false, "plug", "", "mdi:power-plug-off", "diagnostic");
             }
 
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
             
-            ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", "Unknown", "", "", "mdi:camera", "");
-            ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", "Unknown", "", "", "mdi:microphone", "");
-            ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", "Unknown", "", "", "mdi:crosshairs-gps", "");
+            ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", false, "", "", "mdi:camera", "");
+            ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", false, "", "", "mdi:microphone", "");
+            ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", false, "", "", "mdi:crosshairs-gps", "");
 
-            ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", "Unknown", "", "kilobytes", "mdi:clock", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", 0, "", "°C", "mdi:cpu-64-bit", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", 0, "", "%", "mdi:cpu-64-bit", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", 0, "", "kilobytes", "mdi:clock", "diagnostic");
 
-            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", "Unknown", "firmware", "", "mdi:package", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", 0, "", "s", "mdi:timer-outline", "diagnostic");
+            ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", false, "firmware", "", "mdi:package", "diagnostic");
 
 
 
@@ -173,26 +173,24 @@ namespace HA_Desktop_Companion
 
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
-                ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent().ToString());
+                ApiConnectiom.HASendSenzorData("battery_level", GetBatteryPercent());
                 ApiConnectiom.HASendSenzorData("battery_state", GetBatteryStatus().ToString());
-                ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus().ToString());
+                ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus());
             }
+
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
 
-            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryConsetStore("webcam").ToString());
-            ApiConnectiom.HASendSenzorData("microphone_in_use", Senzors.queryConsetStore("microphone").ToString());
-            ApiConnectiom.HASendSenzorData("location_in_use", Senzors.queryConsetStore("location").ToString());
+            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryConsetStore("webcam"));
+            ApiConnectiom.HASendSenzorData("microphone_in_use", Senzors.queryConsetStore("microphone"));
+            ApiConnectiom.HASendSenzorData("location_in_use", Senzors.queryConsetStore("location"));
 
-            ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
-            ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent().ToString());
-            ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
+            ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature());
+            ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent());
+            ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam());
 
-            ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
+            ApiConnectiom.HASendSenzorData("uptime", GetUpTime());
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
-
-            
-
         }
 
         public static double GetBatteryPercent()
@@ -235,20 +233,18 @@ namespace HA_Desktop_Companion
             return "Unknown";
         }
 
-        public static string GetPowerLineStatus()
+        public static bool GetPowerLineStatus()
         {
             try
             {
-                if (Boolean.Parse(queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi")))
-                {
-                    return "plugged in";
-                }
+                return Boolean.Parse(queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi"));
+               
             }
             catch (Exception)
             {
             }
 
-            return "unplugged in";
+            return false;
         }
 
         private string getWifiSSID()
@@ -437,11 +433,11 @@ namespace HA_Desktop_Companion
             else return "";
         }
 
-        public static double GetUpTime()
+        public static int GetUpTime()
         {
             [DllImport("kernel32")]
             extern static UInt64 GetTickCount64();
-            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
+            return (int) (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
         }
 
         private void close_Click(object sender, RoutedEventArgs e)
