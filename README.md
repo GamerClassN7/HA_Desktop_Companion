@@ -5,10 +5,6 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 
 Feel free to contribute any time :)
 
-## NOTICE
-in order to run this applikaction you need to hawe [.NET Desktop Runtime (v6.0.7 or later)](https://download.visualstudio.microsoft.com/download/pr/b4a17a47-2fe8-498d-b817-30ad2e23f413/00020402af25ba40990c6cc3db5cb270/windowsdesktop-runtime-6.0.8-win-x64.exe) installed!
-If you dont want to install it you can dowload _Self_Containef.zip Whitch have runtime inside of EXE File (100MB) Big Beacuse whole runtime is inside of it.
-
 ## Installation
 1) Extract the zip file to some folder on your system, 
 2) Run `HA_Desktop_Companion.exe`
@@ -21,16 +17,18 @@ If you dont want to install it you can dowload _Self_Containef.zip Whitch have r
 - battery_state
 - is_charging
 - wifi_ssid
-- cpi_temp
+- cpu_temp
 - current_active_window
 - uptime
+- camera_in_use
+- cpu_temperature (only native api supported)
+- free_ram
 
 ## Screenshots
 
 ![image](https://user-images.githubusercontent.com/22167469/184820849-c2932b91-a4ee-4c0d-a220-58ab01444c29.png)
 
-![image](https://user-images.githubusercontent.com/22167469/184820793-09eac437-ff73-4015-b2e6-9dcf952bcafe.png)
-
+![image](https://user-images.githubusercontent.com/22167469/185061529-9868070a-cf1e-4531-877e-443c1b1be1e4.png)
 
 ## Future plans:
 - Simple configuration of sensors in YAML
