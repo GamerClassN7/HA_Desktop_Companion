@@ -135,11 +135,16 @@ namespace HA_Desktop_Companion
 
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
+            
             ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", "Unknown", "", "", "mdi:camera", "");
+            ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", "Unknown", "", "", "mdi:microphone", "");
+            ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", "Unknown", "", "", "mdi:crosshairs-gps", "");
+
             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", "Unknown", "", "°C", "mdi:cpu-64-bit", "diagnostic");
             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", "Unknown", "", "%", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
             ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", "Unknown", "", "kilobytes", "mdi:clock", "diagnostic");
+
+            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", "Unknown", "duration", "seconds", "mdi:clock", "diagnostic");
             ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", "Unknown", "firmware", "", "mdi:package", "diagnostic");
 
 
@@ -174,11 +179,16 @@ namespace HA_Desktop_Companion
             }
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", ActiveWindowTitle().ToString());
-            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryWebCamUseStatus().ToString());
+
+            ApiConnectiom.HASendSenzorData("camera_in_use", Senzors.queryConsetStore("webcam").ToString());
+            ApiConnectiom.HASendSenzorData("microphone_in_use", Senzors.queryConsetStore("microphone").ToString());
+            ApiConnectiom.HASendSenzorData("location_in_use", Senzors.queryConsetStore("location").ToString());
+
             ApiConnectiom.HASendSenzorData("cpu_temp", getCPUTemperature().ToString());
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent().ToString());
-            ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam().ToString());
+
+            ApiConnectiom.HASendSenzorData("uptime", GetUpTime().ToString());
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
 
             

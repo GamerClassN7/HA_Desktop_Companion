@@ -84,9 +84,9 @@ namespace HA_Desktop_Companion.Libraries
             }
         }*/
 
-        public static bool queryWebCamUseStatus()
+        public static bool queryConsetStore(string category = "webcam")
         {
-            using (var rootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\"))
+            using (var rootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\"+ category + @"\"))
             {
                 if (rootKey != null)
                 {
@@ -108,7 +108,7 @@ namespace HA_Desktop_Companion.Libraries
                 }
             }
 
-            using (var nonPackagedRootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\NonPackaged"))
+            using (var nonPackagedRootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\NonPackaged"))
             {
                 if (nonPackagedRootKey != null)
                 {
