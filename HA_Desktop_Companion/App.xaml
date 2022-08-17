@@ -4,6 +4,5 @@
              xmlns:local="clr-namespace:HA_Desktop_Companion"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
     </Application.Resources>
 </Application>

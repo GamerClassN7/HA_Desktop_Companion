@@ -10,29 +10,31 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class App : Application
     {
-        Forms.NotifyIcon trayIcon;
-        //https://github.com/Monbsoft/MachineMonitor/blob/master/src/MachineMonitor/App.xaml.cs
+         private Forms.NotifyIcon notifyIcon;
+
         protected override void OnStartup(StartupEventArgs e)
         {
-            trayIcon =  new Forms.NotifyIcon();
-            trayIcon.Icon = new Icon("ha_logo.ico");
-            trayIcon.Visible = true;
-            trayIcon.Click += new System.EventHandler(trayIcon_DoubleClick);
-
+            notifyIcon =  new Forms.NotifyIcon();
+            notifyIcon.Icon = new Icon("ha_logo.ico");
+            notifyIcon.Visible = true;
+            notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
+ 
             base.OnActivated(e);
         }
 
-        private void trayIcon_DoubleClick(object? sender, EventArgs e)
+        private void trayIcon_DoubleClick()
         {
             MainWindow.WindowState = WindowState.Normal;
+            MainWindow.Show();
             MainWindow.Activate();
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            trayIcon.Dispose();
+            notifyIcon.Dispose();
             base.OnExit(e);
         }
+
     }
 
 }
