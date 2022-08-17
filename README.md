@@ -28,7 +28,7 @@ Feel free to contribute any time :)
 
 ![image](https://user-images.githubusercontent.com/22167469/184820849-c2932b91-a4ee-4c0d-a220-58ab01444c29.png)
 
-![image](https://user-images.githubusercontent.com/22167469/184820793-09eac437-ff73-4015-b2e6-9dcf952bcafe.png)
+![image](https://user-images.githubusercontent.com/22167469/185061529-9868070a-cf1e-4531-877e-443c1b1be1e4.png)
 
 
 ## Future plans:
