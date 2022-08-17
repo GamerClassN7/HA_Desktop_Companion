@@ -31,6 +31,16 @@ namespace HA_Desktop_Companion
         {
             InitializeComponent();
             AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
+            if (Properties.Settings.Default.SettingUpdate)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.Reload();
+                Properties.Settings.Default.SettingUpdate = false;
+
+    
+
+                Properties.Settings.Default.Save();
+            }
         }
 
         private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
@@ -116,7 +126,6 @@ namespace HA_Desktop_Companion
 
             RegisterAutostart();
 
-            MessageBox.Show((Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2).ToString());
             if (Int32.Parse(queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
                 ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", "Unknown", "battery", "%", "mdi:battery", "diagnostic");

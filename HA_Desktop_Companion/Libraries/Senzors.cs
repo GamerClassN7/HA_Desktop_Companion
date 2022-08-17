@@ -92,7 +92,30 @@ namespace HA_Desktop_Companion.Libraries
                 {
                     foreach (var subKeyName in rootKey.GetSubKeyNames())
                     {
+
                         using (var subKey = rootKey.OpenSubKey(subKeyName))
+                        {
+                            if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
+                            {
+                                var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
+                                if (endTime == 0)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            using (var nonPackagedRootKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam\NonPackaged"))
+            {
+                if (nonPackagedRootKey != null)
+                {
+                    foreach (var subKeyName in nonPackagedRootKey.GetSubKeyNames())
+                    {
+
+                        using (var subKey = nonPackagedRootKey.OpenSubKey(subKeyName))
                         {
                             if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
                             {
