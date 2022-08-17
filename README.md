@@ -30,7 +30,6 @@ Feel free to contribute any time :)
 
 ![image](https://user-images.githubusercontent.com/22167469/185061529-9868070a-cf1e-4531-877e-443c1b1be1e4.png)
 
-
 ## Future plans:
 - Simple configuration of sensors in YAML
 - Improved debug mode
