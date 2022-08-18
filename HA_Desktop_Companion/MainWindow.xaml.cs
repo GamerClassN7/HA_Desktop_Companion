@@ -1,16 +1,10 @@
-﻿using System.Net.Http;
-using System.Windows;
+﻿using System.Windows;
 using System.Collections.Generic;
-using System.Net.Http.Json;
 using System;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Reflection;
 using System.Windows.Threading;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using System.IO;
 using HA_Desktop_Companion.Libraries;
