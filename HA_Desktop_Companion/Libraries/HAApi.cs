@@ -150,6 +150,7 @@ namespace HA_Desktop_Companion
                     Dictionary<string, object> entiry = new()
                     {
                         { "last_value", senzor.Value["last_value"] },
+                        /*{ "last_time", senzor.Value["last_time"] },*/
                         { "icon", senzor.Value["icon"] }
                     };
 
@@ -239,7 +240,15 @@ namespace HA_Desktop_Companion
                     Debug.WriteLine("Same Value as last one skipping");
                     return JsonSerializer.Deserialize<JsonObject>("{}");
                 }
+
+                /*if (entityTemplate["last_time"] == state)
+                {
+                    Debug.WriteLine("update intervall not reached");
+                    return JsonSerializer.Deserialize<JsonObject>("{}");
+                }*/
+
                 entityTemplate["last_value"] = state;
+                /*entityTemplate["last_time"] = Convert.ToString((int)DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);*/
                 entitiesCatalog[uniqueID] = entityTemplate;
             }
 
@@ -302,7 +311,7 @@ namespace HA_Desktop_Companion
                     float.Parse(latLon[0].Replace(".", ",")),
                     float.Parse(latLon[1].Replace(".", ","))
                 }},
-                {"gps_accuracy" , 100 }
+                {"gps_accuracy" , 3000 }
             };
 
             var body = new

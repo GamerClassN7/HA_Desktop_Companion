@@ -278,7 +278,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
             ApiConnectiom.HASendSenzorData("update_available", (false));
 
-            ApiConnectiom.HASendSenzorLocation();
+            //ApiConnectiom.HASendSenzorLocation();
         }
 
         private static void RegisterAutostart()

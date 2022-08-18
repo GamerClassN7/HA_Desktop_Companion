@@ -1,0 +1,70 @@
+sensor:
+  - platform: wmic
+    name: Battery Level
+    unique_id: battery_level
+    icon: "mdi:battery"
+    unit_of_measurement: "%"
+    device_class: battery
+    entity_category: "diagnostic"
+    update_interval: 16
+  - platform: wmic
+    name: Battery State
+    unique_id: battery_state
+    icon: "mdi:battery-minus"
+    entity_category: "diagnostic"
+    device_class: battery
+  - platform: wmic
+    name: CPU Temperature
+    unique_id: cpu_temp
+    unit_of_measurement: "C"
+    icon: "mdi:cpu-64-bit"
+    entity_category: "diagnostic"
+  - platform: wmic
+    name: Free Ram
+    unique_id: free_ram
+    unit_of_measurement: "kilobytes"
+    icon: "mdi:clock"
+    entity_category: "diagnostic"
+  - platform: wmic
+    name: CPU Usage
+    unique_id: cpu_usage
+    unit_of_measurement: "%"
+    icon: "mdi:cpu-64-bit"
+    entity_category: "diagnostic"
+  - platform: wifi
+    name: Wifi State
+    unique_id: wifi_state
+    icon: "mdi:wifi"
+  - platform: wifi
+    name: Wifi SSID
+    unique_id: wifi_ssid
+    icon: "mdi:wifi"
+  - platform: general
+    name: Currently Active Window
+    unique_id: currently_active_window
+    icon: "mdi:application"
+  - platform: general
+    name: Uptime
+    unique_id: uptime
+    icon: "mdi:timer-outline"
+    entity_category: "diagnostic"
+
+binary_sensor:
+  - platform: consent_store
+    name: Camera in use
+    unique_id: camera_in_use
+    icon: "mdi:camera"
+  - platform: consent_store
+    name: Microphone in use
+    unique_id: microphone_in_use
+    icon: "mdi:microphone"
+  - platform: consent_store
+    name: Location in use
+    unique_id: location_in_use
+    icon: "mdi:crosshairs-gps"
+  - platform: wmic
+    name: Is Charging
+    unique_id: is_charging
+    icon: "mdi:power-plug-off"
+    device_class: plug
+

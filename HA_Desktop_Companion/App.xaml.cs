@@ -4,6 +4,7 @@ using System.Threading;
 using System.Windows;
 using System.Reflection;
 using Forms = System.Windows.Forms;
+using System.Windows.Media.Imaging;
 
 namespace HA_Desktop_Companion
 {
@@ -28,7 +29,7 @@ namespace HA_Desktop_Companion
             }
 
             notifyIcon =  new Forms.NotifyIcon();
-            notifyIcon.Icon = new Icon("ha_logo.ico");
+            notifyIcon.Icon = Resource1.ha_logo;
             notifyIcon.Visible = true;
             notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
 

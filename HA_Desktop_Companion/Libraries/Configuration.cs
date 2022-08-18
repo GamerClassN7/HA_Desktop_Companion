@@ -1,6 +1,10 @@
 ﻿
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Resources;
 using System.Text.Json;
 using System.Windows;
 
@@ -13,6 +17,13 @@ namespace HA_Desktop_Companion.Libraries
 
         public Configuration(string path)
         {
+            if (!File.Exists(path))
+            {
+                //Try to download latest from github if fail use resources
+                //Write internall backup if file did not exist 
+                System.IO.File.WriteAllBytes(path, Resource1.configuration);
+            }
+
             string[] text = File.ReadAllLines(path, System.Text.Encoding.UTF8);
 
             string section = ""; //ROOT
