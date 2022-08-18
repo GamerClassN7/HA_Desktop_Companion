@@ -119,5 +119,16 @@ namespace HA_Desktop_Companion.Libraries
 
             return false;
         }
+    
+        public static dynamic convertToType(dynamic variable)
+        {
+            string variableStr = variable.ToString();
+            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$")){
+                return bool.Parse(variableStr);
+            } else if (Regex.IsMatch(variableStr, @"^\d$")) {
+                return int.Parse(variableStr);
+            }
+            return variableStr;
+        }
     }
 }

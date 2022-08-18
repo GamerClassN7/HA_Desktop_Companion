@@ -16,10 +16,9 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
-        //public static string ConigurationPath = @".\configuration.yaml";
+        public static string ConigurationPath = @".\configuration.yaml";
         public static HAApi ApiConnectiom;
-        public static Configuration configuration;
-
+        public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configuration;
 
         public MainWindow()
         {
@@ -48,8 +47,9 @@ namespace HA_Desktop_Companion
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //Load Config
-            //configuration = new Configuration(ConigurationPath);
-            
+            Configuration configurationClass = new Configuration(ConigurationPath);
+            configuration = configurationClass.GetConfigurationData();
+
             /*
                 AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
                 WindowsPrincipal currentPrincipal = (WindowsPrincipal) Thread.CurrentPrincipal;
@@ -122,59 +122,88 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            //var config = configuration.GetConfigurationData();
+            
 
             //Register Senzors
-            /*foreach (var integration in config["sensor"].Keys)
+            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            senzorTypes.Add("sensor", configuration["sensor"]);
+
+            if (configuration.ContainsKey("binary_sensor"))
+                senzorTypes.Add("binary_sensor", configuration["binary_sensor"]);
+
+            foreach (var item in senzorTypes)
             {
-                foreach (var senzorArray in config["sensor"][integration].Values)
+                string senzorType = item.Key;
+                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>) senzorTypes[senzorType];
+                foreach (var platform in platforms)
                 {
-                    foreach (var senzor in senzorArray)
+                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>) platform.Value;
+                    foreach (var integration in integrations)
                     {
-                        string device_class = "";
-                        if (senzor.ContainsKey("device_class"))
-                            device_class = senzor["device_class"];
+                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>) integration.Value;
+                        foreach (var senzor in senzors)
+                        {
 
-                        string icon = "";
-                        //if (senzor.ContainsKey("icon"))
-                            //icon = senzor["icon"];
+                            //MessageBox.Show(JsonSerializer.Serialize(senzor));
 
-                        string unit_of_measurement = "";
-                        if (senzor.ContainsKey("unit_of_measurement"))
-                            unit_of_measurement = senzor["unit_of_measurement"];
+                            //MessageBox.Show(senzor["name"]);
+                            string device_class = "";
+                            if (senzor.ContainsKey("device_class"))
+                                device_class = senzor["device_class"];
 
-                        string entity_category = "";
-                        if (senzor.ContainsKey("entity_category"))
-                            entity_category = senzor["entity_category"];
+                            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) != 2 && device_class == "battery")
+                                continue;
 
-                        ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, device_class, unit_of_measurement, icon, entity_category);
+                            string icon = "";
+                            if (senzor.ContainsKey("icon"))
+                                icon = senzor["icon"];
+
+                            string unit_of_measurement = "";
+                            if (senzor.ContainsKey("unit_of_measurement"))
+                                unit_of_measurement = senzor["unit_of_measurement"];
+
+                            string entity_category = "";
+                            if (senzor.ContainsKey("entity_category"))
+                                entity_category = senzor["entity_category"];
+
+                            if (senzorType == "binary_sensor") { 
+                                ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], false, device_class, unit_of_measurement, icon, entity_category);
+                            }
+                            else
+                            {
+                                ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, device_class, unit_of_measurement, icon, entity_category);
+                            }
+                            Debug.WriteLine(senzor["unique_id"] + " - " + "Sensor Sucesfully Loadet");
+                        }
                     }
                 }
-            }*/
-
-
-            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
-            {
-                ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", 0, "battery", "%", "mdi:battery", "diagnostic");
-                ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
-                ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", false, "plug", "", "mdi:power-plug-off", "diagnostic");
             }
 
-            ApiConnectiom.HASenzorRegistration("wifi_state", "Wifi State", "Unknown", "", "", "mdi:wifi", "");
-            ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
-            ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
-            
-            ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", false, "", "", "mdi:camera", "");
-            ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", false, "", "", "mdi:microphone", "");
-            ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", false, "", "", "mdi:crosshairs-gps", "");
+            System.Threading.Thread.Sleep(3000);
 
-            ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", 0, "", "°C", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", 0, "", "%", "mdi:cpu-64-bit", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", 0, "", "kilobytes", "mdi:clock", "diagnostic");
 
-            ApiConnectiom.HASenzorRegistration("uptime", "Uptime", 0, "", "s", "mdi:timer-outline", "diagnostic");
-            ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", false, "firmware", "", "mdi:package", "diagnostic");
+            /* if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+             {
+                 ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", 0, "battery", "%", "mdi:battery", "diagnostic");
+                 ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
+                 ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", false, "plug", "", "mdi:power-plug-off", "diagnostic");
+             }
 
+             ApiConnectiom.HASenzorRegistration("wifi_state", "Wifi State", "Unknown", "", "", "mdi:wifi", "");
+             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
+             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
+
+             ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", false, "", "", "mdi:camera", "");
+             ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", false, "", "", "mdi:microphone", "");
+             ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", false, "", "", "mdi:crosshairs-gps", "");
+
+             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", 0, "", "°C", "mdi:cpu-64-bit", "diagnostic");
+             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", 0, "", "%", "mdi:cpu-64-bit", "diagnostic");
+             ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", 0, "", "kilobytes", "mdi:clock", "diagnostic");
+
+             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", 0, "", "s", "mdi:timer-outline", "diagnostic");
+             ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", false, "firmware", "", "mdi:package", "diagnostic");
+            */
 
             RegisterAutostart();
             StartWatchdog();
@@ -207,7 +236,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam());
 
-            ApiConnectiom.HASendSenzorData("uptime", (int)Sensors.queryMachineUpTime().TotalSeconds);
+            ApiConnectiom.HASendSenzorData("uptime", Sensors.queryMachineUpTime().TotalSeconds);
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
         }
 

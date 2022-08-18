@@ -24,8 +24,17 @@ namespace HA_Desktop_Companion.Libraries
             {
                 if (line.Contains(':') == true)
                 {
-                    string parameter = line.Split(':')[0].Trim();
-                    string value = line.Split(':')[1].Trim();
+                    string[] splitedString = line.Split(':');
+                    string parameter = splitedString[0].Trim();
+                    string value = splitedString[1].Trim();
+
+                    if (splitedString.Length > 2)
+                    {
+                        for (int i = 2; i < splitedString.Length; i++)
+                        {
+                            value += ":" + splitedString[i].Trim();
+                        }
+                    }
 
                     if (value == "")
                     {
@@ -50,6 +59,8 @@ namespace HA_Desktop_Companion.Libraries
                         category = value;
                         continue;
                     }
+
+
                     if (!configurationData.ContainsKey(section))
                     {
                         configurationData[section] = new Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>();
@@ -66,10 +77,10 @@ namespace HA_Desktop_Companion.Libraries
                     {
                         configurationData[section][subSection][category].Add(new Dictionary<string, string>());
                     }
+
                     configurationData[section][subSection][category][num][parameter] = value.Replace("\"", "");
                 }
             }
-
 
             /*JsonSerializerOptions options = new JsonSerializerOptions()
             {
@@ -77,11 +88,15 @@ namespace HA_Desktop_Companion.Libraries
                 WriteIndented = true
             };
 
-            MessageBox.Show(JsonSerializer.Serialize(configuration, options));*/
+            using (StreamWriter sw = File.AppendText(".\\log.txt"))
+            {
+                sw.WriteLine(JsonSerializer.Serialize(configurationData, options));
+            }*/
         }
 
         public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> GetConfigurationData()
         {
+            /*MessageBox.Show(JsonSerializer.Serialize(configurationData));*/
             return configurationData;
         }
     }
