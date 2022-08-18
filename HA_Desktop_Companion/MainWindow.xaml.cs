@@ -130,6 +130,7 @@ namespace HA_Desktop_Companion
                 ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", false, "plug", "", "mdi:power-plug-off", "diagnostic");
             }
 
+            ApiConnectiom.HASenzorRegistration("wifi_state", "Wifi State", "Unknown", "", "", "mdi:wifi", "");
             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
             
@@ -175,6 +176,7 @@ namespace HA_Desktop_Companion
                 ApiConnectiom.HASendSenzorData("is_charging", GetPowerLineStatus());
             }
 
+            ApiConnectiom.HASendSenzorData("wifi_state", getWifiState().ToString());
             ApiConnectiom.HASendSenzorData("wifi_ssid", getWifiSSID().ToString());
             ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.queryActiveWindowTitle());
 
@@ -251,11 +253,11 @@ namespace HA_Desktop_Companion
                 var process = new Process
                 {
                     StartInfo = {
-                    FileName = "netsh.exe",
-                    Arguments = "wlan show interfaces",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
+                        FileName = "netsh.exe",
+                        Arguments = "wlan show interfaces",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
                     }
                 };
                 process.Start();
@@ -264,7 +266,7 @@ namespace HA_Desktop_Companion
                 {
                     if (item.Contains("SSID") && !item.Contains("BSSID"))
                     {
-                        return item;
+                        return item.Split(":")[1].Trim();
                     }
                 }
             }
@@ -272,6 +274,37 @@ namespace HA_Desktop_Companion
             {
             }
             return "Not available";
+        }
+
+        private string getWifiState()
+        {
+            try
+            {
+                var process = new Process
+                {
+                    StartInfo = {
+                        FileName = "netsh.exe",
+                        Arguments = "wlan show interfaces",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    }
+                };
+                process.Start();
+                
+                foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                {
+                    
+                    if (item.Contains("State"))
+                    {
+                        return item.Split(":")[1].Trim();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return "off";
         }
 
         private double getCPUTemperature() {
