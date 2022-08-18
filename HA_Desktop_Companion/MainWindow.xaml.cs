@@ -94,11 +94,16 @@ namespace HA_Desktop_Companion
                 }
             }
         }
-
+        
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             this.Hide();
             e.Cancel = true;
+        }
+
+        private void close_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Application.Current.Shutdown();
         }
 
         private void registration_Click(object sender, RoutedEventArgs e)
@@ -151,17 +156,6 @@ namespace HA_Desktop_Companion
             //registration.IsEnabled = false;
         }
 
-        private static void RegisterAutostart()
-        {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
-            {
-                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
-                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
-                key.Close();
-            }
-        }
-
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
 
@@ -188,8 +182,19 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASendSenzorData("cpu_usage", GetCPUUsagePercent());
             ApiConnectiom.HASendSenzorData("free_ram", GetFreeRam());
 
-            ApiConnectiom.HASendSenzorData("uptime", (int) Sensors.queryMachineUpTime().TotalSeconds);
+            ApiConnectiom.HASendSenzorData("uptime", (int)Sensors.queryMachineUpTime().TotalSeconds);
             ApiConnectiom.HASendSenzorData("update_available", (false).ToString());
+        }
+
+        private static void RegisterAutostart()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
+                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
+                key.Close();
+            }
         }
 
         public static double GetBatteryPercent()
@@ -369,10 +374,5 @@ namespace HA_Desktop_Companion
 
         /*string[] drives = Environment.GetLogicalDrives();
         Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
-
-        private void close_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Application.Current.Shutdown();
-        }
     }
 }
