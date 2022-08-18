@@ -21,6 +21,7 @@ namespace HA_Desktop_Companion
         public string remote_ui_url = "";
         public string cloudhook_url = "";
         private bool debug = false;
+        private string senzorBackupFilePath = @".\senzors_backup.json";
 
         public Dictionary<string, object> entitiesCatalog = new();
 
@@ -41,6 +42,7 @@ namespace HA_Desktop_Companion
             token = apiToken;
             remote_ui_url = remoteUiUrl;
             cloudhook_url = cloudhookUrl;
+             GetHASenzorsCatalog();
         }
 
         public void enableDebug()
@@ -134,6 +136,27 @@ namespace HA_Desktop_Companion
             return response;
         }
 
+        public void GetHASenzorsCatalog()
+        {
+            if (File.Exists(senzorBackupFilePath))
+            {
+                string fileContent = File.ReadAllText(senzorBackupFilePath, System.Text.Encoding.UTF8);
+                Debug.WriteLine("SENSOR BACKUP LOADET:" + fileContent);
+
+                JsonObject backup = JsonSerializer.Deserialize<JsonObject>(fileContent);
+                foreach (var senzor in backup)
+                {
+                    Dictionary<string, object> entiry = new()
+                    {
+                        { "last_value", senzor.Value["last_value"] },
+                        { "icon", senzor.Value["icon"] }
+                    };
+
+                    entitiesCatalog.Add(senzor.Key,  entiry);
+                }
+            }
+        }
+
         private object HAGenericSenzorRegistrationBody(string unique_id, string name, object state, string type = "sensor", string device_class = "", string entity_category = "", string icon = "", string unit_of_measurement = "" )
         {
             Dictionary<string, object> data = new ()
@@ -172,6 +195,9 @@ namespace HA_Desktop_Companion
                 entiry.Add("icon", icon);
 
             entitiesCatalog.Add(unique_id, entiry);
+
+            Debug.WriteLine("SENSOR BACKUP SAVED:" + JsonSerializer.Serialize(entitiesCatalog));
+            File.WriteAllText(senzorBackupFilePath, JsonSerializer.Serialize(entitiesCatalog), System.Text.Encoding.UTF8);
 
             return body;
         }

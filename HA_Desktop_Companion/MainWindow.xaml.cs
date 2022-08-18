@@ -16,7 +16,7 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string ConigurationPath = @".\configuration.yaml";
+        //public static string ConigurationPath = @".\configuration.yaml";
         public static HAApi ApiConnectiom;
         public static Configuration configuration;
 
@@ -48,7 +48,7 @@ namespace HA_Desktop_Companion
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //Load Config
-            configuration = new Configuration(ConigurationPath);
+            //configuration = new Configuration(ConigurationPath);
             
             /*
                 AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
@@ -122,26 +122,35 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            var config = configuration.GetConfigurationData();
+            //var config = configuration.GetConfigurationData();
 
             //Register Senzors
-            foreach (var integration in config["sensor"].Keys)
+            /*foreach (var integration in config["sensor"].Keys)
             {
                 foreach (var senzorArray in config["sensor"][integration].Values)
                 {
                     foreach (var senzor in senzorArray)
                     {
-                        JsonSerializerOptions options = new JsonSerializerOptions()
-                        {
-                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                            WriteIndented = true
-                        };
+                        string device_class = "";
+                        if (senzor.ContainsKey("device_class"))
+                            device_class = senzor["device_class"];
 
-                        MessageBox.Show(JsonSerializer.Serialize(senzor, options));
-                        ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, senzor["device_class"], senzor["unit_of_measurement"], senzor["icon"], senzor["entity_category"]);
+                        string icon = "";
+                        //if (senzor.ContainsKey("icon"))
+                            //icon = senzor["icon"];
+
+                        string unit_of_measurement = "";
+                        if (senzor.ContainsKey("unit_of_measurement"))
+                            unit_of_measurement = senzor["unit_of_measurement"];
+
+                        string entity_category = "";
+                        if (senzor.ContainsKey("entity_category"))
+                            entity_category = senzor["entity_category"];
+
+                        ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, device_class, unit_of_measurement, icon, entity_category);
                     }
                 }
-            }
+            }*/
 
 
             if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
