@@ -117,12 +117,13 @@ namespace HA_Desktop_Companion
         public JsonObject HADevicRegistration(string deviceID, string deviceName, string model, string manufacturer, string os, string osVersion)
         {
             string app_version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+            string app_name = Assembly.GetExecutingAssembly().GetName().Name;
 
             var body = new
             {
                 device_id = deviceID,
-                app_id = "ha_desktop_companion",
-                app_name = "HA Desktop Companion",
+                app_id = app_name.ToLower(),
+                app_name = app_name,
                 app_version,
                 device_name = deviceName,
                 manufacturer,

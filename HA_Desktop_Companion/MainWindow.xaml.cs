@@ -93,6 +93,8 @@ namespace HA_Desktop_Companion
         
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            var app = Application.Current as App;
+            app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
             this.Hide();
             e.Cancel = true;
         }

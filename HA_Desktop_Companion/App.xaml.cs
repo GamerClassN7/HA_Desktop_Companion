@@ -31,7 +31,7 @@ namespace HA_Desktop_Companion
             notifyIcon.Icon = new Icon("ha_logo.ico");
             notifyIcon.Visible = true;
             notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
- 
+
             base.OnActivated(e);
         }
 
@@ -40,6 +40,14 @@ namespace HA_Desktop_Companion
             MainWindow.WindowState = WindowState.Normal;
             MainWindow.Show();
             MainWindow.Activate();
+        }
+
+        public void ShowNotification(string title, string body, int duration = 20000)
+        {
+            notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
+            notifyIcon.BalloonTipText = body;
+            notifyIcon.BalloonTipTitle = title;
+            notifyIcon.ShowBalloonTip(duration);
         }
 
         protected override void OnExit(ExitEventArgs e)
