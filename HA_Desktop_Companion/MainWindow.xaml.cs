@@ -16,7 +16,10 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static string ConigurationPath = @".\configuration.yaml";
         public static HAApi ApiConnectiom;
+        public static Configuration configuration;
+
 
         public MainWindow()
         {
@@ -27,9 +30,6 @@ namespace HA_Desktop_Companion
                 Properties.Settings.Default.Upgrade();
                 Properties.Settings.Default.Reload();
                 Properties.Settings.Default.SettingUpdate = false;
-
-    
-
                 Properties.Settings.Default.Save();
             }
         }
@@ -47,6 +47,9 @@ namespace HA_Desktop_Companion
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            //Load Config
+            configuration = new Configuration(ConigurationPath);
+            
             /*
                 AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
                 WindowsPrincipal currentPrincipal = (WindowsPrincipal) Thread.CurrentPrincipal;
@@ -65,7 +68,6 @@ namespace HA_Desktop_Companion
             string base_url = Properties.Settings.Default.apiBaseUrl;
             string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
-
 
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
@@ -120,7 +122,27 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            RegisterAutostart();
+            var config = configuration.GetConfigurationData();
+
+            //Register Senzors
+            foreach (var integration in config["sensor"].Keys)
+            {
+                foreach (var senzorArray in config["sensor"][integration].Values)
+                {
+                    foreach (var senzor in senzorArray)
+                    {
+                        JsonSerializerOptions options = new JsonSerializerOptions()
+                        {
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                            WriteIndented = true
+                        };
+
+                        MessageBox.Show(JsonSerializer.Serialize(senzor, options));
+                        ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, senzor["device_class"], senzor["unit_of_measurement"], senzor["icon"], senzor["entity_category"]);
+                    }
+                }
+            }
+
 
             if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
@@ -145,7 +167,7 @@ namespace HA_Desktop_Companion
             ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", false, "firmware", "", "mdi:package", "diagnostic");
 
 
-
+            RegisterAutostart();
             StartWatchdog();
             //registration.IsEnabled = false;
         }
