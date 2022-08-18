@@ -37,12 +37,52 @@ namespace HA_Desktop_Companion.Libraries
                 {
                     if (output[line].Contains(selector))
                     {
-                        Regex.Replace(output[line + 1], @"\t|\n|\r", "");
-                        return output[line + 1];
+                        string outputResult = Regex.Replace(output[line + 1], @"\t|\n|\r", "").Trim();
+                        return outputResult;
                     }
 
                 }
             } catch (Exception) { }
+            return "";
+        }
+
+        public static string queryWifi(string selector, string deselector = "")
+        {
+            var process = new Process
+            {
+                StartInfo = {
+                        FileName = "netsh.exe",
+                        Arguments = "wlan show interfaces",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true
+                    }
+            };
+
+            process.Start();
+            string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            process.Dispose();
+
+            try 
+            {
+                foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                {
+                    string outputResult = Regex.Replace(item.Split(":")[1].Trim(), @"\t|\n|\r", "").Trim();
+                    if (!String.IsNullOrEmpty(deselector))
+                    {
+                        if (item.Contains(selector) && !item.Contains(deselector))
+                        {
+                            return outputResult;
+                        }
+                    }
+                    
+                    if (item.Contains(selector))
+                    {
+                        return outputResult;
+                    }
+                }
+            }
+            catch (Exception) { }
             return "";
         }
 
@@ -123,7 +163,7 @@ namespace HA_Desktop_Companion.Libraries
         public static dynamic convertToType(dynamic variable)
         {
             string variableStr = variable.ToString();
-            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$")){
+            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase)){
                 return bool.Parse(variableStr);
             } else if (Regex.IsMatch(variableStr, @"^\d$")) {
                 return int.Parse(variableStr);
