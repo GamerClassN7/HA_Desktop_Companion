@@ -111,19 +111,18 @@ namespace HA_Desktop_Companion.Libraries
             return (TimeSpan.FromMilliseconds(GetTickCount64()));
         }
 
-        /*public static string queryLocationByIP()
+        public static string queryLocationByIP()
         {
             try
             {
                 string info = new WebClient().DownloadString("http://ipinfo.io/");
-                Debug.WriteLine(JsonSerializer.Deserialize<JsonObject>(info)["loc"]);
                 return (string) JsonSerializer.Deserialize<JsonObject>(info)["loc"];
             }
             catch (Exception)
             {
                 return null;
             }
-        }*/
+        }
 
         public static bool queryConsetStore(string category = "webcam")
         {

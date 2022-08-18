@@ -290,23 +290,28 @@ namespace HA_Desktop_Companion
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
 
-        /*public JsonObject HASendSenzorLocation()
+        public JsonObject HASendSenzorLocation()
         {
-            Dictionary<string, object> data = new()
-            {
-                { "gps", new[] {
-                    float.Parse(Senzors.queryLocationByIP().Split(",")[0]),
-                    float.Parse(Senzors.queryLocationByIP().Split(",")[1])
+            string[] latLon = Sensors.queryLocationByIP().Split(",");
+
+            Debug.WriteLine(float.Parse(latLon[0].Replace(".", ",")));
+            Debug.WriteLine(float.Parse(latLon[1].Replace(".", ",")));
+
+            Dictionary<string, object> data = new() {
+                { "gps" , new[] {
+                    float.Parse(latLon[0].Replace(".", ",")),
+                    float.Parse(latLon[1].Replace(".", ","))
                 }},
+                {"gps_accuracy" , 100 }
             };
 
             var body = new
             {
-                data = new[] { data, },
+                data = data,
                 type = "update_location"
             };
 
             return HARequest(token, "/api/webhook/" + webhook_id, body);
-        }*/
+        }
     }
 }
