@@ -275,7 +275,7 @@ namespace HA_Desktop_Companion
             var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
             ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
 
-            ApiConnectiom.HASendSenzorData("uptime", Sensors.queryMachineUpTime().TotalSeconds);
+            ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
             ApiConnectiom.HASendSenzorData("update_available", (false));
         }
 
