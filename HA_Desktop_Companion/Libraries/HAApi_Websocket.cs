@@ -14,16 +14,24 @@ namespace HA_Desktop_Companion.Libraries
 
     public class HAApi_Websocket
     {
-  
         private bool wsRegistered = false;
+
         private string token = "";
         private string webhook_id = "";
+        public string base_url = "";
+        public string remote_ui_url = "";
+        public string cloudhook_url = "";
+
         private static int interactions = 2;
 
-        public HAApi_Websocket(string apiToken, string webHookId)
+        public HAApi_Websocket(string baseUrl, string apiToken, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
         {
             webhook_id = webHookId;
             token = apiToken;
+            base_url = baseUrl;
+            remote_ui_url = remoteUiUrl;
+            cloudhook_url = cloudhookUrl;
+
             try
             {
                 registerWebSocket();
@@ -40,7 +48,7 @@ namespace HA_Desktop_Companion.Libraries
             using (var socket = new ClientWebSocket())
             try
             {
-                await socket.ConnectAsync(new Uri("ws://home.jonatanrek.cz/api/websocket"), CancellationToken.None);
+                await socket.ConnectAsync(new Uri(HAResolveUri() + "/api/websocket"), CancellationToken.None);
                 await ReceiveRegistrationRequest(socket, token);
                 await SubscribeToNotifications(socket, webhook_id);
 
@@ -199,6 +207,7 @@ namespace HA_Desktop_Companion.Libraries
                 throw;
             }
         }
+
         static async Task SubscribeToNotifications(ClientWebSocket socket, string webhook_id)
         {
             Debug.WriteLine("WS NOTIFICATIONS Request Send");
@@ -217,6 +226,24 @@ namespace HA_Desktop_Companion.Libraries
         {
             interactions = interactions + 1;
             await socket.SendAsync(Encoding.UTF8.GetBytes(data), WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
+        private string HAResolveUri()
+        {
+            string resultUrl = base_url;
+
+            if (resultUrl.StartsWith("https://"))
+                resultUrl = resultUrl.Replace("ws://", "");
+            else if (resultUrl.StartsWith("http://"))
+                resultUrl = resultUrl.Replace("ws://", "");
+
+            if (!string.IsNullOrEmpty(remote_ui_url))
+                resultUrl = remote_ui_url;
+
+            if (resultUrl.ToString().EndsWith("/"))
+                resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
+
+            return resultUrl;
         }
     }
 }
