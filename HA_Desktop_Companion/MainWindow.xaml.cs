@@ -80,7 +80,7 @@ namespace HA_Desktop_Companion
                 try
                 {
                     ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
-                    WebsocketConnectiom = new HAApi_Websocket(decodedApiToken, decodedWebhookId);
+                    WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
 
                     string hostname = System.Net.Dns.GetHostName() + "";
                     Title = hostname;

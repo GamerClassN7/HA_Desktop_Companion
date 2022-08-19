@@ -233,9 +233,9 @@ namespace HA_Desktop_Companion.Libraries
             string resultUrl = base_url;
 
             if (resultUrl.StartsWith("https://"))
-                resultUrl = resultUrl.Replace("ws://", "");
+                resultUrl = resultUrl.Replace("https://", "ws://");
             else if (resultUrl.StartsWith("http://"))
-                resultUrl = resultUrl.Replace("ws://", "");
+                resultUrl = resultUrl.Replace("http://", "ws://");
 
             if (!string.IsNullOrEmpty(remote_ui_url))
                 resultUrl = remote_ui_url;
