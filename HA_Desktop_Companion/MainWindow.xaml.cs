@@ -18,6 +18,8 @@ namespace HA_Desktop_Companion
     {
         public static string ConigurationPath = @".\configuration.yaml";
         public static HAApi ApiConnectiom;
+        public static HAApi_Websocket WebsocketConnectiom;
+
         public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configuration;
 
         public MainWindow()
@@ -63,6 +65,7 @@ namespace HA_Desktop_Companion
                     // throw exception/show errorMessage - exit programm
                 }
              */
+
             string decodedApiToken = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiToken));
             string decodedWebhookId = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
@@ -77,11 +80,13 @@ namespace HA_Desktop_Companion
                 try
                 {
                     ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
+                    WebsocketConnectiom = new HAApi_Websocket(decodedApiToken, decodedWebhookId);
+
                     string hostname = System.Net.Dns.GetHostName() + "";
                     Title = hostname;
 
                     StartWatchdog();
-                
+
                     //registration.IsEnabled = false;
                 }
                 catch (Exception)
@@ -90,7 +95,7 @@ namespace HA_Desktop_Companion
                 }
             }
         }
-        
+
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var app = Application.Current as App;
@@ -124,7 +129,7 @@ namespace HA_Desktop_Companion
 
             Properties.Settings.Default.Save();
 
-            
+
 
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
@@ -136,13 +141,13 @@ namespace HA_Desktop_Companion
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>) senzorTypes[senzorType];
+                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
                 foreach (var platform in platforms)
                 {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>) platform.Value;
+                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
                     foreach (var integration in integrations)
                     {
-                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>) integration.Value;
+                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
                         foreach (var senzor in senzors)
                         {
 
@@ -168,7 +173,8 @@ namespace HA_Desktop_Companion
                             if (senzor.ContainsKey("entity_category"))
                                 entity_category = senzor["entity_category"];
 
-                            if (senzorType == "binary_sensor") { 
+                            if (senzorType == "binary_sensor")
+                            {
                                 ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], false, device_class, unit_of_measurement, icon, entity_category);
                             }
                             else
@@ -214,69 +220,149 @@ namespace HA_Desktop_Companion
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-
             //Make Use of reflections
             //var type = Type.GetType(type_name);
             //ApiConnectiom.HASendSenzorLocation();
 
             if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
-                var batterypercent = Sensors.queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2");
-                ApiConnectiom.HASendSenzorData("battery_level", Sensors.convertToType(batterypercent));
-
-                var batterystate = "Unknown";
-                Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
-                StatusCodes.Add(1, "Discharging");
-                StatusCodes.Add(2, "On AC");
-                StatusCodes.Add(3, "Fully Charged");
-                StatusCodes.Add(4, "Low");
-                StatusCodes.Add(5, "Critical");
-                StatusCodes.Add(6, "Charging");
-                StatusCodes.Add(7, "Charging and High");
-                StatusCodes.Add(8, "Charging and Low");
-                StatusCodes.Add(9, "Undefined");
-                StatusCodes.Add(10, "Partially Charged");
-
-                int state = Int32.Parse(Sensors.queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
-                if (state <= StatusCodes.Count)
+                try
                 {
-                    batterystate = StatusCodes[state];
+                    var batterypercent = Sensors.queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2");
+                    ApiConnectiom.HASendSenzorData("battery_level", Sensors.convertToType(batterypercent));
+
+                    var batterystate = "Unknown";
+                    Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
+                    StatusCodes.Add(1, "Discharging");
+                    StatusCodes.Add(2, "On AC");
+                    StatusCodes.Add(3, "Fully Charged");
+                    StatusCodes.Add(4, "Low");
+                    StatusCodes.Add(5, "Critical");
+                    StatusCodes.Add(6, "Charging");
+                    StatusCodes.Add(7, "Charging and High");
+                    StatusCodes.Add(8, "Charging and Low");
+                    StatusCodes.Add(9, "Undefined");
+                    StatusCodes.Add(10, "Partially Charged");
+
+                    int state = Int32.Parse(Sensors.queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
+                    if (state <= StatusCodes.Count)
+                    {
+                        batterystate = StatusCodes[state];
+                    }
+                    ApiConnectiom.HASendSenzorData("battery_state", Sensors.convertToType(batterystate));
                 }
-                ApiConnectiom.HASendSenzorData("battery_state", Sensors.convertToType(batterystate));
+                catch (Exception)
+                {
 
-                var PowerLineStatus = Sensors.queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi");
-                ApiConnectiom.HASendSenzorData("is_charging", Sensors.convertToType(PowerLineStatus));
+                }
+
+                try
+                {
+                    var PowerLineStatus = Sensors.queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi");
+                    ApiConnectiom.HASendSenzorData("is_charging", Sensors.convertToType(PowerLineStatus));
+                }
+                catch (Exception)
+                {
+
+                }
             }
+            try
+            {
+                var wifistate = Sensors.queryWifi("SSID", "BSSID");
+                ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
+            }
+            catch (Exception)
+            {
 
-            var wifistate = Sensors.queryWifi("SSID", "BSSID");
-            ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
+            }
+            try
+            {
+                var wifissid = Sensors.queryWifi("State");
+                ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
+            }
+            catch (Exception)
+            {
 
-            var wifissid = Sensors.queryWifi("State");
-            ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
+            }
+            try
+            {
+                var windowname = Sensors.queryActiveWindowTitle();
+                ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
+            }
+            catch (Exception)
+            {
 
-            var windowname = Sensors.queryActiveWindowTitle();
-            ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
+            }
+            try
+            {
+                var cameraConsent = Sensors.queryConsetStore("webcam");
+                ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
+            }
+            catch (Exception)
+            {
 
-            var cameraConsent = Sensors.queryConsetStore("webcam");
-            ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
+            }
+            try
+            {
+                var microphoneConsent = Sensors.queryConsetStore("microphone");
+                ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
+            }
+            catch (Exception)
+            {
 
-            var microphoneConsent = Sensors.queryConsetStore("microphone");
-            ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
+            }
+            try
+            {
+                var locationConsent = Sensors.queryConsetStore("location");
+                ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
+            }
+            catch (Exception)
+            {
 
-            var locationConsent = Sensors.queryConsetStore("location");
-            ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
+            }
+            try
+            {
+                var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+                ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
+            }
+            catch (Exception)
+            {
 
-            var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
-            ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
+            }
+            try
+            {
+                var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
+                ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
+            }
+            catch (Exception)
+            {
 
-            var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
-            ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
+            }
+            try
+            {
+                var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
+                ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
+            }
+            catch (Exception)
+            {
 
-            var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
-            ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
+            }
+            try
+            {
+                ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
+            }
+            catch (Exception)
+            {
 
-            ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
-            ApiConnectiom.HASendSenzorData("update_available", (false));
+            }
+            try
+            {
+                ApiConnectiom.HASendSenzorData("update_available", (false));
+            }
+            catch (Exception)
+            {
+
+            }
 
             //ApiConnectiom.HASendSenzorLocation();
         }

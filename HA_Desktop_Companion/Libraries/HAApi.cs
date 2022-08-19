@@ -131,6 +131,9 @@ namespace HA_Desktop_Companion
                 os_name = os,
                 os_version = osVersion,
                 supports_encryption = false,
+                app_data = new {
+                    push_websocket_channel = true,
+                }
             };
 
             JsonObject response = HARequest(token, "/api/mobile_app/registrations", body);
