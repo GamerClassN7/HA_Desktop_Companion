@@ -14,7 +14,7 @@ namespace HA_Desktop_Companion.Libraries
 
     public class HAApi_Websocket
     {
-        private static Logging log = new Logging(".\log.txt");
+        private static Logging log = new Logging(".\\log.txt");
 
         private bool wsRegistered = false;
 

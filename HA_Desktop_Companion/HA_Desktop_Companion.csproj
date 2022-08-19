@@ -25,10 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Resource Include="Resources\ha_logo.png" />
   </ItemGroup>
 

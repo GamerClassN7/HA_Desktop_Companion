@@ -6,10 +6,6 @@ using System.Reflection;
 using Forms = System.Windows.Forms;
 using System.Windows.Media.Imaging;
 using System.Xml;
-using Windows.Data.Xml.Dom;
-using Windows.UI.Notifications;
-using System.Windows.Forms;
-using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace HA_Desktop_Companion
 {
@@ -53,8 +49,6 @@ namespace HA_Desktop_Companion
             notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
             notifyIcon.BalloonTipText = body;
             notifyIcon.BalloonTipTitle = title;
-
-
             notifyIcon.ShowBalloonTip(duration);
         }
 
