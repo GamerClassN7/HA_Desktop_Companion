@@ -111,6 +111,10 @@ namespace HA_Desktop_Companion
 
         private void registration_Click(object sender, RoutedEventArgs e)
         {
+            if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
+            {
+                return;
+            }
 
             string hostname = System.Net.Dns.GetHostName() + "";
             string maufactorer = Sensors.queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
@@ -120,6 +124,7 @@ namespace HA_Desktop_Companion
             Title = hostname;
 
             ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
+            WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, ApiConnectiom.webhook_id);
 
             Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
             Properties.Settings.Default.apiToken = Encryption.EncryptString(Encryption.ToSecureString(apiToken.Password));
@@ -128,8 +133,6 @@ namespace HA_Desktop_Companion
             Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
 
             Properties.Settings.Default.Save();
-
-
 
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();

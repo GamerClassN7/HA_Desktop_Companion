@@ -1,11 +1,9 @@
-﻿using System;
-using System.Drawing;
-using System.Threading;
+﻿using System.Threading;
 using System.Windows;
 using System.Reflection;
 using Forms = System.Windows.Forms;
-using System.Windows.Media.Imaging;
-using System.Xml;
+using Windows.UI.Notifications;
+using XmlDom = Windows.Data.Xml.Dom;
 
 namespace HA_Desktop_Companion
 {
@@ -16,6 +14,7 @@ namespace HA_Desktop_Companion
     {
         private Forms.NotifyIcon notifyIcon;
         private static Mutex _mutex = null;
+        private const string APP_ID = "ToastSample";
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -46,10 +45,30 @@ namespace HA_Desktop_Companion
 
         public void ShowNotification(string title = "", string body = "", int duration = 20000)
         {
+
             notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
             notifyIcon.BalloonTipText = body;
             notifyIcon.BalloonTipTitle = title;
             notifyIcon.ShowBalloonTip(duration);
+
+            /*string xml = @"<toast>
+                          <visual>
+                            <binding template=""ToastGeneric"">
+                              <image placement=""appLogoOverride"" src=""Resources/MicrosoftLogo.png"" />
+                              <text>DotNet Spain Conference</text>
+                              <text>How much do you like my session?</text>
+                            </binding>
+                          </visual>
+                        </toast>";
+
+            XmlDom.XmlDocument doc = new XmlDom.XmlDocument();
+            doc.LoadXml(xml);
+
+            ToastNotification toast = new ToastNotification(doc);
+            ToastNotificationManager.CreateToastNotifier(APP_ID).Show(toast);*/
+
+
+
         }
 
         protected override void OnExit(ExitEventArgs e)
