@@ -65,9 +65,7 @@ namespace HA_Desktop_Companion
             doc.LoadXml(xml);
 
             ToastNotification toast = new ToastNotification(doc);
-            ToastNotificationManager.CreateToastNotifier(APP_ID).Show(toast);*/
-
-
+            ToastNotificationManager.CreateToastNotifier().Show(toast);*/
 
         }
 
