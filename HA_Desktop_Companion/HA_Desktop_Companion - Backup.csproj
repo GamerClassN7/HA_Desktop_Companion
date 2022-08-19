@@ -7,25 +7,22 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
     <AssemblyVersion>0.0.0.1</AssemblyVersion>
-    <FileVersion>0.0.0.2</FileVersion>
+    <FileVersion>0.0.0.1</FileVersion>
+    <ApplicationIcon>ha_logo.ico</ApplicationIcon>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <SignAssembly>True</SignAssembly>
-    <PackageIcon></PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="configuration.yaml" />
     <None Remove="ha_logo.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Resources\ha_logo.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="ha_logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\ha_logo.png" />
+    <Resource Include="ha_logo.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,27 +31,12 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Update="Resource1.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resource1.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resource1.resx">
-      <Generator>PublicResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resource1.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\configuration.yaml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

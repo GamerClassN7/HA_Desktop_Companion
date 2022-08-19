@@ -82,5 +82,17 @@ namespace HA_Desktop_Companion.Properties {
                 this["apiCloudhookUrl"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SettingUpdate {
+            get {
+                return ((bool)(this["SettingUpdate"]));
+            }
+            set {
+                this["SettingUpdate"] = value;
+            }
+        }
     }
 }

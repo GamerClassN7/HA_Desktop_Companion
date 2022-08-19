@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Drawing;
+using System.Threading;
 using System.Windows;
+using System.Reflection;
 using Forms = System.Windows.Forms;
+using System.Windows.Media.Imaging;
 
 namespace HA_Desktop_Companion
 {
@@ -10,29 +13,50 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class App : Application
     {
-        Forms.NotifyIcon trayIcon;
-        //https://github.com/Monbsoft/MachineMonitor/blob/master/src/MachineMonitor/App.xaml.cs
+        private Forms.NotifyIcon notifyIcon;
+        private static Mutex _mutex = null;
+
         protected override void OnStartup(StartupEventArgs e)
         {
-            trayIcon =  new Forms.NotifyIcon();
-            trayIcon.Icon = new Icon("ha_logo.ico");
-            trayIcon.Visible = true;
-            trayIcon.Click += new System.EventHandler(trayIcon_DoubleClick);
+            string appName = Assembly.GetExecutingAssembly().GetName().Name;
+            bool createdNew;
+
+            _mutex = new Mutex(true, appName, out createdNew);
+
+            if (!createdNew)
+            {
+                Application.Current.Shutdown();
+            }
+
+            notifyIcon =  new Forms.NotifyIcon();
+            notifyIcon.Icon = Resource1.ha_logo;
+            notifyIcon.Visible = true;
+            notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
 
             base.OnActivated(e);
         }
 
-        private void trayIcon_DoubleClick(object? sender, EventArgs e)
+        private void trayIcon_DoubleClick()
         {
             MainWindow.WindowState = WindowState.Normal;
+            MainWindow.Show();
             MainWindow.Activate();
+        }
+
+        public void ShowNotification(string title, string body, int duration = 20000)
+        {
+            notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
+            notifyIcon.BalloonTipText = body;
+            notifyIcon.BalloonTipTitle = title;
+            notifyIcon.ShowBalloonTip(duration);
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            trayIcon.Dispose();
+            notifyIcon.Dispose();
             base.OnExit(e);
         }
+
     }
 
 }
