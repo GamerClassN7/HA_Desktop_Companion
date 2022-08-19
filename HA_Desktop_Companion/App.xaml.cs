@@ -2,8 +2,8 @@
 using System.Windows;
 using System.Reflection;
 using Forms = System.Windows.Forms;
-using Windows.UI.Notifications;
-using XmlDom = Windows.Data.Xml.Dom;
+//using Windows.UI.Notifications;
+//using XmlDom = Windows.Data.Xml.Dom;
 
 namespace HA_Desktop_Companion
 {
