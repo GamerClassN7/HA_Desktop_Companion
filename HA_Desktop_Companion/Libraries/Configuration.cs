@@ -39,6 +39,11 @@ namespace HA_Desktop_Companion.Libraries
                     string parameter = splitedString[0].Trim();
                     string value = splitedString[1].Trim();
 
+                    if (parameter == "")
+                    {
+                        continue;
+                    }
+
                     if (splitedString.Length > 2)
                     {
                         for (int i = 2; i < splitedString.Length; i++)
@@ -58,15 +63,24 @@ namespace HA_Desktop_Companion.Libraries
 
                     if (parameter.Contains("- ") == true)
                     {
+                        subSection = parameter.Replace("- ", "");
+
                         if (category == value)
                         {
                             num++;
                         }
                         else
                         {
-                            num = 0;
+                            if (!configurationData.ContainsKey(section) || !configurationData[section].ContainsKey(subSection) || !configurationData[section][subSection].ContainsKey(value) || configurationData[section][subSection][value].Count <= 0)
+                            {
+                                num = 0;
+                            }
+                            else
+                            {
+                                num = configurationData[section][subSection][value].Count;
+                            }
                         }
-                        subSection = parameter.Replace("- ", "");
+
                         category = value;
                         continue;
                     }
