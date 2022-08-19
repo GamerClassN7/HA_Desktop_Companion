@@ -15,12 +15,13 @@ namespace HA_Desktop_Companion
 {
     public class HAApi
     {
-        public string base_url = "";
-        public string token = "";
-        public string webhook_id = "";
-        public string remote_ui_url = "";
-        public string cloudhook_url = "";
-        private bool debug = false;
+        public string base_url              = "";
+        public string token                 = "";
+        public string webhook_id            = "";
+        public string remote_ui_url         = "";
+        public string cloudhook_url         = "";
+
+        private bool debug                  = false;
         private string senzorBackupFilePath = @".\senzors_backup.json";
 
         public Dictionary<string, object> entitiesCatalog = new();
