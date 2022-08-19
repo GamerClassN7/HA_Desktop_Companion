@@ -14,6 +14,8 @@ namespace HA_Desktop_Companion.Libraries
 
     public class HAApi_Websocket
     {
+        private static Logging log = new Logging(".\log.txt");
+
         private bool wsRegistered = false;
 
         private string token = "";
@@ -52,15 +54,14 @@ namespace HA_Desktop_Companion.Libraries
                 await ReceiveRegistrationRequest(socket, token);
                 await SubscribeToNotifications(socket, webhook_id);
 
-                Debug.WriteLine("WS Registered");
-
+                log.Write("WS Registered " + HAResolveUri());
                 await Receive(socket);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("WS ERROR - " + ex.Message);
-            }
+                log.Write("WS ERROR - " + ex.Message);
 
+            }
         }
 
         static async Task ReceiveRegistrationRequest(ClientWebSocket socket, string token)
@@ -91,7 +92,8 @@ namespace HA_Desktop_Companion.Libraries
                             type = "auth",
                             access_token = token
                         };
-                        Debug.WriteLine("WS Auth Request recived " + jsonPayload);
+
+                        log.Write("WS Auth Request recived " + jsonPayload);
 
                         await Send(socket, JsonSerializer.Serialize(body));
                         await ReceiveRegistration(socket);
@@ -123,7 +125,7 @@ namespace HA_Desktop_Companion.Libraries
                     if (payload["type"].ToString() == "auth_ok")
                     {
                         bool wsRegistered = true;
-                        Debug.WriteLine("WS Auth OK " + jsonPayload);
+                        log.Write("WS Auth OK " + jsonPayload);
                     }
                 }
             }
@@ -149,7 +151,7 @@ namespace HA_Desktop_Companion.Libraries
                 {
                     string jsonPayload = await reader.ReadToEndAsync();
                     var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
-                    Debug.WriteLine("WS NOTIFICATIONS JOINED " + jsonPayload);
+                    log.Write("WS NOTIFICATIONS JOINED " + jsonPayload);
                 }
             }
         }
@@ -158,7 +160,7 @@ namespace HA_Desktop_Companion.Libraries
         {
             try
             {
-                Debug.WriteLine("WS RECEEVE LOOP STARTED");
+                log.Write("WS RECEEVE LOOP STARTED");
 
                 var buffer = new ArraySegment<byte>(new byte[2048]);
                 do
@@ -181,6 +183,8 @@ namespace HA_Desktop_Companion.Libraries
                             string jsonPayload = await reader.ReadToEndAsync();
 
                             var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
+                            log.Write("WS PAYLOAD " + payload);
+
                             if (payload["type"].ToString() == "event")
                             {
                                 if (payload["event"].AsObject().ContainsKey("message"))
@@ -190,7 +194,7 @@ namespace HA_Desktop_Companion.Libraries
 
                                     if (payload["event"].AsObject().ContainsKey("title"))
                                     {
-                                        msg_title = payload["event"].AsObject().ContainsKey("title").ToString();
+                                        msg_title = payload["event"].AsObject()["title"].ToString();
                                     }
                                   
                                     var app = Application.Current as App;
@@ -210,7 +214,8 @@ namespace HA_Desktop_Companion.Libraries
 
         static async Task SubscribeToNotifications(ClientWebSocket socket, string webhook_id)
         {
-            Debug.WriteLine("WS NOTIFICATIONS Request Send");
+            log.Write("WS NOTIFICATIONS Request Send");
+
             var body = new
             {
                 id = interactions,
