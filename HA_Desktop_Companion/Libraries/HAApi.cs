@@ -228,7 +228,7 @@ namespace HA_Desktop_Companion
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
         
-        private object HAGenericSenzorDataBody(string uniqueID, object state, string icon = "")
+        private object HAGenericSenzorDataBody(string uniqueID, object state, string type = "sensor",string icon = "")
         {
             Dictionary<string, object> entityTemplate = new() { };
 
@@ -255,7 +255,7 @@ namespace HA_Desktop_Companion
             Dictionary<string, object> data = new()
             {
                 { "unique_id", uniqueID },
-                { "type", "sensor" },
+                { "type", type },
                 { "state", state }
             };
 
@@ -280,7 +280,7 @@ namespace HA_Desktop_Companion
 
         public JsonObject HASendSenzorData(string uniqueID, bool state)
         {
-            object body = HAGenericSenzorDataBody(uniqueID, state);
+            object body = HAGenericSenzorDataBody(uniqueID, state, "binary_sensor");
 
             return HARequest(token, "/api/webhook/" + webhook_id, body);
         }
