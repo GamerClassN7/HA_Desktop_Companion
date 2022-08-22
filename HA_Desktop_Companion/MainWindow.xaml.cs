@@ -122,9 +122,9 @@ namespace HA_Desktop_Companion
             }
 
             string hostname = System.Net.Dns.GetHostName() + "";
-            string maufactorer = Sensors.queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
-            string model = Sensors.queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
-            string os = Sensors.queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
+            string maufactorer = Sensors.queryWmic("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
+            string model = Sensors.queryWmic("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
+            string os = Sensors.queryWmic("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
 
             Title = hostname;
 
@@ -180,7 +180,7 @@ namespace HA_Desktop_Companion
                             if (senzor.ContainsKey("device_class"))
                                 device_class = senzor["device_class"];
 
-                            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) != 2 && device_class == "battery")
+                            if (Int32.Parse(Sensors.queryWmic("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) != 2 && device_class == "battery")
                                 continue;
 
                             string icon = "";
@@ -212,151 +212,83 @@ namespace HA_Desktop_Companion
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
-            //Make Use of reflections
-            //var type = Type.GetType(type_name);
+            //TODO: Do not discover battery id PC
 
-            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
+            var sensorsClass = typeof(Sensors);
+            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            senzorTypes.Add("sensor", configuration["sensor"]);
+
+            if (configuration.ContainsKey("binary_sensor"))
+                senzorTypes.Add("binary_sensor", configuration["binary_sensor"]);
+
+            foreach (var item in senzorTypes)
             {
-                try
+                string senzorType = item.Key;
+                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                foreach (var platform in platforms)
                 {
-                    var batterypercent = Sensors.queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2");
-                    ApiConnectiom.HASendSenzorData("battery_level", Sensors.convertToType(batterypercent));
-
-                    var batterystate = "Unknown";
-                    Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
-                    StatusCodes.Add(1, "Discharging");
-                    StatusCodes.Add(2, "On AC");
-                    StatusCodes.Add(3, "Fully Charged");
-                    StatusCodes.Add(4, "Low");
-                    StatusCodes.Add(5, "Critical");
-                    StatusCodes.Add(6, "Charging");
-                    StatusCodes.Add(7, "Charging and High");
-                    StatusCodes.Add(8, "Charging and Low");
-                    StatusCodes.Add(9, "Undefined");
-                    StatusCodes.Add(10, "Partially Charged");
-
-                    int state = Int32.Parse(Sensors.queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
-                    if (state <= StatusCodes.Count)
+                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                    foreach (var integration in integrations)
                     {
-                        batterystate = StatusCodes[state];
+                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
+                        foreach (var senzor in senzors)
+                        {
+
+                            object sensorData = null;
+                            if (integration.Key == "wmic")
+                            {
+                                if (senzor.ContainsKey("wmic_path") && senzor.ContainsKey("wmic_selector") && senzor.ContainsKey("wmic_namespace"))
+                                {
+                                    string methodName = "query" + integration.Key[0].ToString().ToUpper() + integration.Key.Substring(1);
+                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["wmic_path"], senzor["wmic_selector"], senzor["wmic_namespace"] });
+                                }
+                                else if (integration.Key == "consent_store")
+                                {
+                                    if (senzor.ContainsKey("consent_category") && senzor.ContainsKey("wmic_selector") && senzor.ContainsKey("wmic_namespace"))
+                                    {
+                                        string methodName = "query";
+                                        foreach (var methodNameSegment in integration.Key.Split("_"))
+                                        {
+                                            methodName += methodNameSegment.ToString().ToUpper() + methodNameSegment.Substring(1);
+                                        }
+                                        sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["consent_category"] });
+                                    }
+                                }
+                                else if (integration.Key == "uptime")
+                                {
+                                    string methodName = "queryUptime";
+                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, null);
+                                }
+                                else if (integration.Key == "current_window")
+                                {
+                                    string methodName = "queryCurrentWindow";
+                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, null);
+                                }
+                                else if (integration.Key == "wifi")
+                                {
+                                    string methodName = "queryWifi";
+                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["selector"], senzor["deselector"] });
+                                }
+
+                                if (sensorData != null)
+                                {
+                                    if (senzor.ContainsKey("value_map"))
+                                    {
+                                        MessageBox.Show(sensorData.ToString());
+                                        //Dictionary<string, string> valueMap = senzor["value_map"].Select(item => item.Split('|')).ToDictionary(s => s[0], s => s[1]);
+                                        string[] valueMap = senzor["value_map"].Split("|");
+                                        //check if key exist in map 
+                                        sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                                        MessageBox.Show(sensorData.ToString());
+                                    }
+                                    ApiConnectiom.HASendSenzorData(senzor["unique_id"], Sensors.convertToType(sensorData));
+                                }
+                            }
+                        }
                     }
-                    ApiConnectiom.HASendSenzorData("battery_state", Sensors.convertToType(batterystate));
-                }
-                catch (Exception)
-                {
-
-                }
-
-                try
-                {
-                    var PowerLineStatus = Sensors.queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi");
-                    ApiConnectiom.HASendSenzorData("is_charging", Sensors.convertToType(PowerLineStatus));
-                }
-                catch (Exception)
-                {
-
                 }
             }
-           try
-           {
-               var wifistate = Sensors.queryWifi("SSID", "BSSID");
-               ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var wifissid = Sensors.queryWifi("State");
-               ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var windowname = Sensors.queryActiveWindowTitle();
-               ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var cameraConsent = Sensors.queryConsetStore("webcam");
-               ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var microphoneConsent = Sensors.queryConsetStore("microphone");
-               ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var locationConsent = Sensors.queryConsetStore("location");
-               ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
-               ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
-               ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
-               ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
-           }
-           catch (Exception)
-           {
-
-           }
-           try
-           {
-               ApiConnectiom.HASendSenzorData("update_available", (false));
-           }
-           catch (Exception)
-           {
-
-           }
-
             WebsocketConnectiom.Check();
-
             //ApiConnectiom.HASendSenzorLocation();
         }
 

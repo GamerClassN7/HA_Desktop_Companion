@@ -14,7 +14,7 @@ namespace HA_Desktop_Companion.Libraries
 {
     class Sensors
     {
-        public static string queryWMIC(string path, string selector, string wmiNmaespace = @"\\root\wmi")
+        public static string queryWmic(string path, string selector, string wmiNmaespace = @"\\root\wmi")
         {
             var process = new Process
             {
@@ -86,7 +86,7 @@ namespace HA_Desktop_Companion.Libraries
             return "";
         }
 
-        public static string queryActiveWindowTitle()
+        public static string queryCurrentWindow()
         {
             [DllImport("user32.dll")]
             static extern IntPtr GetForegroundWindow();
@@ -104,11 +104,11 @@ namespace HA_Desktop_Companion.Libraries
         }
 
 
-        public static TimeSpan queryMachineUpTime()
+        public static double queryUptime()
         {
             [DllImport("kernel32")]
             extern static UInt64 GetTickCount64();
-            return (TimeSpan.FromMilliseconds(GetTickCount64()));
+            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
         }
 
         public static string queryLocationByIP()

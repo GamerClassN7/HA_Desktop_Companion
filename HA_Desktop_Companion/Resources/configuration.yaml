@@ -1,5 +1,8 @@
 sensor:
   - platform: wmic
+    wmic_path: Win32_Battery
+    wmic_selector: EstimatedChargeRemaining
+    wmic_namespace: \\root\CIMV2
     name: Battery Level
     unique_id: battery_level
     icon: "mdi:battery"
@@ -8,42 +11,59 @@ sensor:
     entity_category: "diagnostic"
     update_interval: 16
   - platform: wmic
+    wmic_path: Win32_Battery
+    wmic_selector: BatteryStatus
+    wmic_namespace: \\root\CIMV2
+    value_map: "Discharging|On AC|Fully Charged|Low|Critical|Charging|Charging and High|Charging and Low|Undefined|Partially Charged"
     name: Battery State
     unique_id: battery_state
     icon: "mdi:battery-minus"
     entity_category: "diagnostic"
     device_class: battery
   - platform: wmic
+    wmic_path: Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"
+    wmic_selector: Temperature
+    wmic_namespace: \\root\CIMV2
     name: CPU Temperature
     unique_id: cpu_temp
-    unit_of_measurement: "C"
+    unit_of_measurement: "°C"
     icon: "mdi:cpu-64-bit"
     entity_category: "diagnostic"
   - platform: wmic
+    wmic_path: Win32_OperatingSystem
+    wmic_selector: FreePhysicalMemory
+    wmic_namespace: \\root\CIMV2
     name: Free Ram
     unique_id: free_ram
     unit_of_measurement: "kilobytes"
     icon: "mdi:clock"
     entity_category: "diagnostic"
   - platform: wmic
+    wmic_path: Win32_Processor
+    wmic_selector: LoadPercentage
+    wmic_namespace: \\root\CIMV2
     name: CPU Usage
     unique_id: cpu_usage
     unit_of_measurement: "%"
     icon: "mdi:cpu-64-bit"
     entity_category: "diagnostic"
   - platform: wifi
+    selector: "State"
+    deselector: ""
     name: Wifi State
     unique_id: wifi_state
     icon: "mdi:wifi"
   - platform: wifi
+    selector: "SSID"
+    deselector: "BSSID"
     name: Wifi SSID
     unique_id: wifi_ssid
     icon: "mdi:wifi"
-  - platform: general
+  - platform: current_window
     name: Currently Active Window
     unique_id: currently_active_window
     icon: "mdi:application"
-  - platform: general
+  - platform: uptime
     name: Uptime
     unique_id: uptime
     icon: "mdi:timer-outline"
@@ -51,18 +71,24 @@ sensor:
 
 binary_sensor:
   - platform: consent_store
+    consent_category: webcamera
     name: Camera in use
     unique_id: camera_in_use
     icon: "mdi:camera"
   - platform: consent_store
+    consent_category: microphone
     name: Microphone in use
     unique_id: microphone_in_use
     icon: "mdi:microphone"
   - platform: consent_store
+    consent_category: webcamera
     name: Location in use
     unique_id: location_in_use
     icon: "mdi:crosshairs-gps"
   - platform: wmic
+    wmic_path: Win32_Battery
+    wmic_selector: BatteryStatus
+    wmic_namespace: \\root\CIMV2
     name: Is Charging
     unique_id: is_charging
     icon: "mdi:power-plug-off"
