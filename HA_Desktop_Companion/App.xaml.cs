@@ -20,7 +20,6 @@ namespace HA_Desktop_Companion
     {
         private Forms.NotifyIcon notifyIcon;
         private static Mutex _mutex = null;
-        private const string APP_ID = "ToastSample";
 
         protected override void OnStartup(StartupEventArgs e)
         {
