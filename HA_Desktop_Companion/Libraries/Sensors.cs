@@ -14,13 +14,13 @@ namespace HA_Desktop_Companion.Libraries
 {
     class Sensors
     {
-        public static string queryWmic(string path, string selector, string wmiNmaespace = @"\\root\wmi")
+        public static string queryWmic(string wmic_path, string wmic_selector, string wmic_namespace = @"\\root\wmi")
         {
             var process = new Process
             {
                 StartInfo = {
                     FileName = "wmic.exe",
-                    Arguments = ("/namespace:\"" + wmiNmaespace + "\" path " + path + " get " + selector),
+                    Arguments = ("/namespace:\"" + wmic_namespace + "\" path " + wmic_path + " get " + wmic_selector),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -35,7 +35,7 @@ namespace HA_Desktop_Companion.Libraries
             {
                 for (int line = 0; line < output.Length; line++)
                 {
-                    if (output[line].Contains(selector))
+                    if (output[line].Contains(wmic_selector))
                     {
                         string outputResult = Regex.Replace(output[line + 1], @"\t|\n|\r", "").Trim();
                         return outputResult;
@@ -124,11 +124,11 @@ namespace HA_Desktop_Companion.Libraries
             }
         }
 
-        public static bool queryConsetStore(string category = "webcam")
+        public static bool queryConsetStore(string consent_category = "webcam")
         {
             string[] consentStores = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\" ,
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\NonPackaged" 
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged" 
             };
 
             foreach (string path in consentStores)

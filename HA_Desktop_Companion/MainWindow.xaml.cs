@@ -28,8 +28,8 @@ namespace HA_Desktop_Companion
         {
             InitializeComponent();
             AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
-            var path = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
-            MessageBox.Show(path);
+            //var path = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+            //MessageBox.Show(path);
 
             if (Properties.Settings.Default.SettingUpdate)
             {
@@ -79,6 +79,7 @@ namespace HA_Desktop_Companion
             string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
             debugEnabled = Properties.Settings.Default.debug;
+            debug.IsChecked = Properties.Settings.Default.debug;
 
 
             apiToken.Password = decodedApiToken;
@@ -208,6 +209,7 @@ namespace HA_Desktop_Companion
                             {
                                 ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, device_class, unit_of_measurement, icon, entity_category);
                             }
+
                             Debug.WriteLine(senzor["unique_id"] + " - " + "Sensor Sucesfully Loadet");
                         }
                     }
@@ -238,56 +240,42 @@ namespace HA_Desktop_Companion
                         List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
                         foreach (var senzor in senzors)
                         {
-
                             object sensorData = null;
-                            if (integration.Key == "wmic")
+                            string methodName = "query";
+                            foreach (var methodNameSegment in integration.Key.Split("_"))
                             {
-                                if (senzor.ContainsKey("wmic_path") && senzor.ContainsKey("wmic_selector") && senzor.ContainsKey("wmic_namespace"))
+                                methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
+                            }
+                            
+                            MethodInfo method = sensorsClass.GetMethod(methodName);
+                            if (method == null)
+                                continue;
+                            
+                            ParameterInfo[] pars = method.GetParameters();
+                            List<object> parameters = new List<object>();
+                            foreach (ParameterInfo p in pars)
+                            {
+                                if (!senzor.ContainsKey(p.Name))
+                                    continue;
+
+                                parameters.Insert(p.Position, senzor[p.Name]);
+                            }
+
+                            sensorData = method.Invoke(this, parameters.ToArray());
+
+                            if (sensorData != null)
+                            {
+                                if (senzor.ContainsKey("value_map"))
                                 {
-                                    string methodName = "query" + integration.Key[0].ToString().ToUpper() + integration.Key.Substring(1);
-                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["wmic_path"], senzor["wmic_selector"], senzor["wmic_namespace"] });
-                                }
-                                else if (integration.Key == "consent_store")
-                                {
-                                    if (senzor.ContainsKey("consent_category") && senzor.ContainsKey("wmic_selector") && senzor.ContainsKey("wmic_namespace"))
-                                    {
-                                        string methodName = "query";
-                                        foreach (var methodNameSegment in integration.Key.Split("_"))
-                                        {
-                                            methodName += methodNameSegment.ToString().ToUpper() + methodNameSegment.Substring(1);
-                                        }
-                                        sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["consent_category"] });
-                                    }
-                                }
-                                else if (integration.Key == "uptime")
-                                {
-                                    string methodName = "queryUptime";
-                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, null);
-                                }
-                                else if (integration.Key == "current_window")
-                                {
-                                    string methodName = "queryCurrentWindow";
-                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, null);
-                                }
-                                else if (integration.Key == "wifi")
-                                {
-                                    string methodName = "queryWifi";
-                                    sensorData = sensorsClass.GetMethod(methodName).Invoke(this, new[] { senzor["selector"], senzor["deselector"] });
+                                    //Dictionary<string, string> valueMap = senzor["value_map"].Select(item => item.Split('|')).ToDictionary(s => s[0], s => s[1]);
+                                    string[] valueMap = senzor["value_map"].Split("|");
+                                    //check if key exist in map 
+
+                                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
                                 }
 
-                                if (sensorData != null)
-                                {
-                                    if (senzor.ContainsKey("value_map"))
-                                    {
-                                        MessageBox.Show(sensorData.ToString());
-                                        //Dictionary<string, string> valueMap = senzor["value_map"].Select(item => item.Split('|')).ToDictionary(s => s[0], s => s[1]);
-                                        string[] valueMap = senzor["value_map"].Split("|");
-                                        //check if key exist in map 
-                                        sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                                        MessageBox.Show(sensorData.ToString());
-                                    }
-                                    ApiConnectiom.HASendSenzorData(senzor["unique_id"], Sensors.convertToType(sensorData));
-                                }
+                                ApiConnectiom.HASendSenzorData(senzor["unique_id"], Sensors.convertToType(sensorData));
+                                Debug.WriteLine(senzor["unique_id"] + " - " + "Sensor data published");
                             }
                         }
                     }
