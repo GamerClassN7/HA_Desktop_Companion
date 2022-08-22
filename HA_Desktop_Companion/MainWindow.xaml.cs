@@ -255,7 +255,7 @@ namespace HA_Desktop_Companion
                             List<object> parameters = new List<object>();
                             foreach (ParameterInfo p in pars)
                             {
-                                if (!senzor.ContainsKey(p.Name))
+                                if (!senzor.ContainsKey(p.Name) && !p.IsOptional)
                                     continue;
 
                                 parameters.Insert(p.Position, senzor[p.Name]);
