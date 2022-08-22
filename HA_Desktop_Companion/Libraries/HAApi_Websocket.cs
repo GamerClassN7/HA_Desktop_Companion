@@ -137,14 +137,21 @@ namespace HA_Desktop_Companion.Libraries
                                 {
                                     string msg_text = payload["event"].AsObject()["message"].ToString();
                                     string msg_title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+                                    string msg_image = "";
+
 
                                     if (payload["event"].AsObject().ContainsKey("title"))
                                     {
                                         msg_title = payload["event"].AsObject()["title"].ToString();
                                     }
-                                  
+
+                                    if (payload["event"].AsObject().ContainsKey("data") && payload["event"].AsObject()["data"].AsObject().ContainsKey("image"))
+                                    {
+                                        msg_image = payload["event"].AsObject()["data"].AsObject()["image"].ToString();
+                                    }
+
                                     var app = Application.Current as App;
-                                    app.ShowNotification(msg_title, msg_text, 300000);
+                                    app.ShowNotification(msg_title, msg_text, msg_image, 300000);
                                 }
                             }
                         }
