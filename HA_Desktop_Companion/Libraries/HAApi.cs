@@ -15,12 +15,13 @@ namespace HA_Desktop_Companion
 {
     public class HAApi
     {
-        public string base_url = "";
-        public string token = "";
-        public string webhook_id = "";
-        public string remote_ui_url = "";
-        public string cloudhook_url = "";
-        private bool debug = false;
+        public string base_url              = "";
+        public string token                 = "";
+        public string webhook_id            = "";
+        public string remote_ui_url         = "";
+        public string cloudhook_url         = "";
+
+        private bool debug                  = false;
         private string senzorBackupFilePath = @".\senzors_backup.json";
 
         public Dictionary<string, object> entitiesCatalog = new();
@@ -131,6 +132,9 @@ namespace HA_Desktop_Companion
                 os_name = os,
                 os_version = osVersion,
                 supports_encryption = false,
+                app_data = new {
+                    push_websocket_channel = true,
+                }
             };
 
             JsonObject response = HARequest(token, "/api/mobile_app/registrations", body);

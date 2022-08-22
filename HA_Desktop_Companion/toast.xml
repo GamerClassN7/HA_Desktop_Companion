@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<toast>
+	<visual>
+		<binding template="ToastGeneric">
+			<text>Notification Message</text>
+			<text>This is a Notification Message</text>
+			<image src="C:\Users\Admin\Desktop\Toast\toast\Assets\pikachu.png"/>
+		</binding>
+	</visual>
+	<actions>
+		<input id="snoozeTime" type="selection" defaultInput="15">
+			<selection id="1" content="1 minute"/>
+			<selection id="15" content="15 minutes"/>
+			<selection id="60" content="1 hour"/>
+			<selection id="240" content="4 hours"/>
+			<selection id="1440" content="1 day"/>
+		</input>
+		<action
+         activationType="system"
+         arguments="snooze"
+         hint-inputId="snoozeTime"
+         content=""/>
+		<action
+         activationType="system"
+         arguments="dismiss"
+         content=""/>
+	</actions>
+</toast>
