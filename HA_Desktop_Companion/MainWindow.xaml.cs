@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System.IO;
 using HA_Desktop_Companion.Libraries;
 
+
 namespace HA_Desktop_Companion
 {
     /// <summary>
@@ -27,6 +28,8 @@ namespace HA_Desktop_Companion
         {
             InitializeComponent();
             AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
+            var path = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.PerUserRoamingAndLocal).FilePath;
+            MessageBox.Show(path);
 
             if (Properties.Settings.Default.SettingUpdate)
             {
@@ -35,6 +38,8 @@ namespace HA_Desktop_Companion
                 Properties.Settings.Default.SettingUpdate = false;
                 Properties.Settings.Default.Save();
             }
+
+
         }
 
         private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
