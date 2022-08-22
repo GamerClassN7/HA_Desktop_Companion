@@ -252,103 +252,103 @@ namespace HA_Desktop_Companion
 
                 }
             }
-            try
-            {
-                var wifistate = Sensors.queryWifi("SSID", "BSSID");
-                ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
-            }
-            catch (Exception)
-            {
+           try
+           {
+               var wifistate = Sensors.queryWifi("SSID", "BSSID");
+               ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var wifissid = Sensors.queryWifi("State");
-                ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var wifissid = Sensors.queryWifi("State");
+               ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var windowname = Sensors.queryActiveWindowTitle();
-                ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var windowname = Sensors.queryActiveWindowTitle();
+               ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var cameraConsent = Sensors.queryConsetStore("webcam");
-                ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var cameraConsent = Sensors.queryConsetStore("webcam");
+               ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var microphoneConsent = Sensors.queryConsetStore("microphone");
-                ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var microphoneConsent = Sensors.queryConsetStore("microphone");
+               ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var locationConsent = Sensors.queryConsetStore("location");
-                ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var locationConsent = Sensors.queryConsetStore("location");
+               ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
-                ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
+               ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
-                ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
+               ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
-                ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
+               ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
+           }
+           catch (Exception)
+           {
 
-            }
-            try
-            {
-                ApiConnectiom.HASendSenzorData("update_available", (false));
-            }
-            catch (Exception)
-            {
+           }
+           try
+           {
+               ApiConnectiom.HASendSenzorData("update_available", (false));
+           }
+           catch (Exception)
+           {
 
-            }
+           }
 
             WebsocketConnectiom.Check();
 

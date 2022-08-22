@@ -86,6 +86,15 @@ namespace HA_Desktop_Companion
                     sw.WriteLine(JsonSerializer.Serialize(body));
                 }
 
+                if (JsonSerializer.Serialize(body) == "{}"){
+                    Debug.WriteLine("SENZOR READ ERROR ");
+                    using (StreamWriter sw = File.AppendText(".\\log.txt"))
+                    {
+                        sw.WriteLine("SENZOR READ ERROR" + JsonSerializer.Serialize(body));
+                    }
+                    return JsonSerializer.Deserialize<JsonObject>("{}");
+                }
+
                 var response = httpClient.Send(request);
                 Debug.WriteLine("HTTP CODE:" + response.StatusCode.ToString());
                 using (StreamWriter sw = File.AppendText(".\\log.txt"))
@@ -234,6 +243,7 @@ namespace HA_Desktop_Companion
         
         private object HAGenericSenzorDataBody(string uniqueID, object state, string type = "sensor",string icon = "")
         {
+            Debug.WriteLine(uniqueID);
             Dictionary<string, object> entityTemplate = new() { };
 
             if (entitiesCatalog.ContainsKey(uniqueID))
