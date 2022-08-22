@@ -124,8 +124,19 @@ namespace HA_Desktop_Companion
             Title = hostname;
 
             ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
+
             WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, ApiConnectiom.webhook_id);
 
+            SaveSettings();
+            SenzorRegistration();
+            RegisterAutostart();
+            StartWatchdog();
+
+            //registration.IsEnabled = false;
+        }
+
+        private void SaveSettings()
+        {
             Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
             Properties.Settings.Default.apiToken = Encryption.EncryptString(Encryption.ToSecureString(apiToken.Password));
             Properties.Settings.Default.apiWebhookId = Encryption.EncryptString(Encryption.ToSecureString(ApiConnectiom.webhook_id));
@@ -133,7 +144,10 @@ namespace HA_Desktop_Companion
             Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
 
             Properties.Settings.Default.Save();
+        }
 
+        private static void SenzorRegistration()
+        {
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
             senzorTypes.Add("sensor", configuration["sensor"]);
@@ -189,43 +203,12 @@ namespace HA_Desktop_Companion
                     }
                 }
             }
-
-            System.Threading.Thread.Sleep(3000);
-
-
-            /* if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
-             {
-                 ApiConnectiom.HASenzorRegistration("battery_level", "Battery Level", 0, "battery", "%", "mdi:battery", "diagnostic");
-                 ApiConnectiom.HASenzorRegistration("battery_state", "Battery State", "Unknown", "battery", "", "mdi:battery-minus", "diagnostic");
-                 ApiConnectiom.HASenzorRegistration("is_charging", "Is Charging", false, "plug", "", "mdi:power-plug-off", "diagnostic");
-             }
-
-             ApiConnectiom.HASenzorRegistration("wifi_state", "Wifi State", "Unknown", "", "", "mdi:wifi", "");
-             ApiConnectiom.HASenzorRegistration("wifi_ssid", "Wifi SSID", "Unknown", "", "", "mdi:wifi", "");
-             ApiConnectiom.HASenzorRegistration("currently_active_window", "Currently Active Window", "Unknown", "", "", "mdi:application", "");
-
-             ApiConnectiom.HASenzorRegistration("camera_in_use", "Camera in use", false, "", "", "mdi:camera", "");
-             ApiConnectiom.HASenzorRegistration("microphone_in_use", "Microphone in use", false, "", "", "mdi:microphone", "");
-             ApiConnectiom.HASenzorRegistration("location_in_use", "Location in use", false, "", "", "mdi:crosshairs-gps", "");
-
-             ApiConnectiom.HASenzorRegistration("cpu_temp", "CPU Temperature", 0, "", "°C", "mdi:cpu-64-bit", "diagnostic");
-             ApiConnectiom.HASenzorRegistration("cpu_usage", "CPU Usage", 0, "", "%", "mdi:cpu-64-bit", "diagnostic");
-             ApiConnectiom.HASenzorRegistration("free_ram", "Free Ram", 0, "", "kilobytes", "mdi:clock", "diagnostic");
-
-             ApiConnectiom.HASenzorRegistration("uptime", "Uptime", 0, "", "s", "mdi:timer-outline", "diagnostic");
-             ApiConnectiom.HASenzorRegistration("update_available", "Update Availible", false, "firmware", "", "mdi:package", "diagnostic");
-            */
-
-            RegisterAutostart();
-            StartWatchdog();
-            //registration.IsEnabled = false;
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
         {
             //Make Use of reflections
             //var type = Type.GetType(type_name);
-            //ApiConnectiom.HASendSenzorLocation();
 
             if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
             {
@@ -366,6 +349,8 @@ namespace HA_Desktop_Companion
             {
 
             }
+
+            WebsocketConnectiom.Check();
 
             //ApiConnectiom.HASendSenzorLocation();
         }

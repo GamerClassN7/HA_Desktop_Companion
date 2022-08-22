@@ -17,6 +17,8 @@ namespace HA_Desktop_Companion.Libraries
         private static Logging log = new Logging(".\\log.txt");
 
         private bool wsRegistered = false;
+        private bool wsNotificationsSubscribed = false;
+
 
         private string token = "";
         private string webhook_id = "";
@@ -25,6 +27,7 @@ namespace HA_Desktop_Companion.Libraries
         public string cloudhook_url = "";
 
         private static int interactions = 2;
+        private ClientWebSocket socket = new ClientWebSocket();
 
         public HAApi_Websocket(string baseUrl, string apiToken, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
         {
@@ -34,126 +37,69 @@ namespace HA_Desktop_Companion.Libraries
             remote_ui_url = remoteUiUrl;
             cloudhook_url = cloudhookUrl;
 
-            try
-            {
-                registerWebSocket();
-            }
-            catch (Exception)
-            {
-                var app = Application.Current as App;
-                app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "Unable to connect to Websocket!");
-            }
+            registerWebSocket();
         }
 
-        private async void registerWebSocket()
+        private void registerWebSocket()
         {
-            using (var socket = new ClientWebSocket())
-            try
-            {
-                await socket.ConnectAsync(new Uri(HAResolveUri() + "/api/websocket"), CancellationToken.None);
-                await ReceiveRegistrationRequest(socket, token);
-                await SubscribeToNotifications(socket, webhook_id);
+            socket.Options.KeepAliveInterval = TimeSpan.Zero;
+            socket.ConnectAsync(new Uri(HAResolveUri() + "/api/websocket"), CancellationToken.None).Wait();
 
-                log.Write("WS Registered " + HAResolveUri());
-                await Receive(socket);
-            }
-            catch (Exception ex)
+            /*AUTHENTICATION PHASE*/
+            JsonObject payload = recieveJsonObjectFromWS();
+            if (payload["type"].ToString() != "auth_required")
             {
-                log.Write("WS ERROR - " + ex.Message);
-
+                return;
             }
+
+            var BODY = new
+            {
+                type = "auth",
+                access_token = token
+            };
+            log.Write("WS Send AUTH -> " + JsonSerializer.Serialize(BODY));
+            socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(BODY))), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+
+            payload = recieveJsonObjectFromWS();
+            if (payload["type"].ToString() != "auth_ok")
+            {
+                return;
+            }
+
+            wsRegistered = true;
+            log.Write("WS Auth OK ");
+
+            /*NOTIFICATION SUBSCRIPTION PHASE*/
+            var notificationRegReqBody = new
+            {
+                id = interactions,
+                type = "mobile_app/push_notification_channel",
+                webhook_id = webhook_id,
+            };
+
+            socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(notificationRegReqBody))), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+            log.Write("WS NOTIFICATIONS Request Send");
+
+            payload = recieveJsonObjectFromWS();
+            if (payload["success"].ToString() != "true")
+            {
+                return;
+            }
+
+            wsNotificationsSubscribed = true;
+            log.Write("WS not sub OK ");
+
+            /*WEBSOCKET RECIEVE PHASE*/
+            Receive(socket);
         }
 
-        static async Task ReceiveRegistrationRequest(ClientWebSocket socket, string token)
+        private JsonObject recieveJsonObjectFromWS()
         {
-            var buffer = new ArraySegment<byte>(new byte[2048]);
-
-            WebSocketReceiveResult result;
-            using (var ms = new MemoryStream())
-            {
-                do
-                {
-                    result = await socket.ReceiveAsync(buffer, CancellationToken.None);
-                    ms.Write(buffer.Array, buffer.Offset, result.Count);
-                } while (!result.EndOfMessage);
-
-                ms.Seek(0, SeekOrigin.Begin);
-
-
-                using (var reader = new StreamReader(ms, Encoding.UTF8))
-                {
-                    string jsonPayload = await reader.ReadToEndAsync();
-                    var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
-                    if (payload["type"].ToString() == "auth_required")
-                    {
-
-                        var body = new
-                        {
-                            type = "auth",
-                            access_token = token
-                        };
-
-                        log.Write("WS Auth Request recived " + jsonPayload);
-
-                        await Send(socket, JsonSerializer.Serialize(body));
-                        await ReceiveRegistration(socket);
-                    }
-                }
-            }
-        }
-      
-        static async Task ReceiveRegistration(ClientWebSocket socket)
-        {
-            var buffer = new ArraySegment<byte>(new byte[2048]);
-
-            WebSocketReceiveResult result;
-            using (var ms = new MemoryStream())
-            {
-                do
-                {
-                    result = await socket.ReceiveAsync(buffer, CancellationToken.None);
-                    ms.Write(buffer.Array, buffer.Offset, result.Count);
-                } while (!result.EndOfMessage);
-
-                ms.Seek(0, SeekOrigin.Begin);
-
-
-                using (var reader = new StreamReader(ms, Encoding.UTF8))
-                {
-                    string jsonPayload = await reader.ReadToEndAsync();
-                    var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
-                    if (payload["type"].ToString() == "auth_ok")
-                    {
-                        bool wsRegistered = true;
-                        log.Write("WS Auth OK " + jsonPayload);
-                    }
-                }
-            }
-        }
-
-        static async Task ReceiveSubscribeNotificationsRequest(ClientWebSocket socket)
-        {
-            var buffer = new ArraySegment<byte>(new byte[2048]);
-
-            WebSocketReceiveResult result;
-            using (var ms = new MemoryStream())
-            {
-                do
-                {
-                    result = await socket.ReceiveAsync(buffer, CancellationToken.None);
-                    ms.Write(buffer.Array, buffer.Offset, result.Count);
-                } while (!result.EndOfMessage);
-
-                ms.Seek(0, SeekOrigin.Begin);
-
-
-                using (var reader = new StreamReader(ms, Encoding.UTF8))
-                {
-                    string jsonPayload = await reader.ReadToEndAsync();
-                    var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
-                    log.Write("WS NOTIFICATIONS JOINED " + jsonPayload);
-                }
-            }
+            byte[] buffer = new byte[2048];
+            var result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
+            string stringPayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            log.Write("WS rECIEVED -> " + stringPayload);
+            return JsonSerializer.Deserialize<JsonObject>(stringPayload);
         }
 
         static async Task Receive(ClientWebSocket socket)
@@ -212,21 +158,6 @@ namespace HA_Desktop_Companion.Libraries
             }
         }
 
-        static async Task SubscribeToNotifications(ClientWebSocket socket, string webhook_id)
-        {
-            log.Write("WS NOTIFICATIONS Request Send");
-
-            var body = new
-            {
-                id = interactions,
-                type = "mobile_app/push_notification_channel",
-                webhook_id = webhook_id,
-            };
-
-            await Send(socket, JsonSerializer.Serialize(body));
-            await ReceiveSubscribeNotificationsRequest(socket);
-        }
-
         static async Task Send(ClientWebSocket socket, string data)
         {
             interactions = interactions + 1;
@@ -249,6 +180,15 @@ namespace HA_Desktop_Companion.Libraries
                 resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
 
             return resultUrl;
+        }
+
+        public void Check()
+        {
+            if (socket.State != WebSocketState.Open)
+            {
+                log.Write("WS Closed Reregistering");
+                registerWebSocket();
+            }
         }
     }
 }

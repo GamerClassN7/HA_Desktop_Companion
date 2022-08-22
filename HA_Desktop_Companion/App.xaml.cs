@@ -2,8 +2,8 @@
 using System.Windows;
 using System.Reflection;
 using Forms = System.Windows.Forms;
-//using Windows.UI.Notifications;
-//using XmlDom = Windows.Data.Xml.Dom;
+using Windows.UI.Notifications;
+using XmlDom = Windows.Data.Xml.Dom;
 
 namespace HA_Desktop_Companion
 {
@@ -46,17 +46,17 @@ namespace HA_Desktop_Companion
         public void ShowNotification(string title = "", string body = "", int duration = 20000)
         {
 
-            notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
+           /* notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
             notifyIcon.BalloonTipText = body;
             notifyIcon.BalloonTipTitle = title;
-            notifyIcon.ShowBalloonTip(duration);
+            notifyIcon.ShowBalloonTip(duration);*/
 
-            /*string xml = @"<toast>
+            string xml = @"<toast>
                           <visual>
                             <binding template=""ToastGeneric"">
                               <image placement=""appLogoOverride"" src=""Resources/MicrosoftLogo.png"" />
-                              <text>DotNet Spain Conference</text>
-                              <text>How much do you like my session?</text>
+                              <text>title</text>
+                              <text>body</text>
                             </binding>
                           </visual>
                         </toast>";
@@ -65,7 +65,7 @@ namespace HA_Desktop_Companion
             doc.LoadXml(xml);
 
             ToastNotification toast = new ToastNotification(doc);
-            ToastNotificationManager.CreateToastNotifier().Show(toast);*/
+            ToastNotificationManager.CreateToastNotifier("{sadasdd}").Show(toast);
 
         }
 
