@@ -247,7 +247,6 @@ namespace HA_Desktop_Companion
                             {
                                 methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
                             }
-                            
                             MethodInfo method = sensorsClass.GetMethod(methodName);
                             if (method == null)
                                 continue;
@@ -266,6 +265,8 @@ namespace HA_Desktop_Companion
                                 }
                             }
                             sensorData = method.Invoke(this, parameters.ToArray());
+                            //MessageBox.Show(JsonSerializer.Serialize(parameters));
+                            //MessageBox.Show(JsonSerializer.Serialize(sensorData));
 
                             if (sensorData != null)
                             {

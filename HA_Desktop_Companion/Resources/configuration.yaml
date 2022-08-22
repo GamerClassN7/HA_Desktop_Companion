@@ -1,3 +1,5 @@
+websocket:
+
 sensor:
   - platform: wmic
     wmic_path: Win32_Battery
@@ -21,12 +23,13 @@ sensor:
     entity_category: "diagnostic"
     device_class: battery
   - platform: wmic
-    wmic_path: Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"
+    wmic_path: Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name='\\_TZ.CPUZ'
     wmic_selector: Temperature
     wmic_namespace: \\root\CIMV2
     name: CPU Temperature
     unique_id: cpu_temp
     unit_of_measurement: "°C"
+    accuracy_decimals: 1
     icon: "mdi:cpu-64-bit"
     entity_category: "diagnostic"
   - platform: wmic
