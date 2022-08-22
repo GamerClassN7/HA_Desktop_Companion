@@ -1,5 +1,6 @@
 # HA_Desktop_Companion
 Why did I make this app ? 
+[![Github All Releases](https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg)]()
 
 Cause I don't like existing implementations using MQTT and I took inspiration from awesome ESPhome and its native communication protocol to HA and implemented it my own way :)
 
