@@ -12,6 +12,7 @@
     <SignAssembly>True</SignAssembly>
     <PackageIcon></PackageIcon>
     <StartupObject>HA_Desktop_Companion.App</StartupObject>
+    <ApplicationIcon>Resources\ha_logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

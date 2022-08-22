@@ -19,7 +19,6 @@ namespace HA_Desktop_Companion.Libraries
         private bool wsRegistered = false;
         private bool wsNotificationsSubscribed = false;
 
-
         private string token = "";
         private string webhook_id = "";
         public string base_url = "";

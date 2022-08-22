@@ -19,6 +19,7 @@ namespace HA_Desktop_Companion
         public static string ConigurationPath = @".\configuration.yaml";
         public static HAApi ApiConnectiom;
         public static HAApi_Websocket WebsocketConnectiom;
+        public bool debugEnabled = false;
 
         public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configuration;
 
@@ -26,6 +27,7 @@ namespace HA_Desktop_Companion
         {
             InitializeComponent();
             AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
+
             if (Properties.Settings.Default.SettingUpdate)
             {
                 Properties.Settings.Default.Upgrade();
@@ -71,6 +73,8 @@ namespace HA_Desktop_Companion
             string base_url = Properties.Settings.Default.apiBaseUrl;
             string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
+            debugEnabled = Properties.Settings.Default.debug;
+
 
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
@@ -100,6 +104,7 @@ namespace HA_Desktop_Companion
         {
             var app = Application.Current as App;
             app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
+            this.ShowInTaskbar = false;
             this.Hide();
             e.Cancel = true;
         }
@@ -368,7 +373,7 @@ namespace HA_Desktop_Companion
 
         public void StartWatchdog()
         {
-            if ((debug.IsChecked ?? false))
+            if (debugEnabled)
             {
                 ApiConnectiom.enableDebug();
             }
@@ -379,6 +384,13 @@ namespace HA_Desktop_Companion
             watchdogTimer.Start();
 
             registration.Content = "Registered";
+        }
+
+        private void debug_Checked(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.debug = debug.IsChecked ?? false;
+
+            Properties.Settings.Default.Save();
         }
 
         /*string[] drives = Environment.GetLogicalDrives();

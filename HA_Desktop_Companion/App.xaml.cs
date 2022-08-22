@@ -44,6 +44,7 @@ namespace HA_Desktop_Companion
         private void trayIcon_DoubleClick()
         {
             MainWindow.WindowState = WindowState.Normal;
+            MainWindow.ShowInTaskbar = true;
             MainWindow.Show();
             MainWindow.Activate();
         }

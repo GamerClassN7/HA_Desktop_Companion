@@ -5,26 +5,28 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HA_Desktop_Companion"
         mc:Ignorable="d"
-        Title="MainWindow" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" ShowInTaskbar="False" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="HA_Desktop_Compaino" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
 
 
-    <Grid Background="#FF03A9F4">
+    <Grid Background="#FF03A9F4" Margin="0,0,0,-1">
         <Grid.RowDefinitions>
             <RowDefinition Height="50*"/>
             <RowDefinition Height="50*"/>
             <RowDefinition Height="50*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="70*"/>
             <ColumnDefinition Width="50*"/>
-            <ColumnDefinition Width="100*"/>
+            <ColumnDefinition Width="50*"/>
+            <ColumnDefinition Width="50*"/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="apiBaseUrl" Margin="5,5,5,5" TextWrapping="Wrap" Grid.Column="1" Foreground="White" Background="#FF186384" BorderThickness="0" VerticalContentAlignment="Center">
+        <TextBox x:Name="apiBaseUrl" Margin="5,5,5,5" TextWrapping="Wrap" Grid.Column="1" Foreground="White" Background="#FF186384" BorderThickness="0" VerticalContentAlignment="Center" Grid.ColumnSpan="3">
 
         </TextBox>
-        <PasswordBox x:Name="apiToken" Grid.Column="1" Grid.Row="1" Margin="5,5,5,5" Background="#FF186384" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center"/>
-        <Button x:Name="registration" Margin="111,6,0,7" Click="registration_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="1" Grid.Row="2" HorizontalAlignment="Left" Width="65" BorderThickness="0" Content="Register"/>
-        <CheckBox x:Name="debug" Content="Enable Log" Grid.Column="1"  Grid.Row="2" Margin="6,10,0,13" HorizontalAlignment="Left" Width="85"/>
         <Image x:Name="HALogo" Margin="8,5,9,5" Grid.RowSpan="3" Source="/Resources/ha_logo.png"/>
-        <Button x:Name="close" Content="Close" Margin="182,6,5,7" Click="close_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="1" Grid.Row="2"  BorderThickness="0"/>
+        <PasswordBox x:Name="apiToken" Grid.Column="1" Grid.Row="1" Margin="5,5,5,5" Background="#FF186384" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" Grid.ColumnSpan="3"/>
+        <CheckBox x:Name="debug" Content="Debug"  Grid.Row="2" Margin="5,5,5,5" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="debug_Checked"/>
+        <Button x:Name="registration" Margin="5,5,5,5" Click="registration_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="2" Grid.Row="2" BorderThickness="0" Content="Register"/>
+        <Button x:Name="close" Content="Quit" Margin="5,5,5,5" Click="close_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="3" Grid.Row="2"  BorderThickness="0"/>
     </Grid>
 </Window>
