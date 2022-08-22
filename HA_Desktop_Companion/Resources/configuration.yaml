@@ -49,7 +49,6 @@ sensor:
     entity_category: "diagnostic"
   - platform: wifi
     selector: "State"
-    deselector: ""
     name: Wifi State
     unique_id: wifi_state
     icon: "mdi:wifi"

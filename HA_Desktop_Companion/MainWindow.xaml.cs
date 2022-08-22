@@ -242,6 +242,7 @@ namespace HA_Desktop_Companion
                         {
                             object sensorData = null;
                             string methodName = "query";
+
                             foreach (var methodNameSegment in integration.Key.Split("_"))
                             {
                                 methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
@@ -255,12 +256,15 @@ namespace HA_Desktop_Companion
                             List<object> parameters = new List<object>();
                             foreach (ParameterInfo p in pars)
                             {
-                                if (!senzor.ContainsKey(p.Name) && !p.IsOptional)
-                                    continue;
-
-                                parameters.Insert(p.Position, senzor[p.Name]);
+                                if (senzor.ContainsKey(p.Name))
+                                {
+                                    parameters.Insert(p.Position, senzor[p.Name]);
+                                }
+                                else if (p.IsOptional)
+                                {
+                                    parameters.Insert(p.Position, p.DefaultValue);
+                                }
                             }
-
                             sensorData = method.Invoke(this, parameters.ToArray());
 
                             if (sensorData != null)
