@@ -108,7 +108,7 @@ namespace HA_Desktop_Companion.Libraries
         {
             [DllImport("kernel32")]
             extern static UInt64 GetTickCount64();
-            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalSeconds;
+            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalHours;
         }
 
         public static string queryLocationByIP()

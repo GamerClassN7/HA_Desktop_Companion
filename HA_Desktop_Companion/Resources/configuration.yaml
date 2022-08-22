@@ -66,6 +66,7 @@ sensor:
     name: Uptime
     unique_id: uptime
     icon: "mdi:timer-outline"
+    unit_of_measurement: "h"
     entity_category: "diagnostic"
 
 binary_sensor:
