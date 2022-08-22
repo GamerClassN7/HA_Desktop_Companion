@@ -26,6 +26,19 @@ Feel free to contribute any time :)
 - camera_in_use
 - cpu_temperature (only native api supported)
 - free_ram
+- wmic (You can integrate any wmix query syou want :))
+```yaml
+- platform: wmic
+  wmic_path: Win32_Battery
+  wmic_selector: BatteryStatus
+  wmic_namespace: \\root\CIMV2
+  value_map: "Discharging|On AC|Fully Charged|Low|Critical|Charging|Charging and High|Charging and Low|Undefined|Partially Charged"
+  name: Battery State
+  unique_id: battery_state
+  icon: "mdi:battery-minus"
+  entity_category: "diagnostic"
+  device_class: battery
+``` 
 
 ## Screenshots
 
