@@ -62,12 +62,15 @@ namespace HA_Desktop_Companion.Libraries
 
             process.Start();
             string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            process.Dispose();
+            process.Kill();
 
             try 
             {
                 foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
+                    if (item.Split(":").Length <= 0)
+                        continue;
+
                     string outputResult = Regex.Replace(item.Split(":")[1].Trim(), @"\t|\n|\r", "").Trim();
                     if (!String.IsNullOrEmpty(deselector))
                     {
@@ -116,7 +119,6 @@ namespace HA_Desktop_Companion.Libraries
 
             return exeName;
         }
-
 
         public static double queryUptime()
         {
@@ -174,27 +176,27 @@ namespace HA_Desktop_Companion.Libraries
 
             return false;
         }
-    
+
         public static dynamic convertToType(dynamic variable)
         {
             //ADD double 
             string variableStr = variable.ToString();
-            Debug.WriteLine("BEFORE CONVERSION" + variableStr);
+            //Debug.WriteLine("BEFORE CONVERSION" + variableStr);
             if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase)){
-                Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
                 return bool.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$"))
             {
-                Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^\d$")) {
-                Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);
             }
 
-            Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
+            //Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
             return variableStr;
         }
     }

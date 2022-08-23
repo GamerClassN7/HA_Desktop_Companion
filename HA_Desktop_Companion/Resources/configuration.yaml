@@ -89,9 +89,9 @@ binary_sensor:
     unique_id: location_in_use
     icon: "mdi:crosshairs-gps"
   - platform: wmic
-    wmic_path: Win32_Battery
-    wmic_selector: BatteryStatus
-    wmic_namespace: \\root\CIMV2
+    wmic_path: BatteryStatus
+    wmic_selector: PowerOnline
+    wmic_namespace: \\root\wmi
     name: Is Charging
     unique_id: is_charging
     icon: "mdi:power-plug-off"
