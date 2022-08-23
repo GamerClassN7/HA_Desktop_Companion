@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -86,12 +87,14 @@ namespace HA_Desktop_Companion.Libraries
             return "";
         }
 
-        public static string queryCurrentWindow()
+        public static object queryCurrentWindow()
         {
             [DllImport("user32.dll")]
             static extern IntPtr GetForegroundWindow();
             [DllImport("user32.dll")]
             static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
+            [DllImport("user32.dll")]
+            static extern int GetWindowModuleFileName(IntPtr hWnd, StringBuilder ss, int count);
 
             const int nChar = 256;
             StringBuilder ss = new StringBuilder(nChar);
@@ -99,8 +102,19 @@ namespace HA_Desktop_Companion.Libraries
             IntPtr handle = IntPtr.Zero;
             handle = GetForegroundWindow();
 
-            if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
-            else return "";
+            if  (GetWindowModuleFileName(handle, ss, nChar) <= 0)
+                return "";
+
+            string path = ss.ToString();
+            string exeName = path.Split("\\").Last();
+
+            //TODO: Handle like Attributes for full name and path
+            ss = new StringBuilder(nChar);
+            string fullName = "";
+            if (GetWindowText(handle, ss, nChar) > 0)
+                fullName = ss.ToString();
+
+            return exeName;
         }
 
 

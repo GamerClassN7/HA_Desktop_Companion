@@ -9,6 +9,7 @@ using Microsoft.Win32;
 using System.IO;
 using HA_Desktop_Companion.Libraries;
 using System.Net;
+using System.ComponentModel;
 
 namespace HA_Desktop_Companion
 {
@@ -115,7 +116,7 @@ namespace HA_Desktop_Companion
 
                     StartMainThreadTicker();
 
-                    registration.IsEnabled = false;
+                    //registration.IsEnabled = false;
                 }
                 catch (Exception)
                 {
@@ -306,6 +307,7 @@ namespace HA_Desktop_Companion
                             
                             ParameterInfo[] pars = method.GetParameters();
                             List<object> parameters = new List<object>();
+
                             foreach (ParameterInfo p in pars)
                             {
                                 if (senzor.ContainsKey(p.Name))
@@ -317,12 +319,17 @@ namespace HA_Desktop_Companion
                                     parameters.Insert(p.Position, p.DefaultValue);
                                 }
                             }
+
                             sensorData = method.Invoke(this, parameters.ToArray());
+                  
                             //MessageBox.Show(JsonSerializer.Serialize(parameters));
                             //MessageBox.Show(JsonSerializer.Serialize(sensorData));
 
                             if (sensorData != null)
                             {
+
+                        
+
                                 if (senzor.ContainsKey("value_map"))
                                 {
                                     //Dictionary<string, string> valueMap = senzor["value_map"].Select(item => item.Split('|')).ToDictionary(s => s[0], s => s[1]);
@@ -331,6 +338,8 @@ namespace HA_Desktop_Companion
 
                                     sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
                                 }
+
+                                //Dictionary<string, string> data
 
                                 ApiConnectiom.HASendSenzorData(senzor["unique_id"], Sensors.convertToType(sensorData));
                                 Debug.WriteLine(senzor["unique_id"] + " - " + "Sensor data published");
@@ -375,6 +384,8 @@ namespace HA_Desktop_Companion
             
             log.isEnabled(settings_debug);
         }
+
+
 
         /*string[] drives = Environment.GetLogicalDrives();
         Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
