@@ -356,6 +356,7 @@ namespace HA_Desktop_Companion
 
         public void StartMainThreadTicker()
         {
+
             ApiConnectiom.enableDebug(settings_debug);
 
             DispatcherTimer watchdogTimer = new DispatcherTimer();
@@ -369,7 +370,6 @@ namespace HA_Desktop_Companion
         private void debug_Checked(object sender, RoutedEventArgs e)
         {
             settings_debug = debug.IsChecked ?? false;
-            
             Properties.Settings.Default.debug = settings_debug;
             Properties.Settings.Default.Save();
             
