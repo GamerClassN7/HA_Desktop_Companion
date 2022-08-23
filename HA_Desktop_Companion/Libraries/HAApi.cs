@@ -22,6 +22,7 @@ namespace HA_Desktop_Companion
         public string cloudhook_url         = "";
 
         private bool debug                  = false;
+
         private string senzorBackupFilePath = @".\senzors_backup.json";
 
         public Dictionary<string, object> entitiesCatalog = new();
@@ -46,9 +47,9 @@ namespace HA_Desktop_Companion
              GetHASenzorsCatalog();
         }
 
-        public void enableDebug()
+        public void enableDebug(bool debug = false)
         {
-            debug = true;
+            debug = debug;
         }
         
         private string HAResolveUri()
@@ -155,7 +156,7 @@ namespace HA_Desktop_Companion
             if (File.Exists(senzorBackupFilePath))
             {
                 string fileContent = File.ReadAllText(senzorBackupFilePath, System.Text.Encoding.UTF8);
-                Debug.WriteLine("SENSOR BACKUP LOADET:" + fileContent);
+                //Debug.WriteLine("SENSOR BACKUP LOADET:" + fileContent);
 
                 JsonObject backup = JsonSerializer.Deserialize<JsonObject>(fileContent);
                 foreach (var senzor in backup)
