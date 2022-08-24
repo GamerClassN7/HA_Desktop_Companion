@@ -71,10 +71,11 @@ sensor:
     icon: "mdi:timer-outline"
     unit_of_measurement: "h"
     entity_category: "diagnostic"
+    accuracy_decimals: 0
 
 binary_sensor:
   - platform: consent_store
-    consent_category: webcamera
+    consent_category: webcam
     name: Camera in use
     unique_id: camera_in_use
     icon: "mdi:camera"
@@ -84,7 +85,7 @@ binary_sensor:
     unique_id: microphone_in_use
     icon: "mdi:microphone"
   - platform: consent_store
-    consent_category: webcamera
+    consent_category: location
     name: Location in use
     unique_id: location_in_use
     icon: "mdi:crosshairs-gps"

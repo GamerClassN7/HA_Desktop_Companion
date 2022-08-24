@@ -30,18 +30,50 @@ namespace HA_Desktop_Companion
 
             if (!createdNew)
             {
-                Application.Current.Shutdown();
+                ShowNotification("Already Running !!!");
+                Environment.Exit(0);
             }
+
+            System.ComponentModel.Container components = new System.ComponentModel.Container();
+            Forms.ContextMenuStrip contextMenu = new Forms.ContextMenuStrip();
+
+            Forms.ToolStripMenuItem showItem = new Forms.ToolStripMenuItem();
+            showItem.Text = "Show";
+            showItem.Click += (s, args) => showItem_Click();
+
+            contextMenu.Items.Add(showItem);
+
+ 
+            Forms.ToolStripMenuItem quitItem = new Forms.ToolStripMenuItem();
+            quitItem.Text = "Exit";
+            quitItem.Click += (s, args) => quitItem_Click();
+
+            contextMenu.Items.Add(quitItem);
 
             notifyIcon =  new Forms.NotifyIcon();
             notifyIcon.Icon = Resource1.ha_logo;
             notifyIcon.Visible = true;
             notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
+            notifyIcon.ContextMenuStrip = contextMenu;
 
             base.OnActivated(e);
         }
 
         private void trayIcon_DoubleClick()
+        {
+            MainWindow.WindowState = WindowState.Normal;
+            MainWindow.ShowInTaskbar = true;
+            MainWindow.Show();
+            MainWindow.Activate();
+        }
+
+        private void quitItem_Click()
+        {
+            notifyIcon.Dispose();
+            Environment.Exit(0);
+        }
+
+        private void showItem_Click()
         {
             MainWindow.WindowState = WindowState.Normal;
             MainWindow.ShowInTaskbar = true;

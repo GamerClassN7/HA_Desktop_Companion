@@ -83,11 +83,18 @@ namespace HA_Desktop_Companion.Libraries
 
             if (!response.IsSuccessStatusCode)
             {
-                log.Write("API <- " + response.StatusCode);
+                log.Write("API CODE <- " + response.StatusCode);
                 return JsonSerializer.Deserialize<JsonObject>("{}");
             }
 
             string result = response.Content.ReadAsStringAsync().Result;
+
+            if (String.IsNullOrEmpty(result))
+            {
+                log.Write("API <- No BODY");
+                return JsonSerializer.Deserialize<JsonObject>("{}");
+            }
+
             log.Write("API <- " +JsonSerializer.Serialize(result, options));
 
             return JsonSerializer.Deserialize<JsonObject>(result);
@@ -187,8 +194,15 @@ namespace HA_Desktop_Companion.Libraries
     
         public void addHaEntitiData(string uniqueId, object state, string type = "sensor", string icon = "")
         {
+            /*Dictionary<string, object> actualFrame = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).ToList().Find(o => o["unique_id"] == uniqueId);
+            if (actualFrame != null)
+            {
+                //TODO: Leave newest value;
+                log.Write("API DATA SKIP -> " + uniqueId + " - " + actualFrame["state"] + ">" + state + "-" + " Only one Unique_ID alowed !");
+                return;
+            }*/
+
             Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
-         
             if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
             {
                 log.Write("API DATA SKIP -> " + uniqueId + " - " + state + "==" + oldFrame["state"]  + "-" + "SAME !");
@@ -225,7 +239,7 @@ namespace HA_Desktop_Companion.Libraries
             return true;
 
             return false;*/
-            entitiesDataOld = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).Union(entitiesDataOld).ToList();
+            entitiesDataOld = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).Concat(entitiesDataOld).GroupBy(x => x["unique_id"]).Select(x => x.Last()).ToList();
             entitiesData.Clear();
 
             return true;
