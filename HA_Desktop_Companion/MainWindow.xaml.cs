@@ -19,8 +19,8 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string conigurationPath = @".\configuration.yaml";
-        public static string logFilenPath = @".\log.txt";
+        public static string conigurationPath = @"/configuration.yaml";
+        public static string logFilenPath = @"/log.txt";
 
         public static HAApi_v2 ApiConnectiom2;
         public static HAApi_Websocket WebsocketConnectiom;
@@ -50,8 +50,8 @@ namespace HA_Desktop_Companion
             settings_debug = Properties.Settings.Default.debug;
 
             //Initialize Config and Log
-            log = new Logging(logFilenPath);
-            configurationClass = new Configuration(conigurationPath);
+            log = new Logging(Directory.GetCurrentDirectory() + logFilenPath);
+            configurationClass = new Configuration(Directory.GetCurrentDirectory() + conigurationPath);
         }
 
         private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
