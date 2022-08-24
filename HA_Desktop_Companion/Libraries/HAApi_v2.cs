@@ -81,6 +81,12 @@ namespace HA_Desktop_Companion.Libraries
             using var httpClient = new HttpClient();
             var response = httpClient.Send(request);
 
+            if (!response.IsSuccessStatusCode)
+            {
+                log.Write("API <- " + response.StatusCode);
+                return JsonSerializer.Deserialize<JsonObject>("{}");
+            }
+
             string result = response.Content.ReadAsStringAsync().Result;
             log.Write("API <- " +JsonSerializer.Serialize(result, options));
 
@@ -117,6 +123,9 @@ namespace HA_Desktop_Companion.Libraries
 
                 JsonObject response = task.Result;
                 log.Write(JsonSerializer.Serialize(response));
+
+                if (JsonSerializer.Serialize(response) == "{}")
+                    return false;
 
                 api_webhook_id = response["webhook_id"].ToString();
 

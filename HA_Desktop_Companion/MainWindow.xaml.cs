@@ -76,7 +76,15 @@ namespace HA_Desktop_Companion
             debug.IsChecked = settings_debug;
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
+            version.Content = Assembly.GetEntryAssembly().GetName().Version.ToString();
             Title = hostname;
+
+            //check if inputs are not null
+            if (String.IsNullOrEmpty(apiToken.Password) && String.IsNullOrEmpty(apiBaseUrl.Text))
+            {
+                log.Write("MAIN - Token od URL => Null");
+                return;
+            }
 
             //Ping the Server address
             int timeout = 50;
@@ -138,16 +146,19 @@ namespace HA_Desktop_Companion
 
         private async void registrationAsync_Click(object sender, RoutedEventArgs e)
         {
+            //Werifi that Inputs are Set
+            if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
+            {
+                log.Write("MAIN - Token od URL => Null");
+                return;
+            }
+
             //Disable data reporting if running
             if (watchdogTimer.IsEnabled)
             {
                 watchdogTimer.Stop();
                 log.Write("MAIN - Watchdog Stoped");
             }
-
-            //Werifi that Inputs are Set
-            if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
-                return;
 
             //Get Info for Device Registration
             string hostname = Dns.GetHostName() + "_DEBUG";
