@@ -6,7 +6,6 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Text.Json.Nodes;
 using System.Threading;
-using System.Diagnostics;
 using System.Windows;
 
 namespace HA_Desktop_Companion.Libraries
@@ -14,11 +13,10 @@ namespace HA_Desktop_Companion.Libraries
 
     public class HAApi_Websocket
     {
-        private static Logging log = new Logging(".\\log.txt");
+        private Logging log;
 
         private bool wsRegistered = false;
         private bool wsNotificationsSubscribed = false;
-
 
         private string token = "";
         private string webhook_id = "";
@@ -29,13 +27,14 @@ namespace HA_Desktop_Companion.Libraries
         private static int interactions = 2;
         private ClientWebSocket socket = new ClientWebSocket();
 
-        public HAApi_Websocket(string baseUrl, string apiToken, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
+        public HAApi_Websocket(string baseUrl, string apiToken, Logging logInstance, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
         {
             webhook_id = webHookId;
             token = apiToken;
             base_url = baseUrl;
             remote_ui_url = remoteUiUrl;
             cloudhook_url = cloudhookUrl;
+            log = logInstance;
 
             registerWebSocket();
         }
@@ -52,13 +51,13 @@ namespace HA_Desktop_Companion.Libraries
                 return;
             }
 
-            var BODY = new
+            var body = new
             {
                 type = "auth",
                 access_token = token
             };
-            log.Write("WS Send AUTH -> " + JsonSerializer.Serialize(BODY));
-            socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(BODY))), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+            log.Write("WS -> " + JsonSerializer.Serialize(body));
+            socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(body))), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
             payload = recieveJsonObjectFromWS();
             if (payload["type"].ToString() != "auth_ok")
@@ -78,7 +77,8 @@ namespace HA_Desktop_Companion.Libraries
             };
 
             socket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(notificationRegReqBody))), WebSocketMessageType.Text, true, CancellationToken.None).Wait();
-            log.Write("WS NOTIFICATIONS Request Send");
+            log.Write("WS -> " + JsonSerializer.Serialize(notificationRegReqBody));
+
 
             payload = recieveJsonObjectFromWS();
             if (payload["success"].ToString() != "true")
@@ -98,11 +98,11 @@ namespace HA_Desktop_Companion.Libraries
             byte[] buffer = new byte[2048];
             var result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
             string stringPayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            log.Write("WS rECIEVED -> " + stringPayload);
+            log.Write("WS <- " + stringPayload);
             return JsonSerializer.Deserialize<JsonObject>(stringPayload);
         }
 
-        static async Task Receive(ClientWebSocket socket)
+        private async Task Receive(ClientWebSocket socket)
         {
             try
             {
@@ -129,7 +129,7 @@ namespace HA_Desktop_Companion.Libraries
                             string jsonPayload = await reader.ReadToEndAsync();
 
                             var payload = JsonSerializer.Deserialize<JsonObject>(jsonPayload);
-                            log.Write("WS PAYLOAD " + payload);
+                            log.Write("WS <- " + payload);
 
                             if (payload["type"].ToString() == "event")
                             {
@@ -138,7 +138,6 @@ namespace HA_Desktop_Companion.Libraries
                                     string msg_text = payload["event"].AsObject()["message"].ToString();
                                     string msg_title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
                                     string msg_image = "";
-
 
                                     if (payload["event"].AsObject().ContainsKey("title"))
                                     {

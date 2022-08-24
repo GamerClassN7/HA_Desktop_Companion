@@ -7,11 +7,12 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
     <AssemblyVersion>0.0.0.1</AssemblyVersion>
-    <FileVersion>0.0.0.2</FileVersion>
+    <FileVersion>0.0.1-alpha-6 </FileVersion>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <SignAssembly>True</SignAssembly>
     <PackageIcon></PackageIcon>
     <StartupObject>HA_Desktop_Companion.App</StartupObject>
+    <ApplicationIcon>Resources\ha_logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,10 @@
     <Content Include="Resources\ha_logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="bin\Release\net6.0-windows10.0.17763.0\configuration.yaml" />
   </ItemGroup>
 
   <ItemGroup>

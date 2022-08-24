@@ -8,6 +8,9 @@ using System.Diagnostics;
 using Microsoft.Win32;
 using System.IO;
 using HA_Desktop_Companion.Libraries;
+using System.Net;
+using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace HA_Desktop_Companion
 {
@@ -16,16 +19,21 @@ namespace HA_Desktop_Companion
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static Logging log = new Logging(".\\log.txt");
         public static string ConigurationPath = @".\configuration.yaml";
-        public static HAApi ApiConnectiom;
+        public static HAApi_v2 ApiConnectiom2;
         public static HAApi_Websocket WebsocketConnectiom;
 
         public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configuration;
 
+        private bool settings_debug = false;
+
+        DispatcherTimer watchdogTimer = new DispatcherTimer();
+
         public MainWindow()
         {
             InitializeComponent();
-            AppDomain.CurrentDomain.UnhandledException += AllUnhandledExceptions;
+
             if (Properties.Settings.Default.SettingUpdate)
             {
                 Properties.Settings.Default.Upgrade();
@@ -33,17 +41,15 @@ namespace HA_Desktop_Companion
                 Properties.Settings.Default.SettingUpdate = false;
                 Properties.Settings.Default.Save();
             }
+
+            settings_debug = Properties.Settings.Default.debug;
         }
 
         private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
         {
             var ex = (Exception)e.ExceptionObject;
             MessageBox.Show(ex.ToString());
-            using (StreamWriter sw = File.AppendText(@"C:\Users\JonatanRek\Desktop\log.txt"))
-            {
-                sw.WriteLine(JsonSerializer.Serialize(ex.ToString()));
-            }
-            //Environment.Exit(System.Runtime.InteropServices.Marshal.GetHRForException(ex));
+            log.Write(ex.ToString());
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -52,54 +58,191 @@ namespace HA_Desktop_Companion
             Configuration configurationClass = new Configuration(ConigurationPath);
             configuration = configurationClass.GetConfigurationData();
 
-            /*
-                AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
-                WindowsPrincipal currentPrincipal = (WindowsPrincipal) Thread.CurrentPrincipal;
-
-                if (currentPrincipal.IsInRole("Administrators"))
-                {
-                    // continue programm
-                }
-                else
-                {
-                    // throw exception/show errorMessage - exit programm
-                }
-             */
-
+            //Load Settings
             string decodedApiToken = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiToken));
             string decodedWebhookId = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiWebhookId));
             string base_url = Properties.Settings.Default.apiBaseUrl;
             string remote_ui_url = Properties.Settings.Default.apiRemoteUiUrl;
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
 
+            //Get Info for Device Registration
+            string hostname = Dns.GetHostName() + "_DEBUG";
+            string maufactorer = Sensors.queryWmic("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
+            string model = Sensors.queryWmic("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
+            string os = Sensors.queryWmic("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
+            string osVersion = Environment.OSVersion.ToString();
+
+            //Set UI
+            debug.IsChecked = settings_debug;
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
+            Title = hostname;
 
-            if (decodedWebhookId != "")
+            //Ping the Server address
+            int timeout = 50;
+            do
             {
-                try
+                if (timeout <= 0)
                 {
-                    ApiConnectiom = new HAApi(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
-                    WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
-
-                    string hostname = System.Net.Dns.GetHostName() + "";
-                    Title = hostname;
-
-                    StartWatchdog();
-
-                    //registration.IsEnabled = false;
+                    MessageBox.Show("Unable to connect to API on URL:" + base_url);
+                    registration.IsEnabled = true;
+                    return;
                 }
-                catch (Exception)
+
+                System.Threading.Thread.Sleep(500);
+                registration.Content = "Connecting";
+                timeout--;
+            } while (!HAcheckConection(base_url));
+
+            //Initialize API Class
+            ApiConnectiom2 = new HAApi_v2(base_url, decodedApiToken, log, decodedWebhookId, remote_ui_url, cloudhook_url);
+            ApiConnectiom2.enableDebug(true);
+
+            if (ApiConnectiom2.registerHaDevice(hostname.ToLower(), hostname, model, maufactorer, os, osVersion))
+            {
+                //Start WatchDog Timer
+                StartMainThreadTicker();
+
+                //Initialize Web Socket
+                WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, log, decodedWebhookId, remote_ui_url, cloudhook_url);
+
+                //registration.IsEnabled = false;
+            }
+            else
+            {
+                registration.IsEnabled = true;
+            }
+        }
+        
+        private static bool HAcheckConection(string url)
+        {
+            //TODO: MOVE TO API class
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Timeout = 5000;
+            request.Method = "GET"; // As per Lasse's comment
+            try
+            {
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
-                    //registration.IsEnabled = true;
+                    log.Write("API -> connection Werified:" + url);
+                    return response.StatusCode == HttpStatusCode.OK;
                 }
             }
+            catch (WebException ex)
+            {
+                log.Write("API -> Failed to connect to:" + url + " " + ex.Message);
+                return false;
+            }
+            return false;
+        }
+
+        private async void registrationAsync_Click(object sender, RoutedEventArgs e)
+        {
+            //Disable data reporting if running
+            if (watchdogTimer.IsEnabled)
+            {
+                watchdogTimer.Stop();
+                log.Write("MAIN - Watchdog Stoped");
+            }
+
+            //Werifi that Inputs are Set
+            if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
+                return;
+
+            //Get Info for Device Registration
+            string hostname = Dns.GetHostName() + "_DEBUG";
+            string maufactorer = Sensors.queryWmic("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
+            string model = Sensors.queryWmic("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
+            string os = Sensors.queryWmic("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
+            string osVersion = Environment.OSVersion.ToString();
+
+            //Set UI
+            Title = hostname;
+
+            //Ping the Server address
+            int timeout = 50;
+            do
+            {
+                if (timeout <= 0)
+                {
+                    MessageBox.Show("Unable to connect to API on URL:" + apiBaseUrl.Text);
+                    registration.IsEnabled = true;
+                    return;
+                }
+
+                System.Threading.Thread.Sleep(500);
+                registration.Content = "Connecting";
+                timeout--;
+            } while (!HAcheckConection(apiBaseUrl.Text));
+
+            //Initialize API Class
+            ApiConnectiom2 = new HAApi_v2(apiBaseUrl.Text, apiToken.Password, log);
+            ApiConnectiom2.enableDebug(true);
+
+            if (ApiConnectiom2.registerHaDevice(hostname.ToLower(), hostname, model, maufactorer, os, osVersion))
+            {
+                await RegisterApiDataAsync(ApiConnectiom2);
+
+                //Save Settings
+                Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
+                Properties.Settings.Default.apiToken = Encryption.EncryptString(Encryption.ToSecureString(apiToken.Password));
+                Properties.Settings.Default.apiWebhookId = Encryption.EncryptString(Encryption.ToSecureString(ApiConnectiom2.api_webhook_id));
+                Properties.Settings.Default.apiRemoteUiUrl = ApiConnectiom2.api_remote_ui_url;
+                Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom2.api_cloudhook_url;
+                Properties.Settings.Default.Save();
+
+                //Register WatchDog Timer
+                RegisterAutostart();
+                StartMainThreadTicker();
+
+                //Initialize Web Socket
+                WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, ApiConnectiom2.api_webhook_id, ApiConnectiom2.api_remote_ui_url, ApiConnectiom2.api_cloudhook_url);
+
+                //Modifi UI
+                registration.IsEnabled = false;
+            }
+            else
+            {
+                registration.IsEnabled = true;
+            }
+        }
+
+        private static void RegisterAutostart()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
+                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
+                key.Close();
+            }
+        }
+
+        public void StartMainThreadTicker()
+        {
+            watchdogTimer.Tick += new EventHandler(MainThreadTickAsync);
+            watchdogTimer.Interval = new TimeSpan(0, 0, 10);
+            watchdogTimer.Start();
+
+            registration.Content = "Registered";
+        }
+
+        private async void MainThreadTickAsync(object sender, EventArgs e)
+        {
+            //TODO: Do not discover battery id PC
+
+            await sendApiDataParallelAsync(ApiConnectiom2);
+
+            WebsocketConnectiom.Check();
+
+            //ApiConnectiom.HASendSenzorLocation();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var app = Application.Current as App;
             app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
+            this.ShowInTaskbar = false;
             this.Hide();
             e.Cancel = true;
         }
@@ -109,44 +252,109 @@ namespace HA_Desktop_Companion
             System.Windows.Application.Current.Shutdown();
         }
 
-        private void registration_Click(object sender, RoutedEventArgs e)
+        private void debug_Checked(object sender, RoutedEventArgs e)
         {
-            if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
-            {
-                return;
-            }
-
-            string hostname = System.Net.Dns.GetHostName() + "";
-            string maufactorer = Sensors.queryWMIC("Win32_ComputerSystem", "Manufacturer", @"\\root\CIMV2");
-            string model = Sensors.queryWMIC("Win32_ComputerSystem", "Model", @"\\root\CIMV2");
-            string os = Sensors.queryWMIC("Win32_OperatingSystem", "Caption", @"\\root\CIMV2");
-
-            Title = hostname;
-
-            ApiConnectiom = new HAApi(apiBaseUrl.Text, apiToken.Password, hostname.ToLower(), hostname, model, maufactorer, os, Environment.OSVersion.ToString());
-
-            WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, ApiConnectiom.webhook_id);
-
-            SaveSettings();
-            SenzorRegistration();
-            RegisterAutostart();
-            StartWatchdog();
-
-            //registration.IsEnabled = false;
-        }
-
-        private void SaveSettings()
-        {
-            Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
-            Properties.Settings.Default.apiToken = Encryption.EncryptString(Encryption.ToSecureString(apiToken.Password));
-            Properties.Settings.Default.apiWebhookId = Encryption.EncryptString(Encryption.ToSecureString(ApiConnectiom.webhook_id));
-            Properties.Settings.Default.apiRemoteUiUrl = ApiConnectiom.remote_ui_url;
-            Properties.Settings.Default.apiCloudhookUrl = ApiConnectiom.cloudhook_url;
-
+            settings_debug = debug.IsChecked ?? false;
+            Properties.Settings.Default.debug = settings_debug;
             Properties.Settings.Default.Save();
         }
 
-        private static void SenzorRegistration()
+        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
+        {
+            object sensorData = null;
+            string methodName = "query";
+
+            foreach (var methodNameSegment in integration.Split("_"))
+            {
+                methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
+            }
+
+            MethodInfo method = sensorsClass.GetMethod(methodName);
+            if (method == null)
+                return false;
+
+            ParameterInfo[] pars = method.GetParameters();
+            List<object> parameters = new List<object>();
+
+            foreach (ParameterInfo p in pars)
+            {
+                if (sensor.ContainsKey(p.Name))
+                {
+                    parameters.Insert(p.Position, sensor[p.Name]);
+                }
+                else if (p.IsOptional)
+                {
+                    parameters.Insert(p.Position, p.DefaultValue);
+                }
+            }
+
+            sensorData = method.Invoke(this, parameters.ToArray());
+
+            if (sensorData != null)
+            {
+                if (sensor.ContainsKey("value_map"))
+                {
+                    string[] valueMap = sensor["value_map"].Split("|");
+                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                }
+
+                sensorData = Sensors.convertToType(sensorData);
+
+                if (sensorType == "binary_sensor")
+                {
+                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "binary_sensor");
+                }
+                else
+                {
+                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData);
+                }
+            }
+
+            return true;
+        }
+        
+        private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
+        {
+            var sensorsClass = typeof(Sensors);
+            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            senzorTypes.Add("sensor", configuration["sensor"]);
+            List<Task<bool>> tasks = new List<Task<bool>>();
+
+            //Add Binary Senzors to Dictionary
+            if (configuration.ContainsKey("binary_sensor"))
+                senzorTypes.Add("binary_sensor", configuration["binary_sensor"]);
+
+            //Parse each Senzor and aquire data
+            foreach (var item in senzorTypes)
+            {
+                string senzorType = item.Key;
+                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                foreach (var platform in platforms)
+                {
+                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                    foreach (var integration in integrations)
+                    {
+                        List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
+                        foreach (var sensor in sensors)
+                        {
+                            tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                        }
+                    }
+                }
+            }
+
+            //Finish all tasks
+            var results = await Task.WhenAll(tasks);
+            /*foreach (var item in results)
+            {
+                //Debug.WriteLine((string) item.ToString());
+            }*/
+
+            //Send Data
+            ApiConnection.sendHaEntitiData();
+        }
+
+        private async Task RegisterApiDataAsync(HAApi_v2 ApiConnection)
         {
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
@@ -168,220 +376,34 @@ namespace HA_Desktop_Companion
                         foreach (var senzor in senzors)
                         {
 
-                            //MessageBox.Show(JsonSerializer.Serialize(senzor));
-
-                            //MessageBox.Show(senzor["name"]);
-                            string device_class = "";
+                            string deviceClass = "";
                             if (senzor.ContainsKey("device_class"))
-                                device_class = senzor["device_class"];
+                                deviceClass = senzor["device_class"];
 
-                            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) != 2 && device_class == "battery")
+                            if (Int32.Parse(Sensors.queryWmic("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) != 2 && deviceClass == "battery")
                                 continue;
+
+                            string entityCategory = "";
+                            if (senzor.ContainsKey("entity_category"))
+                                entityCategory = senzor["entity_category"];
 
                             string icon = "";
                             if (senzor.ContainsKey("icon"))
                                 icon = senzor["icon"];
 
-                            string unit_of_measurement = "";
+                            string unitOfMeasurement = "";
                             if (senzor.ContainsKey("unit_of_measurement"))
-                                unit_of_measurement = senzor["unit_of_measurement"];
+                                unitOfMeasurement = senzor["unit_of_measurement"];
 
-                            string entity_category = "";
-                            if (senzor.ContainsKey("entity_category"))
-                                entity_category = senzor["entity_category"];
-
+                            object defaultValue = 0;
                             if (senzorType == "binary_sensor")
-                            {
-                                ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], false, device_class, unit_of_measurement, icon, entity_category);
-                            }
-                            else
-                            {
-                                ApiConnectiom.HASenzorRegistration(senzor["unique_id"], senzor["name"], 0, device_class, unit_of_measurement, icon, entity_category);
-                            }
-                            Debug.WriteLine(senzor["unique_id"] + " - " + "Sensor Sucesfully Loadet");
+                                defaultValue = false;
+
+                            await Task.Run(() => ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], defaultValue, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement));
                         }
                     }
                 }
             }
         }
-
-        private void dispatcherTimer_Tick(object sender, EventArgs e)
-        {
-            //Make Use of reflections
-            //var type = Type.GetType(type_name);
-
-            if (Int32.Parse(Sensors.queryWMIC("Win32_ComputerSystem", "PCSystemType", @"\\root\CIMV2")) == 2)
-            {
-                try
-                {
-                    var batterypercent = Sensors.queryWMIC("Win32_Battery", "EstimatedChargeRemaining", @"\\root\CIMV2");
-                    ApiConnectiom.HASendSenzorData("battery_level", Sensors.convertToType(batterypercent));
-
-                    var batterystate = "Unknown";
-                    Dictionary<int, string> StatusCodes = new Dictionary<int, string>();
-                    StatusCodes.Add(1, "Discharging");
-                    StatusCodes.Add(2, "On AC");
-                    StatusCodes.Add(3, "Fully Charged");
-                    StatusCodes.Add(4, "Low");
-                    StatusCodes.Add(5, "Critical");
-                    StatusCodes.Add(6, "Charging");
-                    StatusCodes.Add(7, "Charging and High");
-                    StatusCodes.Add(8, "Charging and Low");
-                    StatusCodes.Add(9, "Undefined");
-                    StatusCodes.Add(10, "Partially Charged");
-
-                    int state = Int32.Parse(Sensors.queryWMIC("Win32_Battery", "BatteryStatus", @"\\root\CIMV2"));
-                    if (state <= StatusCodes.Count)
-                    {
-                        batterystate = StatusCodes[state];
-                    }
-                    ApiConnectiom.HASendSenzorData("battery_state", Sensors.convertToType(batterystate));
-                }
-                catch (Exception)
-                {
-
-                }
-
-                try
-                {
-                    var PowerLineStatus = Sensors.queryWMIC("BatteryStatus", "PowerOnline", @"\\root\wmi");
-                    ApiConnectiom.HASendSenzorData("is_charging", Sensors.convertToType(PowerLineStatus));
-                }
-                catch (Exception)
-                {
-
-                }
-            }
-            try
-            {
-                var wifistate = Sensors.queryWifi("SSID", "BSSID");
-                ApiConnectiom.HASendSenzorData("wifi_state", Sensors.convertToType(wifistate));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var wifissid = Sensors.queryWifi("State");
-                ApiConnectiom.HASendSenzorData("wifi_ssid", Sensors.convertToType(wifissid));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var windowname = Sensors.queryActiveWindowTitle();
-                ApiConnectiom.HASendSenzorData("currently_active_window", Sensors.convertToType(windowname));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var cameraConsent = Sensors.queryConsetStore("webcam");
-                ApiConnectiom.HASendSenzorData("camera_in_use", Sensors.convertToType(cameraConsent));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var microphoneConsent = Sensors.queryConsetStore("microphone");
-                ApiConnectiom.HASendSenzorData("microphone_in_use", Sensors.convertToType(microphoneConsent));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var locationConsent = Sensors.queryConsetStore("location");
-                ApiConnectiom.HASendSenzorData("location_in_use", Sensors.convertToType(locationConsent));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var cpuTemp = (Math.Round(Int32.Parse(Sensors.queryWMIC("Win32_PerfFormattedData_Counters_ThermalZoneInformation.Name=\"\\\\_TZ.CPUZ\"", "Temperature", @"\\root\CIMV2")) - 273.15, 2));
-                ApiConnectiom.HASendSenzorData("cpu_temp", Sensors.convertToType(cpuTemp));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var cpuUsage = Sensors.queryWMIC("Win32_Processor", "LoadPercentage", @"\\root\CIMV2");
-                ApiConnectiom.HASendSenzorData("cpu_usage", Sensors.convertToType(cpuUsage));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                var ramFree = Sensors.queryWMIC("Win32_OperatingSystem", "FreePhysicalMemory", @"\\root\CIMV2");
-                ApiConnectiom.HASendSenzorData("free_ram", Sensors.convertToType(ramFree));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                ApiConnectiom.HASendSenzorData("uptime", Sensors.convertToType(Sensors.queryMachineUpTime().TotalSeconds));
-            }
-            catch (Exception)
-            {
-
-            }
-            try
-            {
-                ApiConnectiom.HASendSenzorData("update_available", (false));
-            }
-            catch (Exception)
-            {
-
-            }
-
-            WebsocketConnectiom.Check();
-
-            //ApiConnectiom.HASendSenzorLocation();
-        }
-
-        private static void RegisterAutostart()
-        {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
-            {
-                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
-                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
-                key.Close();
-            }
-        }
-
-        public void StartWatchdog()
-        {
-            if ((debug.IsChecked ?? false))
-            {
-                ApiConnectiom.enableDebug();
-            }
-
-            DispatcherTimer watchdogTimer = new DispatcherTimer();
-            watchdogTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-            watchdogTimer.Interval = new TimeSpan(0, 0, 10);
-            watchdogTimer.Start();
-
-            registration.Content = "Registered";
-        }
-
-        /*string[] drives = Environment.GetLogicalDrives();
-        Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
     }
 }

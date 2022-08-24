@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -14,13 +15,13 @@ namespace HA_Desktop_Companion.Libraries
 {
     class Sensors
     {
-        public static string queryWMIC(string path, string selector, string wmiNmaespace = @"\\root\wmi")
+        public static string queryWmic(string wmic_path, string wmic_selector, string wmic_namespace = @"\\root\wmi")
         {
             var process = new Process
             {
                 StartInfo = {
                     FileName = "wmic.exe",
-                    Arguments = ("/namespace:\"" + wmiNmaespace + "\" path " + path + " get " + selector),
+                    Arguments = ("/namespace:\"" + wmic_namespace + "\" path " + wmic_path + " get " + wmic_selector),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -35,7 +36,7 @@ namespace HA_Desktop_Companion.Libraries
             {
                 for (int line = 0; line < output.Length; line++)
                 {
-                    if (output[line].Contains(selector))
+                    if (output[line].Contains(wmic_selector))
                     {
                         string outputResult = Regex.Replace(output[line + 1], @"\t|\n|\r", "").Trim();
                         return outputResult;
@@ -61,12 +62,15 @@ namespace HA_Desktop_Companion.Libraries
 
             process.Start();
             string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            process.Dispose();
+            process.Kill();
 
             try 
             {
                 foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
+                    if (item.Split(":").Length <= 0)
+                        continue;
+
                     string outputResult = Regex.Replace(item.Split(":")[1].Trim(), @"\t|\n|\r", "").Trim();
                     if (!String.IsNullOrEmpty(deselector))
                     {
@@ -86,12 +90,14 @@ namespace HA_Desktop_Companion.Libraries
             return "";
         }
 
-        public static string queryActiveWindowTitle()
+        public static object queryCurrentWindow()
         {
             [DllImport("user32.dll")]
             static extern IntPtr GetForegroundWindow();
             [DllImport("user32.dll")]
             static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
+            [DllImport("user32.dll")]
+            static extern int GetWindowModuleFileName(IntPtr hWnd, StringBuilder ss, int count);
 
             const int nChar = 256;
             StringBuilder ss = new StringBuilder(nChar);
@@ -99,16 +105,26 @@ namespace HA_Desktop_Companion.Libraries
             IntPtr handle = IntPtr.Zero;
             handle = GetForegroundWindow();
 
-            if (GetWindowText(handle, ss, nChar) > 0) return ss.ToString();
-            else return "";
+            if  (GetWindowModuleFileName(handle, ss, nChar) <= 0)
+                return "";
+
+            string path = ss.ToString();
+            string exeName = path.Split("\\").Last();
+
+            //TODO: Handle like Attributes for full name and path
+            ss = new StringBuilder(nChar);
+            string fullName = "";
+            if (GetWindowText(handle, ss, nChar) > 0)
+                fullName = ss.ToString();
+
+            return exeName;
         }
 
-
-        public static TimeSpan queryMachineUpTime()
+        public static double queryUptime()
         {
             [DllImport("kernel32")]
             extern static UInt64 GetTickCount64();
-            return (TimeSpan.FromMilliseconds(GetTickCount64()));
+            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalHours;
         }
 
         public static string queryLocationByIP()
@@ -124,11 +140,11 @@ namespace HA_Desktop_Companion.Libraries
             }
         }
 
-        public static bool queryConsetStore(string category = "webcam")
+        public static bool queryConsentStore(string consent_category)
         {
             string[] consentStores = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\" ,
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + category + @"\NonPackaged" 
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged" 
             };
 
             foreach (string path in consentStores)
@@ -160,27 +176,27 @@ namespace HA_Desktop_Companion.Libraries
 
             return false;
         }
-    
+
         public static dynamic convertToType(dynamic variable)
         {
             //ADD double 
             string variableStr = variable.ToString();
-            Debug.WriteLine("BEFORE CONVERSION" + variableStr);
+            //Debug.WriteLine("BEFORE CONVERSION" + variableStr);
             if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase)){
-                Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
                 return bool.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$"))
             {
-                Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^\d$")) {
-                Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
+                //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);
             }
 
-            Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
+            //Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
             return variableStr;
         }
     }
