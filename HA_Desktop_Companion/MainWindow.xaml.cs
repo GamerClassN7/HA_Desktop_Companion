@@ -10,6 +10,7 @@ using System.IO;
 using HA_Desktop_Companion.Libraries;
 using System.Net;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace HA_Desktop_Companion
 {
@@ -26,6 +27,8 @@ namespace HA_Desktop_Companion
         public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configuration;
 
         private bool settings_debug = false;
+
+        DispatcherTimer watchdogTimer = new DispatcherTimer();
 
         public MainWindow()
         {
@@ -46,10 +49,7 @@ namespace HA_Desktop_Companion
         {
             var ex = (Exception)e.ExceptionObject;
             MessageBox.Show(ex.ToString());
-            using (StreamWriter sw = File.AppendText(@"C:\Users\JonatanRek\Desktop\log.txt"))
-            {
-                sw.WriteLine(JsonSerializer.Serialize(ex.ToString()));
-            }
+            log.Write(ex.ToString());
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -95,7 +95,7 @@ namespace HA_Desktop_Companion
             } while (!HAcheckConection(base_url));
 
             //Initialize API Class
-            ApiConnectiom2 = new HAApi_v2(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
+            ApiConnectiom2 = new HAApi_v2(base_url, decodedApiToken, log, decodedWebhookId, remote_ui_url, cloudhook_url);
             ApiConnectiom2.enableDebug(true);
 
             if (ApiConnectiom2.registerHaDevice(hostname.ToLower(), hostname, model, maufactorer, os, osVersion))
@@ -104,7 +104,7 @@ namespace HA_Desktop_Companion
                 StartMainThreadTicker();
 
                 //Initialize Web Socket
-                WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, decodedWebhookId, remote_ui_url, cloudhook_url);
+                WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, log, decodedWebhookId, remote_ui_url, cloudhook_url);
 
                 //registration.IsEnabled = false;
             }
@@ -136,8 +136,15 @@ namespace HA_Desktop_Companion
             return false;
         }
 
-        private void registration_Click(object sender, RoutedEventArgs e)
+        private async void registrationAsync_Click(object sender, RoutedEventArgs e)
         {
+            //Disable data reporting if running
+            if (watchdogTimer.IsEnabled)
+            {
+                watchdogTimer.Stop();
+                log.Write("MAIN - Watchdog Stoped");
+            }
+
             //Werifi that Inputs are Set
             if (String.IsNullOrEmpty(apiBaseUrl.Text) || String.IsNullOrEmpty(apiToken.Password))
                 return;
@@ -169,12 +176,12 @@ namespace HA_Desktop_Companion
             } while (!HAcheckConection(apiBaseUrl.Text));
 
             //Initialize API Class
-            ApiConnectiom2 = new HAApi_v2(apiBaseUrl.Text, apiToken.Password);
+            ApiConnectiom2 = new HAApi_v2(apiBaseUrl.Text, apiToken.Password, log);
             ApiConnectiom2.enableDebug(true);
 
             if (ApiConnectiom2.registerHaDevice(hostname.ToLower(), hostname, model, maufactorer, os, osVersion))
             {
-                SensorRegistration();
+                await RegisterApiDataAsync(ApiConnectiom2);
 
                 //Save Settings
                 Properties.Settings.Default.apiBaseUrl = apiBaseUrl.Text;
@@ -189,7 +196,7 @@ namespace HA_Desktop_Companion
                 StartMainThreadTicker();
 
                 //Initialize Web Socket
-                WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, ApiConnectiom2.api_webhook_id, ApiConnectiom2.api_remote_ui_url, ApiConnectiom2.api_cloudhook_url);
+                WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, ApiConnectiom2.api_webhook_id, ApiConnectiom2.api_remote_ui_url, ApiConnectiom2.api_cloudhook_url);
 
                 //Modifi UI
                 registration.IsEnabled = false;
@@ -199,7 +206,155 @@ namespace HA_Desktop_Companion
                 registration.IsEnabled = true;
             }
         }
-        private static void SensorRegistration()
+
+        private static void RegisterAutostart()
+        {
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
+                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
+                key.Close();
+            }
+        }
+
+        public void StartMainThreadTicker()
+        {
+            watchdogTimer.Tick += new EventHandler(MainThreadTickAsync);
+            watchdogTimer.Interval = new TimeSpan(0, 0, 10);
+            watchdogTimer.Start();
+
+            registration.Content = "Registered";
+        }
+
+        private async void MainThreadTickAsync(object sender, EventArgs e)
+        {
+            //TODO: Do not discover battery id PC
+
+            await sendApiDataParallelAsync(ApiConnectiom2);
+
+            WebsocketConnectiom.Check();
+
+            //ApiConnectiom.HASendSenzorLocation();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            var app = Application.Current as App;
+            app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
+            this.ShowInTaskbar = false;
+            this.Hide();
+            e.Cancel = true;
+        }
+
+        private void close_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Application.Current.Shutdown();
+        }
+
+        private void debug_Checked(object sender, RoutedEventArgs e)
+        {
+            settings_debug = debug.IsChecked ?? false;
+            Properties.Settings.Default.debug = settings_debug;
+            Properties.Settings.Default.Save();
+        }
+
+        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
+        {
+            object sensorData = null;
+            string methodName = "query";
+
+            foreach (var methodNameSegment in integration.Split("_"))
+            {
+                methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
+            }
+
+            MethodInfo method = sensorsClass.GetMethod(methodName);
+            if (method == null)
+                return false;
+
+            ParameterInfo[] pars = method.GetParameters();
+            List<object> parameters = new List<object>();
+
+            foreach (ParameterInfo p in pars)
+            {
+                if (sensor.ContainsKey(p.Name))
+                {
+                    parameters.Insert(p.Position, sensor[p.Name]);
+                }
+                else if (p.IsOptional)
+                {
+                    parameters.Insert(p.Position, p.DefaultValue);
+                }
+            }
+
+            sensorData = method.Invoke(this, parameters.ToArray());
+
+            if (sensorData != null)
+            {
+                if (sensor.ContainsKey("value_map"))
+                {
+                    string[] valueMap = sensor["value_map"].Split("|");
+                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                }
+
+                sensorData = Sensors.convertToType(sensorData);
+
+                if (sensorType == "binary_sensor")
+                {
+                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "binary_sensor");
+                }
+                else
+                {
+                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData);
+                }
+            }
+
+            return true;
+        }
+        
+        private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
+        {
+            var sensorsClass = typeof(Sensors);
+            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            senzorTypes.Add("sensor", configuration["sensor"]);
+            List<Task<bool>> tasks = new List<Task<bool>>();
+
+            //Add Binary Senzors to Dictionary
+            if (configuration.ContainsKey("binary_sensor"))
+                senzorTypes.Add("binary_sensor", configuration["binary_sensor"]);
+
+            //Parse each Senzor and aquire data
+            foreach (var item in senzorTypes)
+            {
+                string senzorType = item.Key;
+                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                foreach (var platform in platforms)
+                {
+                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                    foreach (var integration in integrations)
+                    {
+                        List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
+                        foreach (var sensor in sensors)
+                        {
+                            tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                        }
+                    }
+                }
+            }
+
+            //Finish all tasks
+            var results = await Task.WhenAll(tasks);
+            /*foreach (var item in results)
+            {
+                //Debug.WriteLine((string) item.ToString());
+            }*/
+
+            //Send Data
+            ApiConnection.sendHaEntitiData();
+        }
+
+        private async Task RegisterApiDataAsync(HAApi_v2 ApiConnection)
         {
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
@@ -231,7 +386,7 @@ namespace HA_Desktop_Companion
                             string entityCategory = "";
                             if (senzor.ContainsKey("entity_category"))
                                 entityCategory = senzor["entity_category"];
-                            
+
                             string icon = "";
                             if (senzor.ContainsKey("icon"))
                                 icon = senzor["icon"];
@@ -240,145 +395,15 @@ namespace HA_Desktop_Companion
                             if (senzor.ContainsKey("unit_of_measurement"))
                                 unitOfMeasurement = senzor["unit_of_measurement"];
 
+                            object defaultValue = 0;
                             if (senzorType == "binary_sensor")
-                            {
-                                ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], false, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement);
-                            }
-                            else
-                            {
-                                ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], 0, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement);
-                            }
+                                defaultValue = false;
 
+                            await Task.Run(() => ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], defaultValue, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement));
                         }
                     }
                 }
             }
         }
-
-
-        private static void RegisterAutostart()
-        {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
-            {
-                string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string exePath = Path.Combine(assemblyFolder, "HA_Desktop_Companion.exe");
-                key.SetValue("HA_Desktop_Companion", "\"" + exePath + "\"");
-                key.Close();
-            }
-        }
-
-        public void StartMainThreadTicker()
-        {
-            DispatcherTimer watchdogTimer = new DispatcherTimer();
-            watchdogTimer.Tick += new EventHandler(MainThreadTick);
-            watchdogTimer.Interval = new TimeSpan(0, 0, 10);
-            watchdogTimer.Start();
-
-            registration.Content = "Registered";
-        }
-
-        private void MainThreadTick(object sender, EventArgs e)
-        {
-            //TODO: Do not discover battery id PC
-
-            var sensorsClass = typeof(Sensors);
-            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
-            senzorTypes.Add("sensor", configuration["sensor"]);
-
-            if (configuration.ContainsKey("binary_sensor"))
-                senzorTypes.Add("binary_sensor", configuration["binary_sensor"]);
-
-            foreach (var item in senzorTypes)
-            {
-                string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
-                foreach (var platform in platforms)
-                {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
-                    foreach (var integration in integrations)
-                    {
-                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
-                        foreach (var senzor in senzors)
-                        {
-                            object sensorData = null;
-                            string methodName = "query";
-
-                            foreach (var methodNameSegment in integration.Key.Split("_"))
-                            {
-                                methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
-                            }
-                            
-                            MethodInfo method = sensorsClass.GetMethod(methodName);
-                            if (method == null)
-                                continue;
-
-                            ParameterInfo[] pars = method.GetParameters();
-                            List<object> parameters = new List<object>();
-
-                            foreach (ParameterInfo p in pars)
-                            {
-                                if (senzor.ContainsKey(p.Name))
-                                {
-                                    parameters.Insert(p.Position, senzor[p.Name]);
-                                }
-                                else if (p.IsOptional)
-                                {
-                                    parameters.Insert(p.Position, p.DefaultValue);
-                                }
-                            }
-
-                            sensorData = method.Invoke(this, parameters.ToArray());
-
-                            if (sensorData != null)
-                            {
-                                if (senzor.ContainsKey("value_map"))
-                                {
-                                    string[] valueMap = senzor["value_map"].Split("|");
-                                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                                }
-
-                                sensorData = Sensors.convertToType(sensorData);
-
-                                if (senzorType == "binary_sensor")
-                                {
-                                    ApiConnectiom2.addHaEntitiData(senzor["unique_id"], sensorData, "binary_sensor");
-                                }
-                                else
-                                {
-                                    ApiConnectiom2.addHaEntitiData(senzor["unique_id"], sensorData);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            ApiConnectiom2.sendHaEntitiData();
-            WebsocketConnectiom.Check();
-            //ApiConnectiom.HASendSenzorLocation();
-        }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            var app = Application.Current as App;
-            app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
-            this.ShowInTaskbar = false;
-            this.Hide();
-            e.Cancel = true;
-        }
-
-        private void close_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Application.Current.Shutdown();
-        }
-
-        private void debug_Checked(object sender, RoutedEventArgs e)
-        {
-            settings_debug = debug.IsChecked ?? false;
-            Properties.Settings.Default.debug = settings_debug;
-            Properties.Settings.Default.Save();
-        }
-
-        /*string[] drives = Environment.GetLogicalDrives();
-        Console.WriteLine("GetLogicalDrives: {0}", String.Join(", ", drives));*/
     }
 }

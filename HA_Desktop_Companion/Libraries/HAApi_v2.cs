@@ -23,9 +23,11 @@ namespace HA_Desktop_Companion.Libraries
         public string api_webhook_id = null;
 
         private List<object> entitiesData = new();
+        private List<Dictionary<string, object>> entitiesDataOld = new();
 
-        private static Logging log = new Logging(".\\log.txt");
-        public HAApi_v2(string apiBaseUrl, string apiToken, string apiWebHookId = "", string apiRemoteUiUrl = "", string apiCloudhookUrl = "")
+        private Logging log;
+
+        public HAApi_v2(string apiBaseUrl, string apiToken, Logging logInstance, string apiWebHookId = "", string apiRemoteUiUrl = "", string apiCloudhookUrl = "")
         {
             api_base_url = apiBaseUrl;
 
@@ -37,6 +39,7 @@ namespace HA_Desktop_Companion.Libraries
 
             api_token = apiToken;
             api_webhook_id = apiWebHookId;
+            log = logInstance;
         }
 
         public void enableDebug(bool debug = false)
@@ -175,6 +178,14 @@ namespace HA_Desktop_Companion.Libraries
     
         public void addHaEntitiData(string uniqueId, object state, string type = "sensor", string icon = "")
         {
+            Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
+         
+            if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
+            {
+                log.Write("API DATA SKIP -> " + uniqueId + " - " + state + "==" + oldFrame["state"]  + "-" + "SAME !");
+                return;
+            }
+
             Dictionary<string, object> data = new()
             {
                 { "unique_id", uniqueId },
@@ -205,8 +216,9 @@ namespace HA_Desktop_Companion.Libraries
             return true;
 
             return false;*/
-
+            entitiesDataOld = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).Union(entitiesDataOld).ToList();
             entitiesData.Clear();
+
             return true;
         }
     }

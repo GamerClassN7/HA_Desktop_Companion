@@ -140,7 +140,7 @@ namespace HA_Desktop_Companion.Libraries
             }
         }
 
-        public static bool queryConsetStore(string consent_category = "webcam")
+        public static bool queryConsentStore(string consent_category)
         {
             string[] consentStores = {
                 @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,

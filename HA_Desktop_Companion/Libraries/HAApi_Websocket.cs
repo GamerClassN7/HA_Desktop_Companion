@@ -13,7 +13,7 @@ namespace HA_Desktop_Companion.Libraries
 
     public class HAApi_Websocket
     {
-        private static Logging log = new Logging(".\\log.txt");
+        private Logging log;
 
         private bool wsRegistered = false;
         private bool wsNotificationsSubscribed = false;
@@ -27,13 +27,14 @@ namespace HA_Desktop_Companion.Libraries
         private static int interactions = 2;
         private ClientWebSocket socket = new ClientWebSocket();
 
-        public HAApi_Websocket(string baseUrl, string apiToken, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
+        public HAApi_Websocket(string baseUrl, string apiToken, Logging logInstance, string webHookId, string remoteUiUrl = "", string cloudhookUrl = "")
         {
             webhook_id = webHookId;
             token = apiToken;
             base_url = baseUrl;
             remote_ui_url = remoteUiUrl;
             cloudhook_url = cloudhookUrl;
+            log = logInstance;
 
             registerWebSocket();
         }
@@ -101,7 +102,7 @@ namespace HA_Desktop_Companion.Libraries
             return JsonSerializer.Deserialize<JsonObject>(stringPayload);
         }
 
-        static async Task Receive(ClientWebSocket socket)
+        private async Task Receive(ClientWebSocket socket)
         {
             try
             {
@@ -137,7 +138,6 @@ namespace HA_Desktop_Companion.Libraries
                                     string msg_text = payload["event"].AsObject()["message"].ToString();
                                     string msg_title = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
                                     string msg_image = "";
-
 
                                     if (payload["event"].AsObject().ContainsKey("title"))
                                     {

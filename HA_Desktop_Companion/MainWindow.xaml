@@ -8,7 +8,7 @@
         Title="HA_Desktop_Compaino" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
 
 
-    <Grid Background="#FF03A9F4" Margin="0,0,0,-1">
+    <Grid Background="#FF03A9F4" Margin="0,0,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="50*"/>
             <RowDefinition Height="50*"/>
@@ -26,7 +26,7 @@
         <Image x:Name="HALogo" Margin="8,5,9,5" Grid.RowSpan="3" Source="/Resources/ha_logo.png"/>
         <PasswordBox x:Name="apiToken" Grid.Column="1" Grid.Row="1" Margin="5,5,5,5" Background="#FF186384" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" Grid.ColumnSpan="3"/>
         <CheckBox x:Name="debug" Content="Debug"  Grid.Row="2" Margin="5,5,5,5" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="debug_Checked"/>
-        <Button x:Name="registration" Margin="5,5,5,5" Click="registration_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="2" Grid.Row="2" BorderThickness="0" Content="Register"/>
+        <Button x:Name="registration" Margin="5,5,5,5" Click="registrationAsync_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="2" Grid.Row="2" BorderThickness="0" Content="Register"/>
         <Button x:Name="close" Content="Quit" Margin="5,5,5,5" Click="close_Click" RenderTransformOrigin="0.531,0.503" Grid.Column="3" Grid.Row="2"  BorderThickness="0"/>
     </Grid>
 </Window>
