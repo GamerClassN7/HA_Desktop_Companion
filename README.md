@@ -9,11 +9,12 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 Feel free to contribute any time :)
 
 ## Installation
-1) Extract the zip file to some folder on your system, 
-2) Run `HA_Desktop_Companion.exe`
-3) Fill in "URL" & "API Token"
-4) Click "Register"
-2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
+1) Donload latest release (HERE)[https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest]
+2) Extract the zip file to some folder on your system, 
+3) Run `HA_Desktop_Companion.exe`
+4) Fill in "URL" & "API Token"
+5) Click "Register"
+6) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
 
 ## Sensors implemented currently:
 - battery_level
