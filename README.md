@@ -9,7 +9,7 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 Feel free to contribute any time :)
 
 ## Installation
-1) Donload latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
+1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
 2) Extract the zip file to some folder on your system, 
 3) Run `HA_Desktop_Companion.exe`
 4) Fill in "URL" & "API Token"
