@@ -160,7 +160,15 @@ namespace HA_Desktop_Companion
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            log.Write("MAIN ->CLOSING");
+            log.Write("MAIN ->CLOSING TO TRAY");
+
+            var app = Application.Current as App;
+            app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
+
+            this.ShowInTaskbar = false;
+            this.Hide();
+
+            e.Cancel = true;
         }
 
         private void debug_Checked(object sender, RoutedEventArgs e)
