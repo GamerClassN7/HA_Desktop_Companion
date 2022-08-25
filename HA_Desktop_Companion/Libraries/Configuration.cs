@@ -12,19 +12,32 @@ namespace HA_Desktop_Companion.Libraries
 {
     public class Configuration
     {
-
+        private string configPath;
         private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configurationData = new Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>>();
 
         public Configuration(string path)
         {
-            if (!File.Exists(path))
+            configPath = path;
+            if (!File.Exists(configPath))
             {
                 //Try to download latest from github if fail use resources
                 //Write internall backup if file did not exist 
-                System.IO.File.WriteAllBytes(path, Resource1.configuration);
+                File.WriteAllBytes(configPath, Resource1.configuration);
+                
+                do
+                {
+                    System.Threading.Thread.Sleep(1);
+                } while (!File.Exists(configPath));
+            }
+        }
+
+        public bool load(){
+            if (!File.Exists(configPath))
+            {
+                return false;
             }
 
-            string[] text = File.ReadAllLines(path, System.Text.Encoding.UTF8);
+            string[] text = File.ReadAllLines(configPath, System.Text.Encoding.UTF8);
 
             string section = ""; //ROOT
             int num = 0;
@@ -107,21 +120,12 @@ namespace HA_Desktop_Companion.Libraries
                 }
             }
 
-            /*JsonSerializerOptions options = new JsonSerializerOptions()
-            {
-                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                WriteIndented = true
-            };
-
-            using (StreamWriter sw = File.AppendText(".\\log.txt"))
-            {
-                sw.WriteLine(JsonSerializer.Serialize(configurationData, options));
-            }*/
+            return true;
         }
 
         public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> GetConfigurationData()
         {
-            /*MessageBox.Show(JsonSerializer.Serialize(configurationData));*/
+            //MessageBox.Show(JsonSerializer.Serialize(configurationData));
             return configurationData;
         }
     }

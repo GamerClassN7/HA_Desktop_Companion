@@ -97,19 +97,22 @@ namespace HA_Desktop_Companion.Libraries
             [DllImport("user32.dll")]
             static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
             [DllImport("user32.dll")]
-            static extern int GetWindowModuleFileName(IntPtr hWnd, StringBuilder ss, int count);
-
-            const int nChar = 256;
-            StringBuilder ss = new StringBuilder(nChar);
+            static extern int GetWindowModuleFileName(IntPtr hwnd, StringBuilder ss, int count);
 
             IntPtr handle = IntPtr.Zero;
             handle = GetForegroundWindow();
 
-            if  (GetWindowModuleFileName(handle, ss, nChar) <= 0)
+            const int nChar = 256;
+            StringBuilder ss = new StringBuilder(nChar);
+            
+            /*if  (GetWindowModuleFileName(handle, ss, nChar) <= 0)
                 return "";
 
-            string path = ss.ToString();
+            MessageBox.Show(ss.ToString());*/
+ 
+            /*string path = ss.ToString();
             string exeName = path.Split("\\").Last();
+            */
 
             //TODO: Handle like Attributes for full name and path
             ss = new StringBuilder(nChar);
@@ -117,7 +120,7 @@ namespace HA_Desktop_Companion.Libraries
             if (GetWindowText(handle, ss, nChar) > 0)
                 fullName = ss.ToString();
 
-            return exeName;
+            return fullName;
         }
 
         public static double queryUptime()

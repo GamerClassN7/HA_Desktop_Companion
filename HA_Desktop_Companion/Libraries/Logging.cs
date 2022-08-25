@@ -7,13 +7,8 @@ namespace HA_Desktop_Companion.Libraries {
         public string logFile;
         private StreamWriter sw;
         public Logging(string logFilePath) {
-            if (!File.Exists(logFilePath))
-                File.Create(logFilePath);
-
-            logFile = logFilePath;
-            sw = File.AppendText(logFile);
+            sw = new StreamWriter(logFilePath, true);
         }
-            
 
         public void Write(string msg)
         {
