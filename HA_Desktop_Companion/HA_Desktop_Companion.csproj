@@ -16,6 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="bin\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <None Remove="bin\**" />
+    <Page Remove="bin\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="configuration.yaml" />
     <None Remove="ha_logo.png" />
   </ItemGroup>
@@ -24,10 +31,6 @@
     <Content Include="Resources\ha_logo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="bin\Release\net6.0-windows10.0.17763.0\configuration.yaml" />
   </ItemGroup>
 
   <ItemGroup>

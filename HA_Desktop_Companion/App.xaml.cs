@@ -43,7 +43,12 @@ namespace HA_Desktop_Companion
 
             contextMenu.Items.Add(showItem);
 
- 
+            Forms.ToolStripMenuItem ConnectionTestItem = new Forms.ToolStripMenuItem();
+            ConnectionTestItem.Text = "Test Connection";
+            ConnectionTestItem.Click += (s, args) => connectionTestItem_Click();
+
+            contextMenu.Items.Add(ConnectionTestItem);
+
             Forms.ToolStripMenuItem quitItem = new Forms.ToolStripMenuItem();
             quitItem.Text = "Exit";
             quitItem.Click += (s, args) => quitItem_Click();
@@ -65,6 +70,11 @@ namespace HA_Desktop_Companion
             MainWindow.ShowInTaskbar = true;
             MainWindow.Show();
             MainWindow.Activate();
+        }
+
+        private void connectionTestItem_Click()
+        {
+            MessageBox.Show("Conection Test", "Testing....");
         }
 
         private void quitItem_Click()

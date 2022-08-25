@@ -10,7 +10,7 @@ namespace HA_Desktop_Companion.Libraries {
         private StreamWriter sw;
         
         public Logging(string logFilePath) {
-            FileStream fs = File.Open(logFilePath, FileMode.Append, FileAccess.Read, FileShare.ReadWrite);
+            FileStream fs = File.Open(logFilePath, FileMode.Append, FileAccess.Write, FileShare.Read);
             sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
         }
 
