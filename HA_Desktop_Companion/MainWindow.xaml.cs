@@ -30,6 +30,7 @@ namespace HA_Desktop_Companion
         public static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configurationData;
 
         private bool settings_debug = false;
+        private bool isRegistered = false;
 
         DispatcherTimer watchdogTimer = new DispatcherTimer();
 
@@ -52,6 +53,8 @@ namespace HA_Desktop_Companion
             //Initialize Config and Log
             log = new Logging(Directory.GetCurrentDirectory() + logFilenPath);
             configurationClass = new Configuration(Directory.GetCurrentDirectory() + conigurationPath);
+            log.Write("MAIN -> Initialization");
+
         }
 
         private static void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
@@ -63,7 +66,7 @@ namespace HA_Desktop_Companion
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            log.Write("Main -> Loading");
+            log.Write("MAIN -> Loading");
 
             //Load Config
             if (!configurationClass.load())
@@ -123,7 +126,7 @@ namespace HA_Desktop_Companion
                 {
                     //Start WatchDog Timer
                     StartMainThreadTicker();
-
+                    isRegistered = true;
                     //Initialize Web Socket
                     WebsocketConnectiom = new HAApi_Websocket(base_url, decodedApiToken, log, decodedWebhookId, remote_ui_url, cloudhook_url);
 
@@ -132,6 +135,7 @@ namespace HA_Desktop_Companion
                 else
                 {
                     registration.IsEnabled = true;
+                    isRegistered = false;
                 }
             }
             log.Write("Main -> Loaded");
@@ -161,20 +165,23 @@ namespace HA_Desktop_Companion
 
         private async void registrationAsync_Click(object sender, RoutedEventArgs e)
         {
+            log.Write("MAIN -> Registration Button Clicked");
+
+            //Disable data reporting if running
+            if (watchdogTimer.IsEnabled)
+            {
+                watchdogTimer.Stop();
+                log.Write("MAIN - Watchdog Stoped");
+            }
+
             //check if inputs are not null
             if (String.IsNullOrEmpty(apiToken.Password) && String.IsNullOrEmpty(apiBaseUrl.Text))
             {
                 log.Write("MAIN - Token od URL => Null");
+                isRegistered = false;
             }
             else
             {
-                //Disable data reporting if running
-                if (watchdogTimer.IsEnabled)
-                {
-                    watchdogTimer.Stop();
-                    log.Write("MAIN - Watchdog Stoped");
-                }
-
                 //Load Config
                 if (!configurationClass.load())
                 {
@@ -227,6 +234,8 @@ namespace HA_Desktop_Companion
                     //Register WatchDog Timer
                     RegisterAutostart();
                     StartMainThreadTicker();
+                    isRegistered = true;
+
 
                     //Initialize Web Socket
                     WebsocketConnectiom = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, ApiConnectiom2.api_webhook_id, ApiConnectiom2.api_remote_ui_url, ApiConnectiom2.api_cloudhook_url);
@@ -241,6 +250,8 @@ namespace HA_Desktop_Companion
                     registration.IsEnabled = true;
                 }
             }
+
+            log.Write("MAIN -> Registration Action Done");
         }
 
         private static void RegisterAutostart()
@@ -256,6 +267,8 @@ namespace HA_Desktop_Companion
 
         public void StartMainThreadTicker()
         {
+            log.Write("MAIN -> Registtering Watch dock caller");
+
             watchdogTimer.Tick += new EventHandler(MainThreadTickAsync);
             watchdogTimer.Interval = new TimeSpan(0, 0, 10);
             watchdogTimer.Start();
@@ -265,9 +278,15 @@ namespace HA_Desktop_Companion
 
         private async void MainThreadTickAsync(object sender, EventArgs e)
         {
+            log.Write("MAIN -> Watchdog tick !");
+
             //TODO: Do not discover battery id PC
 
-            await sendApiDataParallelAsync(ApiConnectiom2);
+            if (isRegistered)
+            {
+                await sendApiDataParallelAsync(ApiConnectiom2);
+
+            }
 
             WebsocketConnectiom.Check();
 
@@ -276,6 +295,8 @@ namespace HA_Desktop_Companion
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            log.Write("MAIN -> closing to tray");
+
             var app = Application.Current as App;
             app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
 
@@ -287,6 +308,8 @@ namespace HA_Desktop_Companion
 
         private void close_Click(object sender, RoutedEventArgs e)
         {
+            log.Write("MAIN -> Exit");
+
             Environment.Exit(0);
         }
 
@@ -399,6 +422,9 @@ namespace HA_Desktop_Companion
 
         private async Task RegisterApiDataAsync(HAApi_v2 ApiConnection)
         {
+            log.Write("MAIN -> Entity Registration");
+
+
             //Register Senzors
             Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
             senzorTypes.Add("sensor", configurationData["sensor"]);
@@ -442,11 +468,14 @@ namespace HA_Desktop_Companion
                             if (senzorType == "binary_sensor")
                                 defaultValue = false;
 
-                            await Task.Run(() => ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], defaultValue, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement));
+                           ApiConnectiom2.registerHaEntiti(senzor["unique_id"], senzor["name"], defaultValue, senzorType, deviceClass, entityCategory, icon, unitOfMeasurement);
                         }
                     }
                 }
             }
+
+            log.Write("MAIN -> Entity Registration Done");
+
         }
     }
 }
