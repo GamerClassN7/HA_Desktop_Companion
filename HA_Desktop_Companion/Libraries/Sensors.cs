@@ -94,22 +94,28 @@ namespace HA_Desktop_Companion.Libraries
         {
             [DllImport("user32.dll")]
             static extern IntPtr GetForegroundWindow();
+
             [DllImport("user32.dll")]
             static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
+
             [DllImport("user32.dll")]
-            static extern int GetWindowModuleFileName(IntPtr hwnd, StringBuilder ss, int count);
+            static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
             IntPtr handle = IntPtr.Zero;
             handle = GetForegroundWindow();
 
             const int nChar = 256;
             StringBuilder ss = new StringBuilder(nChar);
-            
-            /*if  (GetWindowModuleFileName(handle, ss, nChar) <= 0)
+
+            /*uint procesId; 
+            GetWindowThreadProcessId(handle, out procesId);
+            return Process.GetProcessById((int)procesId).ProcessName + ".exe";*/
+
+            /*if  ( <= 0)
                 return "";
 
             MessageBox.Show(ss.ToString());*/
- 
+
             /*string path = ss.ToString();
             string exeName = path.Split("\\").Last();
             */

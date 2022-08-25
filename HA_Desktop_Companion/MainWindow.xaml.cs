@@ -269,7 +269,7 @@ namespace HA_Desktop_Companion
             wsConector = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, apiConector.api_webhook_id, apiConector.api_remote_ui_url, apiConector.api_cloudhook_url);
             log.Write("MAIN-WS Registered!");
 
-            registration.Content = "Registered";
+            registrationText.Text= "Registered";
         }
 
         private void quit_Click(object sender, RoutedEventArgs e)
@@ -431,71 +431,79 @@ namespace HA_Desktop_Companion
 
         private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
         {
-            object sensorData = null;
-            string methodName = "query";
-
-            foreach (var methodNameSegment in integration.Split("_"))
+            try
             {
-                methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
-            }
+                object sensorData = null;
+                string methodName = "query";
 
-            MethodInfo method = sensorsClass.GetMethod(methodName);
-            if (method == null)
-                return false;
-
-            ParameterInfo[] pars = method.GetParameters();
-            List<object> parameters = new List<object>();
-
-            foreach (ParameterInfo p in pars)
-            {
-                if (sensor.ContainsKey(p.Name))
+                foreach (var methodNameSegment in integration.Split("_"))
                 {
-                    parameters.Insert(p.Position, sensor[p.Name]);
-                }
-                else if (p.IsOptional)
-                {
-                    parameters.Insert(p.Position, p.DefaultValue);
-                }
-            }
-
-            sensorData = method.Invoke(this, parameters.ToArray());
-
-            if (sensorData != null)
-            {
-                if (sensor.ContainsKey("value_map"))
-                {
-                    string[] valueMap = sensor["value_map"].Split("|");
-                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                    methodName += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
                 }
 
-                if (sensor.ContainsKey("accuracy_decimals"))
+                MethodInfo method = sensorsClass.GetMethod(methodName);
+                if (method == null)
+                    return false;
+
+                ParameterInfo[] pars = method.GetParameters();
+                List<object> parameters = new List<object>();
+
+                foreach (ParameterInfo p in pars)
                 {
-                    try
+                    if (sensor.ContainsKey(p.Name))
                     {
-                        if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$")) { 
-                            sensorData = Math.Round(double.Parse(sensorData.ToString()), Int32.Parse(sensor["accuracy_decimals"]));
-                        }
+                        parameters.Insert(p.Position, sensor[p.Name]);
                     }
-                    catch (Exception)
+                    else if (p.IsOptional)
                     {
+                        parameters.Insert(p.Position, p.DefaultValue);
+                    }
+                }
+
+                sensorData = method.Invoke(this, parameters.ToArray());
+
+                if (sensorData != null)
+                {
+                    if (sensor.ContainsKey("value_map"))
+                    {
+                        string[] valueMap = sensor["value_map"].Split("|");
+                        sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                    }
+
+                    if (sensor.ContainsKey("accuracy_decimals"))
+                    {
+                        try
+                        {
+                            if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$")) { 
+                                sensorData = Math.Round(double.Parse(sensorData.ToString()), Int32.Parse(sensor["accuracy_decimals"]));
+                            }
+                        }
+                        catch (Exception)
+                        {
 
                         
+                        }
+                    }
+
+                    sensorData = Sensors.convertToType(sensorData);
+
+                    if (sensorType == "binary_sensor")
+                    {
+                        ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "binary_sensor", sensor["icon"]);
+                    }
+                    else
+                    {
+                        ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "sensor", sensor["icon"]);
                     }
                 }
-
-                sensorData = Sensors.convertToType(sensorData);
-
-                if (sensorType == "binary_sensor")
-                {
-                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "binary_sensor", sensor["icon"]);
-                }
-                else
-                {
-                    ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "sensor", sensor["icon"]);
-                }
+            return true;
+            }
+            catch (Exception)
+            {
             }
 
-            return true;
+            log.Write("MAIN-Failed to read senzor data :(");
+            return false;
         }
     }
 }
