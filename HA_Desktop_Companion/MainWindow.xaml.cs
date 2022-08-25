@@ -35,6 +35,8 @@ namespace HA_Desktop_Companion
         Logging log = new Logging(appDir + "/log.txt");
         Configuration config = new Configuration(appDir + "/configuration.yaml");
         HAApi_v2 apiConector;
+        HAApi_Websocket wsConector;
+
 
         private bool isRegistered = false;
         private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configData;
@@ -140,6 +142,11 @@ namespace HA_Desktop_Companion
                         {
                             startSyncer();
                             log.Write("MAIN-Autostart Sucesfull!");
+
+                            //Connect WS
+                            wsConector = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, apiConector.api_webhook_id, apiConector.api_remote_ui_url, apiConector.api_cloudhook_url);
+                            log.Write("MAIN-WS Registered!");
+
                         }
                         catch (Exception)
                         {
@@ -255,9 +262,11 @@ namespace HA_Desktop_Companion
             //Start syncer
             startSyncer();
 
+            //Connect WS
+            wsConector = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, apiConector.api_webhook_id, apiConector.api_remote_ui_url, apiConector.api_cloudhook_url);
+            log.Write("MAIN-WS Registered!");
+
             registration.Content = "Registered";
-
-
         }
 
         private void quit_Click(object sender, RoutedEventArgs e)
@@ -365,6 +374,7 @@ namespace HA_Desktop_Companion
             log.Write("MAIN-Syncer Tick n:" + syncerIterator);
 
             await sendApiDataParallelAsync(apiConector);
+            wsConector.Check();
 
             syncerIterator++;
         }
