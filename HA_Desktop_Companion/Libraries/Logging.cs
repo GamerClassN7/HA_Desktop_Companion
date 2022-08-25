@@ -16,7 +16,7 @@ namespace HA_Desktop_Companion.Libraries {
 
         public void Write(string msg, bool logOnly = false)
         {
-            if (logOnly)
+            if (!logOnly)
                 Debug.WriteLine(msg);
 
             sw.WriteLine("[" + DateTime.Now.ToString("yyyyMMddTHHmmss") + "]-" + msg);

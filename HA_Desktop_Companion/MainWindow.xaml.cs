@@ -21,6 +21,7 @@ using System.Threading;
 using Form = System.Windows.Forms;
 using Application = System.Windows.Application;
 using System.Windows.Controls;
+using System.Text.RegularExpressions;
 
 namespace HA_Desktop_Companion
 {
@@ -245,6 +246,9 @@ namespace HA_Desktop_Companion
             Properties.Settings.Default.apiWebhookId = Encryption.EncryptString(Encryption.ToSecureString(apiConector.api_webhook_id));
             Properties.Settings.Default.apiRemoteUiUrl = apiConector.api_remote_ui_url;
             Properties.Settings.Default.apiCloudhookUrl = apiConector.api_cloudhook_url;
+            Properties.Settings.Default.Save();
+            log.Write("MAIN-Valid Settings Saved");
+
 
             //Entity Registration
             await RegisterApiData(apiConector);
@@ -412,7 +416,7 @@ namespace HA_Desktop_Companion
             var results = await Task.WhenAll(tasks);
             foreach (var item in results)
             {
-                //Debug.WriteLine((string) item.ToString());
+                log.Write("SENSOR-Read Outcome " + item.ToString());
             }
 
             //Send Data
@@ -460,7 +464,17 @@ namespace HA_Desktop_Companion
 
                 if (sensor.ContainsKey("accuracy_decimals"))
                 {
-                    //TODO Round if INT
+                    try
+                    {
+                        if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$")) { 
+                            sensorData = Math.Round(double.Parse(sensorData.ToString()), Int32.Parse(sensor["accuracy_decimals"]));
+                        }
+                    }
+                    catch (Exception)
+                    {
+
+                        
+                    }
                 }
 
                 sensorData = Sensors.convertToType(sensorData);

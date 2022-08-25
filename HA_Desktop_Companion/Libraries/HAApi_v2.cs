@@ -218,6 +218,9 @@ namespace HA_Desktop_Companion.Libraries
 
         public bool validateWebhookId(string deviceName, string model, string manufacturer, string osVersion)
         {
+            log.Write(api_token);
+            log.Write(api_webhook_id);
+
             string appVersion = Assembly.GetEntryAssembly().GetName().Version.ToString();
 
             Dictionary<string, object> data = new()
