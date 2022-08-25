@@ -374,11 +374,17 @@ namespace HA_Desktop_Companion
 
         private async void syncerTickAsync(object sender, EventArgs e)
         {
-            log.Write("MAIN-Syncer Tick n:" + syncerIterator);
+            try
+            {
+                log.Write("MAIN-Syncer Tick n:" + syncerIterator);
 
-            await sendApiDataParallelAsync(apiConector);
-            wsConector.Check();
-
+                await sendApiDataParallelAsync(apiConector);
+                wsConector.Check();
+            }
+            catch (Exception ex)
+            {
+                log.Write("MAIN-syncer Error " + ex.Message);
+            }
             syncerIterator++;
         }
 
