@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HA_Desktop_Companion"
-        mc:Ignorable="d"
         Title="HA_Desktop_Compaino" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
 
 
