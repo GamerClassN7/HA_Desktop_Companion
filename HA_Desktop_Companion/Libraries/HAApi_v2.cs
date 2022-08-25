@@ -11,11 +11,13 @@ using System.Net;
 using System.Reflection;
 using System.Windows;
 using System.Diagnostics;
+using System.Xml;
 
 namespace HA_Desktop_Companion.Libraries
 {
     public class HAApi_v2
     {
+
         public string api_base_url = null;
         public string api_cloudhook_url = null;
         public string api_remote_ui_url = null;
@@ -63,7 +65,7 @@ namespace HA_Desktop_Companion.Libraries
             return resultUrl;
         }
 
-        private async Task<JsonObject> sendHaRequest(string token, string webhookUrlEndpoint, object body)
+        private JsonObject sendHaRequest(string token, string webhookUrlEndpoint, object body)
         {
             JsonSerializerOptions options = new JsonSerializerOptions()
             {Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping};
@@ -81,9 +83,9 @@ namespace HA_Desktop_Companion.Libraries
             using var httpClient = new HttpClient();
             var response = httpClient.Send(request);
 
+            log.Write("API CODE <- " + response.StatusCode);
             if (!response.IsSuccessStatusCode)
             {
-                log.Write("API CODE <- " + response.StatusCode);
                 return JsonSerializer.Deserialize<JsonObject>("{}");
             }
 
@@ -125,10 +127,8 @@ namespace HA_Desktop_Companion.Libraries
                 };
 
                 log.Write(JsonSerializer.Serialize(body));
-                Task<JsonObject> task = sendHaRequest(api_token, "/api/mobile_app/registrations", body);
-                task.Wait();
 
-                JsonObject response = task.Result;
+                JsonObject response = sendHaRequest(api_token, "/api/mobile_app/registrations", body); ;
                 log.Write(JsonSerializer.Serialize(response));
 
                 if (JsonSerializer.Serialize(response) == "{}")
@@ -146,6 +146,33 @@ namespace HA_Desktop_Companion.Libraries
            }
 
            return true;
+        }
+
+        public bool updateHaDevice(string deviceName = "", string model = "", string manufacturer = "", string osVersion = "")
+        {
+            string appVersion = Assembly.GetEntryAssembly().GetName().Version.ToString();
+
+            Dictionary<string, object> data = new()
+            {
+                { "app_version", appVersion },
+                { "device_name", deviceName },
+                { "manufacturer", manufacturer },
+                { "model", model },
+                { "os_version", osVersion },
+                //{ "app_data", new { push_websocket_channel = true,}},
+            };
+
+            Dictionary<string, object> body = new()
+            {
+                {"data", data },
+                {"type", "update_registration"},
+            };
+
+            JsonObject response = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
+            log.Write(JsonSerializer.Serialize(response));
+
+            //TODO: Somehow Validate
+            return true;
         }
 
         public bool registerHaEntiti(string uniqueId, string name, object state, string type = "sensor", string deviceClass = "", string entityCategory = "", string icon = "", string unitOfMeasurement = "")
@@ -176,11 +203,8 @@ namespace HA_Desktop_Companion.Libraries
                 {"type", "register_sensor"},
             };
 
-            Task<JsonObject> task = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
             System.Threading.Thread.Sleep(1000);
-            task.Wait();
-
-            JsonObject response = task.Result;
+            JsonObject response = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
             log.Write(JsonSerializer.Serialize(response));
 
             if ((bool) response["success"] == true)
@@ -191,6 +215,46 @@ namespace HA_Desktop_Companion.Libraries
 
             return false;
         }
+
+        public bool validateWebhookId(string deviceName, string model, string manufacturer, string osVersion)
+        {
+            string appVersion = Assembly.GetEntryAssembly().GetName().Version.ToString();
+
+            Dictionary<string, object> data = new()
+            {
+                { "app_version", appVersion },
+                { "device_name", deviceName },
+                { "manufacturer", manufacturer },
+                { "model", model },
+                { "os_version", osVersion },
+                //{ "app_data", new { push_websocket_channel = true,}},
+            };
+
+            Dictionary<string, object> body = new()
+            {
+                {"data", data },
+                {"type", "update_registration"},
+            };
+
+            JsonObject response = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
+            log.Write(JsonSerializer.Serialize(response));
+
+            if (JsonSerializer.Serialize(response) != "{}")
+            {
+                log.Write("API = webhook valid");
+                return true;
+            }
+
+            log.Write("API = webhook id invalid");
+            return false;
+
+            if (registerHaEntiti(deviceName, model, manufacturer, osVersion))
+            {
+                return true;
+            }
+            return false;
+        }
+
     
         public void addHaEntitiData(string uniqueId, object state, string type = "sensor", string icon = "")
         {
@@ -231,9 +295,7 @@ namespace HA_Desktop_Companion.Libraries
                 {"type", "update_sensor_states"},
             };
 
-            Task<JsonObject> task = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
-    
-            JsonObject response = task.Result;
+            JsonObject response = sendHaRequest(api_token, "/api/webhook/" + api_webhook_id, body);
 
             /*if ((string)response["success"] == "True")
             return true;
@@ -243,6 +305,27 @@ namespace HA_Desktop_Companion.Libraries
             entitiesData.Clear();
 
             return true;
+        }
+
+        public bool validateHaUrl()
+        {
+            //TODO: MOVE TO API class
+            try
+            {
+                HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("GET"), api_base_url + "/api");
+                using var httpClient = new HttpClient();
+                var response = httpClient.Send(request);
+                
+                log.Write("API -> connection Verified:" + response.IsSuccessStatusCode);
+                return true;
+           
+            }
+            catch (WebException ex)
+            {
+                log.Write("API -> Failed to connect to:" + api_base_url + " " + ex.Message);
+                return false;
+            }
+            return false;
         }
     }
 }
