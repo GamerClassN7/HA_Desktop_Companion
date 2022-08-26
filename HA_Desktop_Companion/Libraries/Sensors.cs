@@ -49,23 +49,23 @@ namespace HA_Desktop_Companion.Libraries
 
         public static string queryWifi(string selector, string deselector = "")
         {
-            var process = new Process
-            {
-                StartInfo = {
-                        FileName = "netsh.exe",
-                        Arguments = "wlan show interfaces",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    }
-            };
-
-            process.Start();
-            string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            process.Kill();
-
             try 
             {
+                var process = new Process
+                {
+                    StartInfo = {
+                            FileName = "netsh.exe",
+                            Arguments = "wlan show interfaces",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            CreateNoWindow = true
+                        }
+                };
+
+                process.Start();
+                string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+                process.WaitForExit();
+
                 foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
                     if (item.Split(":").Length <= 0)
@@ -86,7 +86,7 @@ namespace HA_Desktop_Companion.Libraries
                     }
                 }
             }
-            catch (Exception) { }
+            catch (Exception ex) { }
             return "";
         }
 
