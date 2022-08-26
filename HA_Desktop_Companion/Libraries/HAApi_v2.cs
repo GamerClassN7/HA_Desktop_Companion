@@ -259,35 +259,43 @@ namespace HA_Desktop_Companion.Libraries
         }
 
     
-        public void addHaEntitiData(string uniqueId, object state, string type = "sensor", string icon = "")
+        public bool addHaEntitiData(string uniqueId, object state, string type = "sensor", string icon = "")
         {
-            /*Dictionary<string, object> actualFrame = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).ToList().Find(o => o["unique_id"] == uniqueId);
-            if (actualFrame != null)
-            {
-                //TODO: Leave newest value;
-                log.Write("API DATA SKIP -> " + uniqueId + " - " + actualFrame["state"] + ">" + state + "-" + " Only one Unique_ID alowed !");
-                return;
-            }*/
+            try {
+                /*Dictionary<string, object> actualFrame = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).ToList().Find(o => o["unique_id"] == uniqueId);
+                if (actualFrame != null)
+                {
+                    //TODO: Leave newest value;
+                    log.Write("API DATA SKIP -> " + uniqueId + " - " + actualFrame["state"] + ">" + state + "-" + " Only one Unique_ID alowed !");
+                    return;
+                }*/
 
-            Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
-            if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
+                Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
+                if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
+                {
+                    log.Write("API\ADD\SKIP -> " + uniqueId + " - " + state + "==" + oldFrame["state"]  + "-" + "SAME !");
+                    return;
+                }
+
+                Dictionary<string, object> data = new()
+                {
+                    { "unique_id", uniqueId },
+                    { "type", type },
+                    { "state", state }
+                };
+
+                if (!String.IsNullOrEmpty(icon))
+                    data.Add("icon", icon);
+
+                log.Write("API\ADD\DATA -> "+ uniqueId + " - " + state);
+                entitiesData.Add(data);
+                return true;
+            } catch (Exception ex)
             {
-                log.Write("API DATA SKIP -> " + uniqueId + " - " + state + "==" + oldFrame["state"]  + "-" + "SAME !");
-                return;
+                log.Write("API\ADD\ERROR -> Failed to add data to frame:" + api_base_url + " " + ex.Message);
+                return false;
             }
-
-            Dictionary<string, object> data = new()
-            {
-                { "unique_id", uniqueId },
-                { "type", type },
-                { "state", state }
-            };
-
-            if (!String.IsNullOrEmpty(icon))
-                data.Add("icon", icon);
-
-            log.Write("API DATA -> "+ uniqueId + " - " + state);
-            entitiesData.Add(data);
+            return false;
         }
 
         public bool sendHaEntitiData()
