@@ -1,3 +1,5 @@
+> Most of the time new wersion introduce new bugs so please if you are using working wersion keep using it untill some stable release come pout :)
+
 # HA_Desktop_Companion
 
 [![Github All Releases](https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg)]()
@@ -8,12 +10,15 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 
 Feel free to contribute any time :)
 
+[HomeAssistant Comunity Forum Thread](https://community.home-assistant.io/t/ha-desktop-companion/)
+
 ## Installation
-1) Extract the zip file to some folder on your system, 
-2) Run `HA_Desktop_Companion.exe`
-3) Fill in "URL" & "API Token"
-4) Click "Register"
-2) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
+1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
+2) Extract the zip file to some folder on your system, 
+3) Run `HA_Desktop_Companion.exe`
+4) Fill in "URL" & "API Token"
+5) Click "Register"
+6) Create shortcut to `HA_Desktop_Companion.exe` in `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup` (if you want app to start on computer boot)
 
 ## Sensors implemented currently:
 - battery_level
