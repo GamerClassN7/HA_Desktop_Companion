@@ -374,6 +374,7 @@ namespace HA_Desktop_Companion
 
         private async void syncerTickAsync(object sender, EventArgs e)
         {
+            syncer.Stop();
             try
             {
                 log.Write("MAIN-Syncer Tick n:" + syncerIterator);
@@ -386,6 +387,7 @@ namespace HA_Desktop_Companion
                 log.Write("MAIN-syncer Error " + ex.Message);
             }
             syncerIterator++;
+            syncer.Start();
         }
 
         private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
@@ -422,7 +424,7 @@ namespace HA_Desktop_Companion
             var results = await Task.WhenAll(tasks);
             foreach (var item in results)
             {
-                log.Write("SENSOR-Read Outcome " + item.ToString());
+                log.Write("SENSOR/READ/" + item.ToString());
             }
 
             //Send Data

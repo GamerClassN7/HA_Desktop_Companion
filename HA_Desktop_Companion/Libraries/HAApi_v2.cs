@@ -273,8 +273,8 @@ namespace HA_Desktop_Companion.Libraries
                 Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
                 if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
                 {
-                    log.Write("API\ADD\SKIP -> " + uniqueId + " - " + state + "==" + oldFrame["state"]  + "-" + "SAME !");
-                    return;
+                    log.Write("API/ADD/SKIP/SAME/[" + uniqueId + "]'" + state + "'=='" + oldFrame["state"]+"'");
+                    return false;
                 }
 
                 Dictionary<string, object> data = new()
@@ -287,12 +287,13 @@ namespace HA_Desktop_Companion.Libraries
                 if (!String.IsNullOrEmpty(icon))
                     data.Add("icon", icon);
 
-                log.Write("API\ADD\DATA -> "+ uniqueId + " - " + state);
+                log.Write("API/ADD/DATA[" + uniqueId + "]'" + state + "'");
                 entitiesData.Add(data);
                 return true;
             } catch (Exception ex)
             {
-                log.Write("API\ADD\ERROR -> Failed to add data to frame:" + api_base_url + " " + ex.Message);
+                log.Write("API/ADD/ERROR[" + uniqueId + "]" + api_base_url + " ");
+                log.Write(ex.Message);
                 return false;
             }
             return false;

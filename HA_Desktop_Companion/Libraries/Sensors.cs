@@ -61,17 +61,18 @@ namespace HA_Desktop_Companion.Libraries
                             CreateNoWindow = true
                         }
                 };
-
+             
                 process.Start();
                 string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 process.WaitForExit();
 
                 foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
                 {
-                    if (item.Split(":").Length <= 0)
+                    if (item.Split(":").Count() < 2)
                         continue;
 
                     string outputResult = Regex.Replace(item.Split(":")[1].Trim(), @"\t|\n|\r", "").Trim();
+
                     if (!String.IsNullOrEmpty(deselector))
                     {
                         if (item.Contains(selector) && !item.Contains(deselector))
@@ -86,54 +87,66 @@ namespace HA_Desktop_Companion.Libraries
                     }
                 }
             }
-            catch (Exception ex) { }
+            catch (Exception ex) {}
             return "";
         }
 
         public static object queryCurrentWindow()
         {
-            [DllImport("user32.dll")]
-            static extern IntPtr GetForegroundWindow();
+            try
+            {
+                [DllImport("user32.dll")]
+                static extern IntPtr GetForegroundWindow();
 
-            [DllImport("user32.dll")]
-            static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
+                [DllImport("user32.dll")]
+                static extern int GetWindowText(IntPtr hwnd, StringBuilder ss, int count);
 
-            [DllImport("user32.dll")]
-            static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+                [DllImport("user32.dll")]
+                static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-            IntPtr handle = IntPtr.Zero;
-            handle = GetForegroundWindow();
+                IntPtr handle = IntPtr.Zero;
+                handle = GetForegroundWindow();
 
-            const int nChar = 256;
-            StringBuilder ss = new StringBuilder(nChar);
+                const int nChar = 256;
+                StringBuilder ss = new StringBuilder(nChar);
 
-            /*uint procesId; 
-            GetWindowThreadProcessId(handle, out procesId);
-            return Process.GetProcessById((int)procesId).ProcessName + ".exe";*/
+                /*uint procesId; 
+                GetWindowThreadProcessId(handle, out procesId);
+                return Process.GetProcessById((int)procesId).ProcessName + ".exe";*/
 
-            /*if  ( <= 0)
-                return "";
+                /*if  ( <= 0)
+                    return "";
 
-            MessageBox.Show(ss.ToString());*/
+                MessageBox.Show(ss.ToString());*/
 
-            /*string path = ss.ToString();
-            string exeName = path.Split("\\").Last();
-            */
+                /*string path = ss.ToString();
+                string exeName = path.Split("\\").Last();
+                */
 
-            //TODO: Handle like Attributes for full name and path
-            ss = new StringBuilder(nChar);
-            string fullName = "";
-            if (GetWindowText(handle, ss, nChar) > 0)
-                fullName = ss.ToString();
+                //TODO: Handle like Attributes for full name and path
+                ss = new StringBuilder(nChar);
+                string fullName = "";
+                if (GetWindowText(handle, ss, nChar) > 0)
+                    fullName = ss.ToString();
 
-            return fullName;
+                return fullName;
+            }
+            catch (Exception ex) { }
+            return "";
         }
 
         public static double queryUptime()
         {
-            [DllImport("kernel32")]
-            extern static UInt64 GetTickCount64();
-            return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalHours;
+            try
+            {
+                [DllImport("kernel32")]
+                extern static UInt64 GetTickCount64();
+                return (TimeSpan.FromMilliseconds(GetTickCount64())).TotalHours;
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
         }
 
         public static string queryLocationByIP()
@@ -151,30 +164,33 @@ namespace HA_Desktop_Companion.Libraries
 
         public static bool queryConsentStore(string consent_category)
         {
-            string[] consentStores = {
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,
-                @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged" 
-            };
-
-            foreach (string path in consentStores)
+            try
             {
-                using (var rootKey = Registry.CurrentUser.OpenSubKey(path))
+                string[] consentStores = {
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged" 
+                };
+
+                foreach (string path in consentStores)
                 {
-                    if (rootKey != null)
+                    using (var rootKey = Registry.CurrentUser.OpenSubKey(path))
                     {
-                        foreach (var subKeyName in rootKey.GetSubKeyNames())
+                        if (rootKey != null)
                         {
-
-                            using (var subKey = rootKey.OpenSubKey(subKeyName))
+                            foreach (var subKeyName in rootKey.GetSubKeyNames())
                             {
-                                if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
-                                {
 
-                                    var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
-                                    if (endTime == 0)
+                                using (var subKey = rootKey.OpenSubKey(subKeyName))
+                                {
+                                    if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
                                     {
-                                        //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
-                                        return true;
+
+                                        var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
+                                        if (endTime == 0)
+                                        {
+                                            //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
+                                            return true;
+                                        }
                                     }
                                 }
                             }
@@ -182,7 +198,7 @@ namespace HA_Desktop_Companion.Libraries
                     }
                 }
             }
-
+            catch (Exception){}
             return false;
         }
 
