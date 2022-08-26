@@ -184,18 +184,18 @@ namespace HA_Desktop_Companion.Libraries
         {
             string resultUrl = base_url;
 
+            if (!string.IsNullOrEmpty(remote_ui_url))
+                resultUrl = remote_ui_url;
+  
+            if (resultUrl.ToString().EndsWith("/"))
+                resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
+
             if (resultUrl.StartsWith("https://"))
-                resultUrl = resultUrl.Replace("https://", "ws://");
+                resultUrl = resultUrl.Replace("https://", "wss://");
             else if (resultUrl.StartsWith("http://"))
                 resultUrl = resultUrl.Replace("http://", "ws://");
             else
                 resultUrl = "ws://"+ resultUrl;
-
-            if (!string.IsNullOrEmpty(remote_ui_url))
-                resultUrl = remote_ui_url;
-
-            if (resultUrl.ToString().EndsWith("/"))
-                resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
 
             return resultUrl;
         }
