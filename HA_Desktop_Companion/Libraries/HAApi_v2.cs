@@ -58,9 +58,10 @@ namespace HA_Desktop_Companion.Libraries
                 resultUrl = api_remote_ui_url;
 
             if (resultUrl.EndsWith("/"))
-            {
                 resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
-            }
+
+            if (!resultUrl.StartsWith("http"))
+                resultUrl = "http://" + resultUrl;
 
             return resultUrl;
         }
