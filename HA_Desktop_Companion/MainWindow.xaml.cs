@@ -377,14 +377,14 @@ namespace HA_Desktop_Companion
             syncer.Stop();
             try
             {
-                log.Write("MAIN-Syncer Tick n:" + syncerIterator);
+                log.Write("MAIN/SYNCER/TICK/" + syncerIterator);
 
                 await sendApiDataParallelAsync(apiConector);
                 wsConector.Check();
             }
             catch (Exception ex)
             {
-                log.Write("MAIN-syncer Error " + ex.Message);
+                log.Write("MAIN/SYNCER/TICK/ERROR/" + ex.Message);
             }
             syncerIterator++;
             syncer.Start();
