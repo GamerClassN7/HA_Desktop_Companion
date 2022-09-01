@@ -204,8 +204,17 @@ namespace HA_Desktop_Companion.Libraries
         {
             if (socket.State != WebSocketState.Open)
             {
-                log.Write("WS Closed Reregistering");
+                log.Write("WS/CLOSED/REREGISTERING");
                 registerWebSocket();
+            }
+        }
+
+        public async void disconnect()
+        {
+            if (socket.State == WebSocketState.Open)
+            {
+                log.Write("WS/DISCONECTING");
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
             }
         }
     }

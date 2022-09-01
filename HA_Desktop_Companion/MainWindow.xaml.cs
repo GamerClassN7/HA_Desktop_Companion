@@ -50,7 +50,7 @@ namespace HA_Desktop_Companion
             //Unaciunted Exceoption Handle
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(AllUnhandledExceptions);
-
+            SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(OnPowerModeChanged);
         }
 
         private void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
@@ -506,6 +506,21 @@ namespace HA_Desktop_Companion
 
             log.Write("MAIN-Failed to read senzor data :(");
             return false;
+        }
+        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            switch (e.Mode)
+            {
+                case PowerModes.Resume:
+                    wsConector.Check();
+                    syncer.Start();
+                    break;
+
+                case PowerModes.Suspend:
+                    syncer.Stop();
+                    wsConector.disconnect();
+                    break;
+            }
         }
     }
 }
