@@ -58,9 +58,10 @@ namespace HA_Desktop_Companion.Libraries
                 resultUrl = api_remote_ui_url;
 
             if (resultUrl.EndsWith("/"))
-            {
                 resultUrl = resultUrl.Substring(0, resultUrl.Length - 1);
-            }
+
+            if (!resultUrl.StartsWith("http"))
+                resultUrl = "http://" + resultUrl;
 
             return resultUrl;
         }
@@ -78,12 +79,13 @@ namespace HA_Desktop_Companion.Libraries
             request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
             request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + token);
             request.Content = JsonContent.Create(body);
-            log.Write("API -> " + JsonSerializer.Serialize(body, options));
+            log.Write("API/SEND/BODY");
+            log.Write(JsonSerializer.Serialize(body, options));
 
             using var httpClient = new HttpClient();
             var response = httpClient.Send(request);
 
-            log.Write("API CODE <- " + response.StatusCode);
+            log.Write("API/RESPONSE/CODE/" + response.StatusCode + "[" + (int)response.StatusCode + "]");
             if (!response.IsSuccessStatusCode)
             {
                 return JsonSerializer.Deserialize<JsonObject>("{}");
@@ -93,11 +95,12 @@ namespace HA_Desktop_Companion.Libraries
 
             if (String.IsNullOrEmpty(result))
             {
-                log.Write("API <- No BODY");
+                log.Write("API/RESPONSE/NOBODY");
                 return JsonSerializer.Deserialize<JsonObject>("{}");
             }
 
-            log.Write("API <- " +JsonSerializer.Serialize(result, options));
+            log.Write("API/RESPONSE/BODY");
+            log.Write(JsonSerializer.Serialize(result, options));
 
             return JsonSerializer.Deserialize<JsonObject>(result);
         }
@@ -287,7 +290,7 @@ namespace HA_Desktop_Companion.Libraries
                 if (!String.IsNullOrEmpty(icon))
                     data.Add("icon", icon);
 
-                log.Write("API/ADD/DATA[" + uniqueId + "]'" + state + "'");
+                log.Write("API/ADD/DATA[" + uniqueId + "]='" + state + "'");
                 entitiesData.Add(data);
                 return true;
             } catch (Exception ex)

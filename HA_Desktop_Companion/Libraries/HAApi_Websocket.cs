@@ -94,12 +94,12 @@ namespace HA_Desktop_Companion.Libraries
                 /*WEBSOCKET RECIEVE PHASE*/
                 Receive(socket);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                log.Write("WS crashed " + ex.Message);
             }
 
-            log.Write("WS crashed ");
             return;
         }
 

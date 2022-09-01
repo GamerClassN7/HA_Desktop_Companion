@@ -186,7 +186,7 @@ namespace HA_Desktop_Companion.Libraries
                                     {
 
                                         var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
-                                        if (endTime == 0)
+                                        if (endTime <= 0)
                                         {
                                             //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
                                             return true;
