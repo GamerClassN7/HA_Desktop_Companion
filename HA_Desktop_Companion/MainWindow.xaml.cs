@@ -386,8 +386,11 @@ namespace HA_Desktop_Companion
             {
                 log.Write("MAIN/SYNCER/TICK/ERROR/" + ex.Message);
             }
+
             syncerIterator++;
+
             syncer.Start();
+            log.housekeeping();
         }
 
         private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
