@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HA_Desktop_Companion"
-        Title="HA_Desktop_Compaino" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="HA_Desktop_Companion" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
 
 
     <Grid Background="#FF03A9F4" Margin="0,0,0,0">
@@ -24,7 +24,7 @@
 
         <Grid Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,0,0">
             <TextBox x:Name="apiBaseUrl" Margin="5,5,5,5" TextWrapping="Wrap" Foreground="White" Background="#FF186384" BorderThickness="0" VerticalContentAlignment="Center"/>
-            <TextBlock IsHitTestVisible="False" Text="http://homeassistant.local" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,0,0" Foreground="DarkGray">
+            <TextBlock IsHitTestVisible="False" Text="http://homeassistant.local:8123" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,0,0" Foreground="DarkGray">
                 <TextBlock.Style>
                     <Style TargetType="{x:Type TextBlock}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -78,7 +78,7 @@
 
 
         <CheckBox x:Name="debug" Content="Debug"  Grid.Row="2" Margin="5,5,5,5" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="debug_Checked"/>
-        <Label x:Name="version" Content="Label" Margin="0,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="top" Padding="0,0,0,0" Foreground="#FF186384"/>
+        <Label x:Name="version" Content="Label" Margin="4,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="top" Padding="0,0,0,0" Foreground="#FF186384"/>
         <TextBlock HorizontalAlignment="Left" Margin="120,7,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
     </Grid>
 </Window>
