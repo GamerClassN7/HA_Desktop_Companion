@@ -66,7 +66,7 @@ namespace HA_Desktop_Companion.Libraries
                 string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 process.WaitForExit();
 
-                foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                foreach (var item in output)
                 {
                     if (item.Split(":").Count() < 2)
                         continue;
