@@ -274,6 +274,7 @@ namespace HA_Desktop_Companion
 
         private void quit_Click(object sender, RoutedEventArgs e)
         {
+            SystemEvents.PowerModeChanged -= new PowerModeChangedEventHandler(OnPowerModeChanged);
             log.Write("MAIN -> Exit");
             Environment.Exit(0);
         }
