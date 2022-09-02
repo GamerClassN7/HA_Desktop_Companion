@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HA_Desktop_Companion"
-        Title="HA_Desktop_Compaino" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="HA_Desktop_Companion" Height="145" Width="378" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Grid.IsSharedSizeScope="True" Loaded="Window_Loaded" Closing="Window_Closing">
 
 
     <Grid Background="#FF03A9F4" Margin="0,0,0,0">
@@ -78,7 +78,7 @@
 
 
         <CheckBox x:Name="debug" Content="Debug"  Grid.Row="2" Margin="5,5,5,5" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Checked="debug_Checked"/>
-        <Label x:Name="version" Content="Label" Margin="0,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="top" Padding="0,0,0,0" Foreground="#FF186384"/>
+        <Label x:Name="version" Content="Label" Margin="4,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="top" Padding="0,0,0,0" Foreground="#FF186384"/>
         <TextBlock HorizontalAlignment="Left" Margin="120,7,0,0" Grid.Row="2" TextWrapping="Wrap" Text="TextBlock" VerticalAlignment="Top"/>
     </Grid>
 </Window>
