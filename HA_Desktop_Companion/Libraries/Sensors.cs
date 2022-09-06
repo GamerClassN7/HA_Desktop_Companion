@@ -186,9 +186,9 @@ namespace HA_Desktop_Companion.Libraries
                                     {
 
                                         var endTime = (long)subKey.GetValue("LastUsedTimeStop");
-                                        Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
 
-                                        if (endTime > 0)
+                                        if (endTime == 0)
                                         {
                                             //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
                                             return true;
