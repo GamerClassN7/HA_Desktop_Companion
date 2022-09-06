@@ -396,43 +396,50 @@ namespace HA_Desktop_Companion
 
         private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
         {
-            var sensorsClass = typeof(Sensors);
-            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
-            senzorTypes.Add("sensor", configData["sensor"]);
-            List<Task<bool>> tasks = new List<Task<bool>>();
-
-            //Add Binary Senzors to Dictionary
-            if (configData.ContainsKey("binary_sensor"))
-                senzorTypes.Add("binary_sensor", configData["binary_sensor"]);
-
-            //Parse each Senzor and aquire data
-            foreach (var item in senzorTypes)
+            try
             {
-                string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
-                foreach (var platform in platforms)
+                var sensorsClass = typeof(Sensors);
+                Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+                senzorTypes.Add("sensor", configData["sensor"]);
+                List<Task<bool>> tasks = new List<Task<bool>>();
+
+                //Add Binary Senzors to Dictionary
+                if (configData.ContainsKey("binary_sensor"))
+                    senzorTypes.Add("binary_sensor", configData["binary_sensor"]);
+
+                //Parse each Senzor and aquire data
+                foreach (var item in senzorTypes)
                 {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
-                    foreach (var integration in integrations)
+                    string senzorType = item.Key;
+                    Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                    foreach (var platform in platforms)
                     {
-                        List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
-                        foreach (var sensor in sensors)
+                        Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                        foreach (var integration in integrations)
                         {
-                            tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                            List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
+                            foreach (var sensor in sensors)
+                            {
+                                tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                            }
                         }
                     }
                 }
-            }
 
-            //Finish all tasks
-            var results = await Task.WhenAll(tasks);
-            foreach (var item in results)
+                //Finish all tasks
+                var results = await Task.WhenAll(tasks);
+                foreach (var item in results)
+                {
+                    log.Write("SENSOR/READ/" + item.ToString());
+                }
+
+                //Send Data
+                ApiConnection.sendHaEntitiData();
+            }
+            catch (Exception ex)
             {
-                log.Write("SENSOR/READ/" + item.ToString());
+                log.Write("MAIN/DATA/SEND/ERROR" + ex.Message);
             }
-
-            //Send Data
-            ApiConnection.sendHaEntitiData();
         }
 
         private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
