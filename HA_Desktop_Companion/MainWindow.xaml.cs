@@ -39,7 +39,7 @@ namespace HA_Desktop_Companion
         HAApi_Websocket wsConector;
 
         private bool isRegistered = false;
-        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configData;
+        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
         private DispatcherTimer syncer = new DispatcherTimer();
         private int syncerIterator = 0;
 
@@ -293,13 +293,13 @@ namespace HA_Desktop_Companion
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType];
                 foreach (var platform in platforms)
                 {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                    Dictionary<string, List<Dictionary<string, dynamic>>> integrations = (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value;
                     foreach (var integration in integrations)
                     {
-                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
+                        List<Dictionary<string, dynamic>> senzors = (List<Dictionary<string, dynamic>>)integration.Value;
                         foreach (var senzor in senzors)
                         {
 
