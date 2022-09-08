@@ -13,7 +13,7 @@ namespace HA_Desktop_Companion.Libraries
     public class Configuration
     {
         private string configPath;
-        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configurationData = new Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>>();
+        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configurationData = new Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>>();
 
         public Configuration(string path)
         {
@@ -43,6 +43,7 @@ namespace HA_Desktop_Companion.Libraries
             int num = 0;
             string subSection = "";
             string category = "";
+            string subArray = "";
 
             foreach (string line in text)
             {
@@ -67,6 +68,22 @@ namespace HA_Desktop_Companion.Libraries
 
                     if (value == "")
                     {
+                        if (splitedString[0].Contains("  "))
+                        {
+                            subArray = parameter;
+                            continue;
+                        }
+                        else
+                        {
+                            subArray = "";
+                        }
+                        if (section != "")
+                        {
+                            if (!configurationData.ContainsKey(section))
+                            {
+                                configurationData[section] = null;
+                            }
+                        }
                         section = parameter;
                         num = 0;
                         category = "";
@@ -76,54 +93,70 @@ namespace HA_Desktop_Companion.Libraries
 
                     if (parameter.Contains("- ") == true)
                     {
-                        subSection = parameter.Replace("- ", "");
+                        if (subArray == "") {
+                            subSection = parameter.Replace("- ", "");
 
-                        if (category == value)
-                        {
-                            num++;
-                        }
-                        else
-                        {
-                            if (!configurationData.ContainsKey(section) || !configurationData[section].ContainsKey(subSection) || !configurationData[section][subSection].ContainsKey(value) || configurationData[section][subSection][value].Count <= 0)
+                            if (category == value)
                             {
-                                num = 0;
+                                num++;
                             }
                             else
                             {
-                                num = configurationData[section][subSection][value].Count;
+                                if (!configurationData.ContainsKey(section) || !configurationData[section].ContainsKey(subSection) || !configurationData[section][subSection].ContainsKey(value) || configurationData[section][subSection][value].Count <= 0)
+                                {
+                                    num = 0;
+                                }
+                                else
+                                {
+                                    num = configurationData[section][subSection][value].Count;
+                                }
                             }
-                        }
 
-                        category = value;
-                        continue;
+                            category = value;
+                            continue;
+                        }
+                        else
+                        {
+                            parameter = parameter.Replace("- ", "");
+                        }
                     }
 
 
                     if (!configurationData.ContainsKey(section))
                     {
-                        configurationData[section] = new Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>();
+                        configurationData[section] = new Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>();
                     }
                     if (!configurationData[section].ContainsKey(subSection))
                     {
-                        configurationData[section][subSection] = new Dictionary<string, List<Dictionary<string, string>>>();
+                        configurationData[section][subSection] = new Dictionary<string, List<Dictionary<string, dynamic>>>();
                     }
                     if (!configurationData[section][subSection].ContainsKey(category))
                     {
-                        configurationData[section][subSection][category] = new List<Dictionary<string, string>>(100);
+                        configurationData[section][subSection][category] = new List<Dictionary<string, dynamic>>(100);
                     }
                     if (configurationData[section][subSection][category].Count <= num)
                     {
-                        configurationData[section][subSection][category].Add(new Dictionary<string, string>());
+                        configurationData[section][subSection][category].Add(new Dictionary<string, dynamic>());
                     }
-
-                    configurationData[section][subSection][category][num][parameter] = value.Replace("\"", "");
+                    if (subArray == "")
+                    {
+                        configurationData[section][subSection][category][num][parameter] = value.Replace("\"", "");
+                    }
+                    else
+                    {
+                        if (!configurationData[section][subSection][category][num].ContainsKey(subArray))
+                        {
+                            configurationData[section][subSection][category][num][subArray] = new Dictionary<string, string>();
+                        }
+                        configurationData[section][subSection][category][num][subArray][parameter] = value.Replace("\"", "");
+                    }
                 }
             }
 
             return true;
         }
 
-        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> GetConfigurationData()
+        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> GetConfigurationData()
         {
             //MessageBox.Show(JsonSerializer.Serialize(configurationData));
             return configurationData;
