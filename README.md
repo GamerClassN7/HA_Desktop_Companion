@@ -25,13 +25,12 @@ Feel free to contribute any time :)
 - battery_state
 - is_charging
 - wifi_ssid
-- cpu_temp
 - current_active_window
 - uptime
 - camera_in_use
 - cpu_temperature (only native api supported)
 - free_ram
-- wmic (You can integrate any wmix query syou want :))
+- wmic (You can integrate any wmic query you want :))
 ```yaml
 - platform: wmic
   wmic_path: Win32_Battery
