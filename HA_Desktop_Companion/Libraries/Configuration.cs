@@ -47,15 +47,25 @@ namespace HA_Desktop_Companion.Libraries
 
             foreach (string line in text)
             {
-                if (line.Contains(':') == true)
+                 string localLine = line;
+                if (line.Contains('#') == true)
                 {
-                    string[] splitedString = line.Split(':');
+                    localLine = line.Replace('#' + line.Split('#')[1], "");
+                }
+                if (localLine.Contains(':') == true)
+                {
+                    string[] splitedString = localLine.Split(':');
                     string parameter = splitedString[0].Trim();
                     string value = splitedString[1].Trim();
 
                     if (parameter == "")
                     {
                         continue;
+                    }
+
+                    if (subArray != "" && !splitedString[0].Contains("     "))
+                    {
+                        subArray = "";
                     }
 
                     if (splitedString.Length > 2)
@@ -68,7 +78,7 @@ namespace HA_Desktop_Companion.Libraries
 
                     if (value == "")
                     {
-                        if (splitedString[0].Contains("  "))
+                        if (splitedString[0].Contains("    "))
                         {
                             subArray = parameter;
                             continue;
