@@ -22,6 +22,7 @@ using Form = System.Windows.Forms;
 using Application = System.Windows.Application;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace HA_Desktop_Companion
 {
@@ -411,13 +412,13 @@ namespace HA_Desktop_Companion
                 foreach (var item in senzorTypes)
                 {
                     string senzorType = item.Key;
-                    Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                    Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType];
                     foreach (var platform in platforms)
                     {
-                        Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                        Dictionary<string, List<Dictionary<string, dynamic>>> integrations = (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value;
                         foreach (var integration in integrations)
                         {
-                            List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
+                            List<Dictionary<string, dynamic>> sensors = (List<Dictionary<string, dynamic>>)integration.Value;
                             foreach (var sensor in sensors)
                             {
                                 tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
@@ -442,7 +443,7 @@ namespace HA_Desktop_Companion
             }
         }
 
-        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
+        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, dynamic> sensor, string sensorType)
         {
             try
             {
@@ -483,18 +484,49 @@ namespace HA_Desktop_Companion
                         sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
                     }
 
+                    if (sensor.ContainsKey("filters"))
+                    {
+                        bool isNumeric = int.TryParse(sensorData.ToString(), out _);
+                        Dictionary<string, string> filters = sensor["filters"];
+
+                        if (isNumeric)
+                        {
+                            if (filters.ContainsKey("multiply"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("divide"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("deduct"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("add"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+                        }
+
+                    }
+
                     if (sensor.ContainsKey("accuracy_decimals"))
                     {
                         try
                         {
-                            if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$")) { 
+                            if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
+                            {
                                 sensorData = Math.Round(double.Parse(sensorData.ToString()), Int32.Parse(sensor["accuracy_decimals"]));
                             }
                         }
                         catch (Exception)
                         {
 
-                        
+
                         }
                     }
 

@@ -32,6 +32,8 @@ sensor:
     accuracy_decimals: 1
     icon: "mdi:cpu-64-bit"
     entity_category: "diagnostic"
+    filters:
+      - deduct: 273.15
   - platform: wmic
     wmic_path: Win32_OperatingSystem
     wmic_selector: FreePhysicalMemory
