@@ -198,6 +198,32 @@ namespace HA_Desktop_Companion.Libraries
                             }
                         }
                     }
+                    // Repeat the same search now under "LocalMachine"
+                    using (var rootKey = Registry.LocalMachine.OpenSubKey(path))
+                    {
+                        if (rootKey != null)
+                        {
+                            foreach (var subKeyName in rootKey.GetSubKeyNames())
+                            {
+
+                                using (var subKey = rootKey.OpenSubKey(subKeyName))
+                                {
+                                    if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
+                                    {
+
+                                        var endTime = (long)subKey.GetValue("LastUsedTimeStop");
+                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+
+                                        if (endTime == 0)
+                                        {
+                                            //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch (Exception){}
