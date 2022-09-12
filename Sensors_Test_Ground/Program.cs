@@ -12,18 +12,16 @@ string category = "% Processor Time";
 string instance = "_Total";
 int maxSampleCount = 3;
 
-Console.WriteLine(rqueryPerfCounter(name, category, instance, maxSampleCount));
+Console.WriteLine(queryPerfCounter(name, category, instance, maxSampleCount));
 Console.WriteLine();
 
-static float rqueryPerfCounter(string name, string category, string instance, int maxSampleCount)
+static float queryPerfCounter(string name, string category, string instance, int maxSampleCount)
 {
     try
     {
         PerformanceCounter total_cpu = new(name, category, instance);
-
-        maxSampleCount = 3;
         int sampleCount = maxSampleCount;
-
+        
         float result = 0;
         while (sampleCount >= 0)
         {
