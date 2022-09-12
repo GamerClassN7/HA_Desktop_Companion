@@ -276,7 +276,7 @@ namespace HA_Desktop_Companion.Libraries
                 Dictionary<string, object> oldFrame = entitiesDataOld.Find(o => o["unique_id"] == uniqueId);
                 if (oldFrame != null && oldFrame["state"].ToString() == state.ToString())
                 {
-                    log.Write("API/ADD/SKIP/SAME/[" + uniqueId + "]'" + state + "'=='" + oldFrame["state"]+"'");
+                    log.Write("API/ADD/SKIP/SAME/[" + uniqueId.ToString() + "]'" + state.ToString() + "'=='" + oldFrame["state"].ToString() + "'");
                     return false;
                 }
 
@@ -316,7 +316,22 @@ namespace HA_Desktop_Companion.Libraries
             return true;
 
             return false;*/
-            entitiesDataOld = entitiesData.ConvertAll(x => (Dictionary<string, object>)x).Concat(entitiesDataOld).GroupBy(x => x["unique_id"]).Select(x => x.Last()).ToList();
+
+            //TODO: Deduplicate duplicate 
+
+            foreach (Dictionary<string, object> actualItem in entitiesData)
+            {
+                Dictionary<string, object> oldItem = entitiesDataOld.Find(o => o["unique_id"] == actualItem["unique_id"]);
+                if (oldItem != actualItem)
+                {
+                    if (oldItem != null)
+                    {
+                        entitiesDataOld.Remove(oldItem);
+                    }
+                    entitiesDataOld.Add(actualItem);
+                }
+
+            }            
             entitiesData.Clear();
 
             return true;
