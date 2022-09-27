@@ -1,4 +1,4 @@
-> Most of the time new wersion introduce new bugs so please if you are using working wersion keep using it untill some stable release come pout :)
+> Most of the time new wersion introduce new bugs so please if you are using working wersion keep using it untill some stable release come out :)
 
 # HA_Desktop_Companion
 

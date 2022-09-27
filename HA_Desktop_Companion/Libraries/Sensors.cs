@@ -66,7 +66,7 @@ namespace HA_Desktop_Companion.Libraries
                 string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 process.WaitForExit();
 
-                foreach (var item in process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None))
+                foreach (var item in output)
                 {
                     if (item.Split(":").Count() < 2)
                         continue;
@@ -185,8 +185,36 @@ namespace HA_Desktop_Companion.Libraries
                                     if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
                                     {
 
-                                        var endTime = subKey.GetValue("LastUsedTimeStop") is long ? (long)subKey.GetValue("LastUsedTimeStop") : -1;
-                                        if (endTime <= 0)
+                                        var endTime = (long)subKey.GetValue("LastUsedTimeStop");
+                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+
+                                        if (endTime == 0)
+                                        {
+                                            //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // Repeat the same search now under "LocalMachine"
+                    using (var rootKey = Registry.LocalMachine.OpenSubKey(path))
+                    {
+                        if (rootKey != null)
+                        {
+                            foreach (var subKeyName in rootKey.GetSubKeyNames())
+                            {
+
+                                using (var subKey = rootKey.OpenSubKey(subKeyName))
+                                {
+                                    if (subKey.GetValueNames().Contains("LastUsedTimeStop"))
+                                    {
+
+                                        var endTime = (long)subKey.GetValue("LastUsedTimeStop");
+                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+
+                                        if (endTime == 0)
                                         {
                                             //MessageBox.Show(subKey.GetValue("LastUsedTimeStop").ToString());
                                             return true;
@@ -199,6 +227,7 @@ namespace HA_Desktop_Companion.Libraries
                 }
             }
             catch (Exception){}
+
             return false;
         }
 

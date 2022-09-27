@@ -15,10 +15,17 @@ namespace HA_Desktop_Companion.Libraries {
         public Logging(string logFilePath) {
             FileStream fs = File.Open(logFilePath, FileMode.Append, FileAccess.Write, FileShare.Read);
             sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            logFile = logFilePath;
         }
 
         public void Write(string msg, bool logOnly = false)
         {
+            if (sw.BaseStream == null)
+            {
+                Debug.WriteLine("SW/CLOSED");
+                return;
+            }
+
             if (lastMessage == msg)
             {
                 lastMessageCount++;
@@ -47,6 +54,18 @@ namespace HA_Desktop_Companion.Libraries {
             }
 
             lastMessage = msg;
+        }
+
+        public void housekeeping()
+        {
+            if (sw.BaseStream.Length > (1024 * 30)) //30MB
+            {
+                sw.Close();
+                File.Delete(logFile);
+                FileStream fs = File.Open(logFile, FileMode.Append, FileAccess.Write, FileShare.Read);
+                sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+            }
+
         }
     }
 }

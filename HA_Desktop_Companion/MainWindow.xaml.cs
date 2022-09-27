@@ -22,6 +22,7 @@ using Form = System.Windows.Forms;
 using Application = System.Windows.Application;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace HA_Desktop_Companion
 {
@@ -39,7 +40,7 @@ namespace HA_Desktop_Companion
         HAApi_Websocket wsConector;
 
         private bool isRegistered = false;
-        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>> configData;
+        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
         private DispatcherTimer syncer = new DispatcherTimer();
         private int syncerIterator = 0;
 
@@ -50,7 +51,7 @@ namespace HA_Desktop_Companion
             //Unaciunted Exceoption Handle
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.UnhandledException += new UnhandledExceptionEventHandler(AllUnhandledExceptions);
-
+            SystemEvents.PowerModeChanged += new PowerModeChangedEventHandler(OnPowerModeChanged);
         }
 
         private void AllUnhandledExceptions(object sender, UnhandledExceptionEventArgs e)
@@ -274,6 +275,7 @@ namespace HA_Desktop_Companion
 
         private void quit_Click(object sender, RoutedEventArgs e)
         {
+            SystemEvents.PowerModeChanged -= new PowerModeChangedEventHandler(OnPowerModeChanged);
             log.Write("MAIN -> Exit");
             Environment.Exit(0);
         }
@@ -292,13 +294,13 @@ namespace HA_Desktop_Companion
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
+                Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType];
                 foreach (var platform in platforms)
                 {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
+                    Dictionary<string, List<Dictionary<string, dynamic>>> integrations = (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value;
                     foreach (var integration in integrations)
                     {
-                        List<Dictionary<string, string>> senzors = (List<Dictionary<string, string>>)integration.Value;
+                        List<Dictionary<string, dynamic>> senzors = (List<Dictionary<string, dynamic>>)integration.Value;
                         foreach (var senzor in senzors)
                         {
 
@@ -377,61 +379,71 @@ namespace HA_Desktop_Companion
             syncer.Stop();
             try
             {
-                log.Write("MAIN-Syncer Tick n:" + syncerIterator);
+                log.Write("MAIN/SYNCER/TICK/" + syncerIterator);
 
                 await sendApiDataParallelAsync(apiConector);
                 wsConector.Check();
             }
             catch (Exception ex)
             {
-                log.Write("MAIN-syncer Error " + ex.Message);
+                log.Write("MAIN/SYNCER/TICK/ERROR/" + ex.Message);
             }
+
             syncerIterator++;
+
             syncer.Start();
+            log.housekeeping();
         }
 
         private async Task sendApiDataParallelAsync(HAApi_v2 ApiConnection)
         {
-            var sensorsClass = typeof(Sensors);
-            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
-            senzorTypes.Add("sensor", configData["sensor"]);
-            List<Task<bool>> tasks = new List<Task<bool>>();
-
-            //Add Binary Senzors to Dictionary
-            if (configData.ContainsKey("binary_sensor"))
-                senzorTypes.Add("binary_sensor", configData["binary_sensor"]);
-
-            //Parse each Senzor and aquire data
-            foreach (var item in senzorTypes)
+            try
             {
-                string senzorType = item.Key;
-                Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, string>>>>)senzorTypes[senzorType];
-                foreach (var platform in platforms)
+                var sensorsClass = typeof(Sensors);
+                Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+                senzorTypes.Add("sensor", configData["sensor"]);
+                List<Task<bool>> tasks = new List<Task<bool>>();
+
+                //Add Binary Senzors to Dictionary
+                if (configData.ContainsKey("binary_sensor"))
+                    senzorTypes.Add("binary_sensor", configData["binary_sensor"]);
+
+                //Parse each Senzor and aquire data
+                foreach (var item in senzorTypes)
                 {
-                    Dictionary<string, List<Dictionary<string, string>>> integrations = (Dictionary<string, List<Dictionary<string, string>>>)platform.Value;
-                    foreach (var integration in integrations)
+                    string senzorType = item.Key;
+                    Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>> platforms = (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType];
+                    foreach (var platform in platforms)
                     {
-                        List<Dictionary<string, string>> sensors = (List<Dictionary<string, string>>)integration.Value;
-                        foreach (var sensor in sensors)
+                        Dictionary<string, List<Dictionary<string, dynamic>>> integrations = (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value;
+                        foreach (var integration in integrations)
                         {
-                            tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                            List<Dictionary<string, dynamic>> sensors = (List<Dictionary<string, dynamic>>)integration.Value;
+                            foreach (var sensor in sensors)
+                            {
+                                tasks.Add(Task.Run(() => getEntityData(ApiConnection, integration.Key, sensorsClass, sensor, senzorType)));
+                            }
                         }
                     }
                 }
-            }
 
-            //Finish all tasks
-            var results = await Task.WhenAll(tasks);
-            foreach (var item in results)
+                //Finish all tasks
+                var results = await Task.WhenAll(tasks);
+                foreach (var item in results)
+                {
+                    log.Write("SENSOR/READ/" + item.ToString());
+                }
+
+                //Send Data
+                ApiConnection.sendHaEntitiData();
+            }
+            catch (Exception ex)
             {
-                log.Write("SENSOR/READ/" + item.ToString());
+                log.Write("MAIN/DATA/SEND/ERROR" + ex.Message);
             }
-
-            //Send Data
-            ApiConnection.sendHaEntitiData();
         }
 
-        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, string> sensor, string sensorType)
+        private bool getEntityData(HAApi_v2 ApiConnection, string integration, Type sensorsClass, Dictionary<string, dynamic> sensor, string sensorType)
         {
             try
             {
@@ -472,18 +484,49 @@ namespace HA_Desktop_Companion
                         sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
                     }
 
+                    if (sensor.ContainsKey("filters"))
+                    {
+                        bool isNumeric = int.TryParse(sensorData.ToString(), out _);
+                        Dictionary<string, string> filters = sensor["filters"];
+
+                        if (isNumeric)
+                        {
+                            if (filters.ContainsKey("multiply"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("divide"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("deduct"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+
+                            if (filters.ContainsKey("add"))
+                            {
+                                sensorData = (double.Parse(sensorData.ToString()) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat));
+                            }
+                        }
+
+                    }
+
                     if (sensor.ContainsKey("accuracy_decimals"))
                     {
                         try
                         {
-                            if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$")) { 
+                            if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
+                            {
                                 sensorData = Math.Round(double.Parse(sensorData.ToString()), Int32.Parse(sensor["accuracy_decimals"]));
                             }
                         }
                         catch (Exception)
                         {
 
-                        
+
                         }
                     }
 
@@ -506,6 +549,21 @@ namespace HA_Desktop_Companion
 
             log.Write("MAIN-Failed to read senzor data :(");
             return false;
+        }
+        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            switch (e.Mode)
+            {
+                case PowerModes.Resume:
+                    wsConector.Check();
+                    syncer.Start();
+                    break;
+
+                case PowerModes.Suspend:
+                    syncer.Stop();
+                    wsConector.disconnect();
+                    break;
+            }
         }
     }
 }
