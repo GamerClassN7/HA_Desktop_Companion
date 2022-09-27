@@ -2,7 +2,7 @@
 using Microsoft.Win32;
 using System.IO;
 
-Console.WriteLine("Hello, World!");
+Console.WriteLine("Hello, World :D !");
 
 
 
