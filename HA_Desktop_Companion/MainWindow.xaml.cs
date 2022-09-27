@@ -464,6 +464,7 @@ namespace HA_Desktop_Companion
 
                 foreach (ParameterInfo p in pars)
                 {
+                    //log.Write(p.Name);
                     if (sensor.ContainsKey(p.Name))
                     {
                         parameters.Insert(p.Position, sensor[p.Name]);
@@ -541,10 +542,12 @@ namespace HA_Desktop_Companion
                         ApiConnection.addHaEntitiData(sensor["unique_id"], sensorData, "sensor", sensor["icon"]);
                     }
                 }
-            return true;
+                return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                log.Write(ex.Message);
+                //log.Write(String.Join(", ", parameters.ToArray()));
             }
 
             log.Write("MAIN-Failed to read senzor data :(");

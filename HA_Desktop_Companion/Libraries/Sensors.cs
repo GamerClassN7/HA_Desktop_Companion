@@ -43,13 +43,14 @@ namespace HA_Desktop_Companion.Libraries
                     }
 
                 }
-            } catch (Exception) { }
+            }
+            catch (Exception) { }
             return "";
         }
 
         public static string queryWifi(string selector, string deselector = "")
         {
-            try 
+            try
             {
                 var process = new Process
                 {
@@ -61,7 +62,7 @@ namespace HA_Desktop_Companion.Libraries
                             CreateNoWindow = true
                         }
                 };
-             
+
                 process.Start();
                 string[] output = process.StandardOutput.ReadToEnd().ToString().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                 process.WaitForExit();
@@ -80,14 +81,14 @@ namespace HA_Desktop_Companion.Libraries
                             return outputResult;
                         }
                     }
-                    
+
                     if (item.Contains(selector))
                     {
                         return outputResult;
                     }
                 }
             }
-            catch (Exception ex) {}
+            catch (Exception ex) { }
             return "";
         }
 
@@ -154,7 +155,7 @@ namespace HA_Desktop_Companion.Libraries
             try
             {
                 string info = new WebClient().DownloadString("http://ipinfo.io/");
-                return (string) JsonSerializer.Deserialize<JsonObject>(info)["loc"];
+                return (string)JsonSerializer.Deserialize<JsonObject>(info)["loc"];
             }
             catch (Exception)
             {
@@ -168,7 +169,7 @@ namespace HA_Desktop_Companion.Libraries
             {
                 string[] consentStores = {
                     @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\" ,
-                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged" 
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\" + consent_category + @"\NonPackaged"
                 };
 
                 foreach (string path in consentStores)
@@ -226,7 +227,7 @@ namespace HA_Desktop_Companion.Libraries
                     }
                 }
             }
-            catch (Exception){}
+            catch (Exception) { }
 
             return false;
         }
@@ -236,7 +237,8 @@ namespace HA_Desktop_Companion.Libraries
             //ADD double 
             string variableStr = variable.ToString();
             //Debug.WriteLine("BEFORE CONVERSION" + variableStr);
-            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase)){
+            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
+            {
                 //Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
                 return bool.Parse(variableStr);
             }
@@ -245,7 +247,8 @@ namespace HA_Desktop_Companion.Libraries
                 //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
-            else if (Regex.IsMatch(variableStr, @"^\d$")) {
+            else if (Regex.IsMatch(variableStr, @"^\d$"))
+            {
                 //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);
             }
@@ -284,6 +287,35 @@ namespace HA_Desktop_Companion.Libraries
             }
 
             return false;
+        }
+
+        public static float queryPerfCounter(string perf_name, string perf_category, string perf_instance, string perf_max_sample)
+        {
+            //Debug.WriteLine(perf_name + " " + perf_category + " " + perf_nstance + " " + perf_max_sample);
+            try
+            {
+                PerformanceCounter total_cpu = new(perf_name, perf_category, perf_instance);
+                int sampleCount = Int32.Parse(perf_max_sample);
+                int maxSampleCount = Int32.Parse(perf_max_sample);
+
+                float result = 0;
+                while (sampleCount >= 0)
+                {
+                    if (sampleCount != maxSampleCount)
+                    {
+                        result += total_cpu.NextValue();
+                    }
+
+                    sampleCount--;
+                }
+
+                return (float) Math.Round((result / maxSampleCount));
+            }
+            catch (Exception)
+            {
+
+                return 0.0f;
+            }
         }
     }
 }
