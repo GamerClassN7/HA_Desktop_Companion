@@ -38,7 +38,7 @@ namespace HA_Desktop_Companion.Libraries {
                     if (!logOnly)
                         Debug.WriteLine(outMsg);
 
-                    sw.WriteLine("[" + DateTime.Now.ToString("yyyyMMddTHHmmss") + "]-" + outMsg);
+                    sw.WriteLine("[" + DateTime.Now.ToString("yyyyMMddTHHmmss") + "]()-" + outMsg);
                 } else
                 {
                     if (!logOnly)

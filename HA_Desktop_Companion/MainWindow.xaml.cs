@@ -23,6 +23,9 @@ using Application = System.Windows.Application;
 using System.Windows.Controls;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Reflection.Metadata.Ecma335;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
 
 namespace HA_Desktop_Companion
 {
@@ -66,6 +69,9 @@ namespace HA_Desktop_Companion
 
             log.Write("MAIN ->LOADED Start");
             //registration.IsEnabled = false;
+            //CHecking for updates
+            checkUpdates(Assembly.GetEntryAssembly().GetName().Version.ToString());
+
 
             //Load Settings
             string decodedApiToken = Encryption.ToInsecureString(Encryption.DecryptString(Properties.Settings.Default.apiToken));
@@ -575,6 +581,17 @@ namespace HA_Desktop_Companion
                     wsConector.disconnect();
                     break;
             }
+        }
+
+        public void checkUpdates(string Version)
+        {
+            if (!File.Exists(appDir + "/GH_Updater.exe"))
+            {
+                return;
+            }
+
+            var process = Process.Start(appDir + "/GH_Updater.exe", "'https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases' '"+ Version + "'");
+            process.WaitForExit();
         }
     }
 }

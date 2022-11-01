@@ -20,6 +20,9 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Xml.Linq;
 using System.IO;
+using static System.Net.Mime.MediaTypeNames;
+using Windows.Media.Protection.PlayReady;
+using System.IO.Compression;
 
 namespace GH_Updater
 {
@@ -29,33 +32,30 @@ namespace GH_Updater
     public partial class MainWindow : Window
     {
         private static readonly HttpClient client = new HttpClient();
+
         private static string appDir = Directory.GetCurrentDirectory();
 
         public MainWindow()
         {
             InitializeComponent();
-            checkForUpdates("https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", "0.0.0.7");
+            //Environment.Exit(0);
         }
 
-        internal async void checkForUpdates(string repository_url = "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", string assemblyVersion = "0.0.0.7")
+        public void checkForUpdates(string repository_url = "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", string assemblyVersion = "0.0.1.9")
         {
+            int assembylVersionNumber = Int32.Parse(string.Join("", new Regex("[0-9]").Matches(assemblyVersion)));
+
             client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
             client.DefaultRequestHeaders.Add("User-Agent", ".NET Foundation Repository Reporter");
 
-            string stringTask = await client.GetStringAsync(repository_url);
-            //MessageBox.Show(stringTask);
-
+            string stringTask = client.GetStringAsync(repository_url).Result;
             JsonArray msg = JsonSerializer.Deserialize<JsonArray>(stringTask);
+ 
             for (int i = 0; i < msg.Count(); i++)
             {
                 string versionString = string.Join("", new Regex("[0-9]").Matches(msg[i].AsObject()["tag_name"].ToString()));
                 int versionNumber = Int32.Parse(versionString);
-                
-                //MessageBox.Show(msg[i].AsObject()["tag_name"].ToString());
-                //MessageBox.Show(versionNumber.ToString());
-                //MessageBox.Show(msg[i].AsObject()["assets"].AsArray()[0].AsObject()["browser_download_url"].ToString());
 
                 string zipUrl = msg[i].AsObject()["assets"].AsArray()[0].AsObject()["browser_download_url"].ToString();
                 string zipName = msg[i].AsObject()["assets"].AsArray()[0].AsObject()["name"].ToString();
@@ -63,15 +63,26 @@ namespace GH_Updater
                 if (!Directory.Exists(appDir + "/cache/"))
                     Directory.CreateDirectory(appDir + "/cache/");
 
-                using (var client = new WebClient())
+                if (assembylVersionNumber < versionNumber)
                 {
-                    client.DownloadFile(zipUrl, appDir + "/cache/" + versionString+ "_"  + zipName);
+
+                    MessageBoxResult result = MessageBox.Show("update Found v"+ versionString, "Do you wish ti perform update ? ", MessageBoxButton.YesNo);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        using (var client = new WebClient())
+                        {
+                            client.DownloadFile(zipUrl, appDir + "/cache/" + versionString + "_" + zipName);
+                        }
+
+                        string zipPath = appDir + "/cache/" + versionString + "_" + zipName;
+                        string extractPath = @"..\exxtract\";
+
+        
+                        ZipFile.ExtractToDirectory(zipPath, extractPath, true);
+                        break;
+                    }
                 }
             }
-
-
-
-            throw new NotImplementedException();
         }
     }
 }

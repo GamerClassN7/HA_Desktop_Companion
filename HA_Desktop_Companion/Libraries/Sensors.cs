@@ -92,6 +92,27 @@ namespace HA_Desktop_Companion.Libraries
             return "";
         }
 
+        /*
+         
+            [DllImport("user32.dll")]
+static extern IntPtr GetForegroundWindow();
+
+[DllImport("user32.dll", SetLastError=true)]
+static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+
+public Process GetActiveProcess()
+{
+    IntPtr handle = GetForegroundWindow();
+    uint pID;
+   
+    GetWindowThreadProcessId(handle, out pID);
+
+    return Process.GetProcessById((Int32)pID);
+}
+         
+         */
+
         public static object queryCurrentWindow()
         {
             try
