@@ -46,7 +46,7 @@ sensor:
   - platform: perf_counter
     perf_name: Processor
     perf_category: "% Processor Time"
-    perf_nstance: _Total
+    perf_instance: _Total
     perf_max_sample: 3
     name: CPU Usage
     unique_id: cpu_usage

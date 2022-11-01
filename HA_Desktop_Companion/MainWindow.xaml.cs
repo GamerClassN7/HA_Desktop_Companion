@@ -61,7 +61,7 @@ namespace HA_Desktop_Companion
             log.Write(ex.ToString());
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
 
             log.Write("MAIN ->LOADED Start");
@@ -75,13 +75,11 @@ namespace HA_Desktop_Companion
             string cloudhook_url = Properties.Settings.Default.apiCloudhookUrl;
             log.Write("MAIN ->Setting Loaded");
 
-
             //Set UI data
             apiToken.Password = decodedApiToken;
             apiBaseUrl.Text = base_url;
             version.Content = Assembly.GetEntryAssembly().GetName().Version.ToString();
             log.Write("MAIN ->UI Set");
-
 
             //Load Config
             if (!config.load())
@@ -159,6 +157,11 @@ namespace HA_Desktop_Companion
                         log.Write("MAIN-Autostart Failed!");
                         log.Write("MAIN-Webhook ID invalid!");
                         registration.IsEnabled = true;
+                        MessageBoxResult result = MessageBox.Show("do you with to try to register again?", "Registration not found", MessageBoxButton.YesNo);
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            await registrationMethod();
+                        }
                     }
                 }
             }
@@ -185,6 +188,11 @@ namespace HA_Desktop_Companion
         }
 
         private async void registrationAsync_Click(object sender, RoutedEventArgs e)
+        {
+            await registrationMethod();
+        }
+
+        private async Task registrationMethod()
         {
             registration.IsEnabled = false;
             log.Write("MAIN-Registration Clicked");
@@ -270,7 +278,7 @@ namespace HA_Desktop_Companion
             wsConector = new HAApi_Websocket(apiBaseUrl.Text, apiToken.Password, log, apiConector.api_webhook_id, apiConector.api_remote_ui_url, apiConector.api_cloudhook_url);
             log.Write("MAIN-WS Registered!");
 
-            registrationText.Text= "Registered";
+            registrationText.Text = "Registered";
         }
 
         private void quit_Click(object sender, RoutedEventArgs e)
