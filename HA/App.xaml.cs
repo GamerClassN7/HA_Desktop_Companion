@@ -27,7 +27,7 @@ namespace HA
         static HomeAssistantAPI ha;
         static DispatcherTimer? update = null;
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
-        static Dictionary<string, string> sensorLastValues = new Dictionary<string, string>();
+        static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
 
         private static string appDir = Directory.GetCurrentDirectory();

@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace HA.Class.Sensors
 {
@@ -16,7 +11,7 @@ namespace HA.Class.Sensors
             try
             {
                 string info = new WebClient().DownloadString("http://ipinfo.io/");
-                return (string)JsonSerializer.Deserialize<JsonObject>(info)["loc"];
+                return (string)JObject.Parse(info)["loc"];
             }
             catch (Exception)
             {
