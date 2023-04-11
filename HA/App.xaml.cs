@@ -29,7 +29,6 @@ namespace HA
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
-
         private static string appDir = Directory.GetCurrentDirectory();
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
@@ -138,6 +137,7 @@ namespace HA
             {
                 ha.setWebhookID(webhookId);
                 ha.setSecret(secret);
+                IpLocation.test();
             }
 
             update = new DispatcherTimer();
