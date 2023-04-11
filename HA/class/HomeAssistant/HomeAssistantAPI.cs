@@ -10,11 +10,11 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
-using HA.@class.HomeAssistant.Objects;
+using HA.Class.HomeAssistant.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace HA.@class.HomeAssistant
+namespace HA.Class.HomeAssistant
 {
     public class HomeAssistantAPI
     {
@@ -146,6 +146,12 @@ namespace HA.@class.HomeAssistant
 
         public string sendSensorBuffer()
         {
+            if (sensorsBuffer.Count < 1)
+            {
+                Debug.WriteLine("No data to send!");
+                return "";
+            }
+
             HomeAssistantRequest request = new HomeAssistantRequest();
 
             request.SetData(sensorsBuffer);
