@@ -16,19 +16,37 @@ namespace HA
     /// </summary>
     public partial class App : Application
     {
-        HomeAssistantAPI ha;
-
+        static HomeAssistantAPI ha;
+        static DispatcherTimer? update = null;
         void App_Startup(object sender, StartupEventArgs e)
         {
+           
+        }
+
+        public static bool Start()
+        {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
             string token = config.AppSettings.Settings["token"].Value;
             string url = config.AppSettings.Settings["url"].Value;
             string webhookId = config.AppSettings.Settings["webhookId"].Value;
             string secret = config.AppSettings.Settings["secret"].Value;
 
-            ha = new HomeAssistantAPI(url, token);
+            try
+            {
+                ha = new HomeAssistantAPI(url, token);
+            } catch {
+                return false;
+            }
 
-            MessageBoxResult messageBoxResult = MessageBox.Show(ha.GetVersion());
+            try
+            {
+                ha.GetVersion();
+            }
+            catch
+            {
+                return false;
+            }
 
             if (String.IsNullOrEmpty(webhookId))
             {
@@ -44,7 +62,7 @@ namespace HA
                 device.os_version = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
                 device.supports_encryption = false;
                 MessageBox.Show(ha.RegisterDevice(device));
- 
+
                 HomeAssistatnSensors senzor = new HomeAssistatnSensors();
                 senzor.device_class = "battery";
                 senzor.icon = "mdi:battery";
@@ -57,17 +75,30 @@ namespace HA
                 senzor.entity_category = "diagnostic";
                 senzor.disabled = false;
                 MessageBox.Show(ha.RegisterSensorData(senzor));
-            } else {
+            }
+            else
+            {
                 ha.setWebhookID(webhookId);
                 ha.setSecret(secret);
             }
 
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(1);
-            timer.Tick += UpdateSenzorTick;
-            timer.Start();
+            update = new DispatcherTimer();
+            update.Interval = TimeSpan.FromSeconds(1);
+            update.Tick += UpdateSenzorTick;
+            update.Start();
+
+            return true;
         }
-        async void UpdateSenzorTick(object sender, EventArgs e)
+
+        public static void Stop()
+        {
+            if (update != null)
+            {
+                update.Stop();
+            }
+        }
+
+        static async void UpdateSenzorTick(object sender, EventArgs e)
         {
             HomeAssistatnSensors senzor = new HomeAssistatnSensors();
 

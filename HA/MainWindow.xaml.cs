@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -39,8 +40,30 @@ namespace HA
             config.AppSettings.Settings["url"].Value = url.Text;
             config.AppSettings.Settings["token"].Value = token.Text;
 
-
             config.Save(ConfigurationSaveMode.Modified);
+
+            App.Stop();
+            if (!App.Start())
+            {
+                MessageBox.Show("Initialization Failed", "Error");
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+            token.Text = config.AppSettings.Settings["token"].Value;
+            url.Text = config.AppSettings.Settings["url"].Value;
+            string webhookId = config.AppSettings.Settings["webhookId"].Value;
+
+            if (!string.IsNullOrEmpty(webhookId))
+            {
+                if (!App.Start())
+                {
+                    MessageBox.Show("Autoregistration Failed", "Error");
+                }
+            }
         }
     }
 }
