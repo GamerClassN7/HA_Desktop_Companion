@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -18,7 +17,8 @@ using HA.Class.HomeAssistant.Objects;
 using HA.Class.Sensors;
 using HA.Class.YamlConfiguration;
 using Microsoft.Toolkit.Uwp.Notifications;
-using Windows.Media.Playback;
+using Microsoft.Win32;
+using Forms = System.Windows.Forms;
 
 namespace HA
 {
@@ -38,10 +38,8 @@ namespace HA
 
         static HomeAssistantWS ws;
 
-        void App_Startup(object sender, StartupEventArgs e)
-        {
-            
-        }
+        private Forms.NotifyIcon notifyIcon;
+        private static Mutex _mutex = null;
 
         public static bool Start()
         {
@@ -447,6 +445,86 @@ namespace HA
             player.Play();
             await Task.Delay(duration);
             player.Stop();
+        }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            string appName = Assembly.GetExecutingAssembly().GetName().Name;
+            bool createdNew;
+
+            _mutex = new Mutex(true, appName, out createdNew);
+
+            if (!createdNew)
+            {
+                ShowNotification("Already Running !!!");
+                Environment.Exit(0);
+            }
+
+            System.ComponentModel.Container components = new System.ComponentModel.Container();
+            Forms.ContextMenuStrip contextMenu = new Forms.ContextMenuStrip();
+
+            Forms.ToolStripMenuItem showItem = new Forms.ToolStripMenuItem();
+            showItem.Text = "Show";
+            showItem.Click += (s, args) => showItem_Click();
+
+            contextMenu.Items.Add(showItem);
+
+            Forms.ToolStripMenuItem ConnectionTestItem = new Forms.ToolStripMenuItem();
+            ConnectionTestItem.Text = "Test Connection";
+            ConnectionTestItem.Click += (s, args) => connectionTestItem_Click();
+
+            contextMenu.Items.Add(ConnectionTestItem);
+
+            Forms.ToolStripMenuItem quitItem = new Forms.ToolStripMenuItem();
+            quitItem.Text = "Exit";
+            quitItem.Click += (s, args) => quitItem_Click();
+
+            contextMenu.Items.Add(quitItem);
+
+            notifyIcon = new Forms.NotifyIcon();
+            notifyIcon.Visible = true;
+            notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
+            notifyIcon.ContextMenuStrip = contextMenu;
+
+            base.OnActivated(e);
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            notifyIcon.Dispose();
+            base.OnExit(e);
+        }
+       
+        private void trayIcon_DoubleClick()
+        {
+            MainWindow.WindowState = WindowState.Normal;
+            MainWindow.ShowInTaskbar = true;
+            MainWindow.Show();
+            MainWindow.Activate();
+        }
+
+        private void connectionTestItem_Click()
+        {
+            MessageBox.Show("Conection Test", "Testing....");
+        }
+
+        private void quitItem_Click()
+        {
+            notifyIcon.Dispose();
+            Environment.Exit(0);
+        }
+
+        private void showItem_Click()
+        {
+            MainWindow.WindowState = WindowState.Normal;
+            MainWindow.ShowInTaskbar = true;
+            MainWindow.Show();
+            MainWindow.Activate();
+        }
+
+        private void OnExit(object sender, ExitEventArgs e)
+        {
+
         }
     }
 }

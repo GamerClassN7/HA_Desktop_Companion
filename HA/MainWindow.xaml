@@ -44,7 +44,7 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Button x:Name="save" Content="Save" Margin="0,5,1.5,0" Click="Save_Click"/>
-                <Button x:Name="close" Content="Close" Margin="1.5,5,0,0" Click="Save_Click" Grid.Column="1"/>
+                <Button x:Name="close" Content="Close" Margin="1.5,5,0,0" Click="Close_Click" Grid.Column="1"/>
             </Grid>
         </Grid>
     </Grid>

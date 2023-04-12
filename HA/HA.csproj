@@ -5,9 +5,11 @@
     <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ha_logo.ico" />
     <None Remove="ha_logo.png" />
   </ItemGroup>
 
@@ -18,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="ha_logo.ico" />
     <Resource Include="ha_logo.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
