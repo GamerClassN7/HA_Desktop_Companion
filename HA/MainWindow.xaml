@@ -6,34 +6,46 @@
         xmlns:local="clr-namespace:HA"
         mc:Ignorable="d"
         Title="MainWindow"
-        Height="210"
-        Width="450"
-        ResizeMode="NoResize" Loaded="Window_Loaded">
-    <Grid>
-        <Grid Margin="5,5,5,5">
+        ResizeMode="NoResize" 
+        Loaded="Window_Loaded"
+        Background="#FF03A9F4"
+        Width="454"
+        SizeToContent="Height" Closing="Window_Closing"
+        >
+    <Grid Margin="5px,5px,5px,5px">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150px"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Border Grid.Row="0" Grid.Column="0" Width="150" Margin="0,0,0,0">
+            <Image Margin="5px,5px,5px,5px" Source="/ha_logo.png" />
+        </Border>
+        <Grid  Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="27"/>
-                <RowDefinition Height="27"/>
-                <RowDefinition Height="27"/>
-                <RowDefinition Height="27"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+                <RowDefinition/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Height="17" Grid.Column="1" Margin="5,5,5,5" TextWrapping="Wrap" Grid.ColumnSpan="2" Grid.Row="0"><Run Language="cs-cz" Text="Home Assistant URL"/></TextBlock>
-            <TextBox x:Name="url" Height="20" Margin="5,5,5,5" TextWrapping="Wrap" Text="http://homeassistant:8123" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1"/>
+            <TextBlock Margin="0,2,0,5" TextWrapping="Wrap" Grid.Row="0"><Run Language="cs-cz" Text="Home Assistant URL"/></TextBlock>
+            <TextBox x:Name="url" Margin="0,0,0,0" TextWrapping="Wrap" Text="http://homeassistant:8123" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1"/>
 
-            <TextBlock Height="17" Grid.Column="1" Margin="5,5,5,5" TextWrapping="Wrap" Grid.ColumnSpan="2" Grid.Row="2"><Run Language="cs-cz" Text="API Token"/></TextBlock>
-            <TextBox x:Name="token" Height="20" Margin="5,5,5,5" TextWrapping="Wrap" Text="" Grid.ColumnSpan="2" Grid.Row="3" Grid.Column="1"/>
+            <TextBlock Grid.Column="1" Margin="0,2,0,5" TextWrapping="Wrap" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Grid.Row="2"><Run Language="cs-cz" Text="API Token"/></TextBlock>
+            <TextBox x:Name="token" Margin="0,0,0,0" TextWrapping="Wrap" Text="" Grid.ColumnSpan="2" Grid.Row="3" Grid.Column="1"/>
 
-            <Button x:Name="save" Grid.Column="2" Content="Save" Margin="5,5,5,5" Grid.Row="4" Click="Save_Click"/>
-            <Border Grid.Row="0" Grid.RowSpan="6" Grid.Column="0" Background="#FFED0A0A" Height="150" Width="150" Margin="0,0,0,0" VerticalAlignment="Top">
-                <Image Margin="5,5,5,5" Source="/ha_logo.png" />
-            </Border>
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="save" Content="Save" Margin="0,5,1.5,0" Click="Save_Click"/>
+                <Button x:Name="close" Content="Close" Margin="1.5,5,0,0" Click="Save_Click" Grid.Column="1"/>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

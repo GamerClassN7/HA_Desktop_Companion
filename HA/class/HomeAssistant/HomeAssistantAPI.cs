@@ -27,10 +27,21 @@ namespace HA.Class.HomeAssistant
 
         private List<HomeAssistatnSensors> sensorsBuffer = new List<HomeAssistatnSensors>();
 
+        public string getWebhookID()
+        {
+            return webhookId;
+        }
+
+        public string getSecret()
+        {
+            return secret;
+        }
+
         public void setWebhookID(string apiWebhookId)
         {
             webhookId = apiWebhookId;
         }
+
         public void setSecret(string apiSecret)
         {
             secret = apiSecret;

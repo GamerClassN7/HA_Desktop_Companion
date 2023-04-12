@@ -19,6 +19,7 @@ namespace HA.Class.Sensors
                 return "";
             }
         }
+
         public static void test()
         {
             [DllImport("user32.dll")]

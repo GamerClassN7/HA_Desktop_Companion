@@ -45,6 +45,7 @@ sensor:
     unit_of_measurement: "%"
     icon: "mdi:cpu-64-bit"
     entity_category: "diagnostic"
+    accuracy_decimals: 0
     update_interval: 10
   - platform: wifi
     selector: "State"
@@ -63,6 +64,7 @@ sensor:
     name: Currently Active Window
     unique_id: currently_active_window
     icon: "mdi:application"
+    update_interval: 20
   - platform: uptime
     name: Uptime
     unique_id: uptime

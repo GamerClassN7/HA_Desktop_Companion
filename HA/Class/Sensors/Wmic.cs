@@ -13,33 +13,28 @@ namespace HA.Class.Sensors
     {
         public static string GetValue(string wmic_class, string wmic_selector, string wmic_namespace = @"root\\wmi")
         {
+            Debug.WriteLine("NAMESPACE " + wmic_namespace);
+            Debug.WriteLine("SELECT " + wmic_selector + " FROM " + wmic_class);
+
             try
             {
-                Debug.WriteLine("NAMESPACE " + wmic_namespace);
-                Debug.WriteLine("SELECT " + wmic_selector + " FROM " + wmic_class);
-                try
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher(wmic_namespace, ("SELECT " + wmic_selector +  " FROM " + wmic_class));
+                foreach (ManagementObject queryObj in searcher.Get())
                 {
-                    ManagementObjectSearcher searcher = new ManagementObjectSearcher(wmic_namespace, ("SELECT " + wmic_selector +  " FROM " + wmic_class));
-                    foreach (ManagementObject queryObj in searcher.Get())
+                    if (!Equals(queryObj, null) && queryObj != null && queryObj != new ManagementObject() { })
                     {
-                        if (queryObj != null && queryObj != new ManagementObject() { })
-                        {
-                            return queryObj[wmic_selector].ToString();
+                        if (queryObj.Properties.Count > 0 && queryObj?[wmic_selector]?.ToString() != null) { 
+                            return queryObj?[wmic_selector]?.ToString();
                         }
                     }
                 }
-                catch (ManagementException e)
-                {
-                    MessageBox.Show("An error occurred while querying for WMI data: " + e.Message);
-                }
-
-                return "";
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
-                return "";
+                Debug.WriteLine("An error occurred while querying for WMI data: " + e.Message);
             }
+
+            return "";
         }
     }
 }

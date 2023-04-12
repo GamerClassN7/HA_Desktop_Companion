@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -16,6 +17,8 @@ using HA.Class.HomeAssistant;
 using HA.Class.HomeAssistant.Objects;
 using HA.Class.Sensors;
 using HA.Class.YamlConfiguration;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Windows.Media.Playback;
 
 namespace HA
 {
@@ -33,9 +36,11 @@ namespace HA
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
+        static HomeAssistantWS ws;
+
         void App_Startup(object sender, StartupEventArgs e)
         {
-           
+            
         }
 
         public static bool Start()
@@ -50,6 +55,11 @@ namespace HA
                 MessageBox.Show("Config Error Report to Developer!");
             }
             configData = configurationObject.GetConfigurationData();
+
+            if (configData.ContainsKey("ip_location"))
+            {
+                MessageBox.Show("IPLocation");
+            }
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -76,16 +86,23 @@ namespace HA
 
             if (String.IsNullOrEmpty(webhookId))
             {
-                HomeAssistatnDevice device = new HomeAssistatnDevice();
-                device.device_name = "DEBUG_" + System.Environment.MachineName;
-                device.device_id = "DEBUG_" + System.Environment.MachineName;
-                device.app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower();
-                device.app_name = Assembly.GetExecutingAssembly().GetName().Name;
-                device.app_version = Assembly.GetEntryAssembly().GetName().Version.ToString();
-                device.manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2");
-                device.model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2");
-                device.os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2");
-                device.os_version = Environment.OSVersion.ToString(); ;
+                HomeAssistatnDevice device = new HomeAssistatnDevice
+                {
+                    device_name = "DEBUG_" + System.Environment.MachineName,
+                    device_id = "DEBUG_" + System.Environment.MachineName,
+                    app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
+                    app_name = Assembly.GetExecutingAssembly().GetName().Name,
+                    app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
+                    manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
+                    model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
+                    os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
+                    os_version = Environment.OSVersion.ToString(),
+                    app_data = new {
+                        push_websocket_channel = true,
+                    }
+                };
+                Debug.WriteLine(device);
+
                 device.supports_encryption = false;
                 MessageBox.Show(ha.RegisterDevice(device));
 
@@ -128,6 +145,9 @@ namespace HA
 
                                 ha.RegisterSensorData(senzor);
                                 Thread.Sleep(100);
+
+                                webhookId = ha.getWebhookID();
+                                secret = ha.getSecret();
                             }
                         }
                     }
@@ -137,13 +157,23 @@ namespace HA
             {
                 ha.setWebhookID(webhookId);
                 ha.setSecret(secret);
-                IpLocation.test();
+                //IpLocation.test();
             }
+
+
+            if (configData.ContainsKey("websocket"))
+            {
+                
+                //WEBSOCKET INITIALIZATION
+                ws = new HomeAssistantWS(url.Replace("http", "ws"), webhookId, token);
+
+            }
+
 
             update = new DispatcherTimer();
             update.Interval = TimeSpan.FromSeconds(5);
-            update.Tick += UpdateSenzorTick;
-            update.Start();
+            update.Tick += UpdateSensorTick;
+            //update.Start();
 
             return true;
         }
@@ -156,7 +186,7 @@ namespace HA
             }
         }
 
-        static async void UpdateSenzorTick(object sender, EventArgs e)
+        static async void UpdateSensorTick(object sender, EventArgs e)
         {
             Dictionary<string, object> senzorTypes = getSensorsConfiguration();
             foreach (var item in senzorTypes)
@@ -219,6 +249,11 @@ namespace HA
 
                             if (senzorType != "binary_sensor")
                             {
+                                if (string.IsNullOrEmpty(sensorData))
+                                {
+                                    sensorData = "0";
+                                }
+
                                 if (sensorDefinition.ContainsKey("value_map"))
                                 {
                                     string[] valueMap = sensorDefinition["value_map"].Split("|");
@@ -312,6 +347,12 @@ namespace HA
             }
 
             ha.sendSensorBuffer();
+
+            if (configData.ContainsKey("ip_location"))
+            {
+
+            }
+
         }
 
         private static Dictionary<string, object> getSensorsConfiguration()
@@ -348,6 +389,64 @@ namespace HA
 
             //Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
             return variableStr;
+        }
+   
+        public static void Close()
+        {
+            ws.Close();
+        }
+
+        public void ShowNotification(string title = "", string body = "", string imageUrl = "", string audioUrl = "", int duration = 5000)
+        {
+            ToastContentBuilder toast = new ToastContentBuilder();
+            toast.AddText(body);
+
+            if (!String.IsNullOrEmpty(title))
+            {
+                toast.AddText(title);
+            }
+
+            if (!String.IsNullOrEmpty(imageUrl))
+            {
+                string fileName = string.Format("{0}{1}.png", System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+                if (imageUrl.StartsWith("http"))
+                {
+                    WebClient wc = new WebClient();
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    wc.DownloadFile(imageUrl, fileName);
+                 
+                    Debug.WriteLine("DOWNLOADED");
+                }
+
+                Debug.WriteLine("file:///" + fileName);
+                toast.AddInlineImage(new Uri("file:///" + fileName));
+            }
+
+            if (!String.IsNullOrEmpty(audioUrl))
+            {
+                string fileName = string.Format("{0}{1}.wav", System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+                if (audioUrl.StartsWith("http"))
+                {
+                    WebClient wc = new WebClient();
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    wc.DownloadFile(audioUrl, fileName);
+                }
+                Debug.WriteLine(fileName);
+                
+                playNotificationAudio(fileName, duration);
+
+            }
+           
+            toast.Show();
+        }
+
+        private async Task playNotificationAudio(string fileName, int duration)
+        {
+            System.Media.SoundPlayer player = new System.Media.SoundPlayer();
+            player.SoundLocation = fileName;
+            player.Play();
+            await Task.Delay(duration);
+            player.Stop();
         }
     }
 }
