@@ -2,25 +2,26 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
-    <Nullable>enable</Nullable>
+	  <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
+	  <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
+	<UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="ha_logo.ico" />
+	<ItemGroup>
+	<None Remove="ha_logo.ico" />
     <None Remove="ha_logo.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="Autoupdater.NET.Official" Version="1.7.7" />
+	  <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Management" Version="7.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="ha_logo.ico" />
+	<ItemGroup>
+	<Resource Include="ha_logo.ico" />
     <Resource Include="ha_logo.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
