@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-      <PackageReference Include="Autoupdater.NET.Official" Version="1.7.7" />
 	  <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Management" Version="7.0.1" />

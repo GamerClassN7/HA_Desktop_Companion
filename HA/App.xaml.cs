@@ -160,18 +160,15 @@ namespace HA
 
 
             if (configData.ContainsKey("websocket"))
-            {
-                
+            {                 
                 //WEBSOCKET INITIALIZATION
                 ws = new HomeAssistantWS(url.Replace("http", "ws"), webhookId, token);
-
             }
-
 
             update = new DispatcherTimer();
             update.Interval = TimeSpan.FromSeconds(5);
             update.Tick += UpdateSensorTick;
-            //update.Start();
+            update.Start();
 
             return true;
         }
@@ -392,6 +389,7 @@ namespace HA
         public static void Close()
         {
             ws.Close();
+            Stop();
         }
 
         public void ShowNotification(string title = "", string body = "", string imageUrl = "", string audioUrl = "", int duration = 5000)
@@ -459,72 +457,6 @@ namespace HA
                 ShowNotification("Already Running !!!");
                 Environment.Exit(0);
             }
-
-            System.ComponentModel.Container components = new System.ComponentModel.Container();
-            Forms.ContextMenuStrip contextMenu = new Forms.ContextMenuStrip();
-
-            Forms.ToolStripMenuItem showItem = new Forms.ToolStripMenuItem();
-            showItem.Text = "Show";
-            showItem.Click += (s, args) => showItem_Click();
-
-            contextMenu.Items.Add(showItem);
-
-            Forms.ToolStripMenuItem ConnectionTestItem = new Forms.ToolStripMenuItem();
-            ConnectionTestItem.Text = "Test Connection";
-            ConnectionTestItem.Click += (s, args) => connectionTestItem_Click();
-
-            contextMenu.Items.Add(ConnectionTestItem);
-
-            Forms.ToolStripMenuItem quitItem = new Forms.ToolStripMenuItem();
-            quitItem.Text = "Exit";
-            quitItem.Click += (s, args) => quitItem_Click();
-
-            contextMenu.Items.Add(quitItem);
-
-            notifyIcon = new Forms.NotifyIcon();
-            notifyIcon.Visible = true;
-            notifyIcon.DoubleClick += (s, args) => trayIcon_DoubleClick();
-            notifyIcon.ContextMenuStrip = contextMenu;
-
-            base.OnActivated(e);
-        }
-
-        protected override void OnExit(ExitEventArgs e)
-        {
-            notifyIcon.Dispose();
-            base.OnExit(e);
-        }
-       
-        private void trayIcon_DoubleClick()
-        {
-            MainWindow.WindowState = WindowState.Normal;
-            MainWindow.ShowInTaskbar = true;
-            MainWindow.Show();
-            MainWindow.Activate();
-        }
-
-        private void connectionTestItem_Click()
-        {
-            MessageBox.Show("Conection Test", "Testing....");
-        }
-
-        private void quitItem_Click()
-        {
-            notifyIcon.Dispose();
-            Environment.Exit(0);
-        }
-
-        private void showItem_Click()
-        {
-            MainWindow.WindowState = WindowState.Normal;
-            MainWindow.ShowInTaskbar = true;
-            MainWindow.Show();
-            MainWindow.Activate();
-        }
-
-        private void OnExit(object sender, ExitEventArgs e)
-        {
-
         }
     }
 }

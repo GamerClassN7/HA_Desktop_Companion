@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -51,6 +52,8 @@ namespace HA
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            Process.Start(".\\Updater.exe", "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.1");
+
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             token.Text = config.AppSettings.Settings["token"].Value;
