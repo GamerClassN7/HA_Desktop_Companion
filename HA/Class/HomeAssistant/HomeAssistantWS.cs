@@ -42,14 +42,15 @@ namespace HA.Class.HomeAssistant
         {
             try
             {
-                Uri wsAddress = new Uri(url + "/api/websocket");
+                Uri wsAddress = new Uri(url + "api/websocket");
+                MessageBox.Show(wsAddress.ToString());
                 var exitEvent = new ManualResetEvent(false);
-                socket.Options.KeepAliveInterval = TimeSpan.FromMilliseconds(10);
+                socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
                 socket.ConnectAsync(wsAddress, CancellationToken.None).Wait();
 
                 Task<JObject> initialization = RecieveAsync();
-                initialization.Wait(500);
+                initialization.Wait();
 
                 if (initialization.Result["type"].ToString() != "auth_required")
                 {
@@ -60,10 +61,8 @@ namespace HA.Class.HomeAssistant
                 HAWSAuth authObj = new HAWSAuth() { };
                 authObj.access_token = token;
 
-                Task<JObject> registration = sendAndRecieveAsync(authObj);
-                registration.Wait(500);
-
-                if (registration.Result["type"].ToString() != "auth_ok")
+                JObject registration = sendAndRecieveAsync(authObj);
+                if (registration["type"].ToString() != "auth_ok")
                 {
                     Debug.WriteLine("WS Auth error");
                     return;
@@ -75,10 +74,8 @@ namespace HA.Class.HomeAssistant
                 subscribeObj.webhook_id = webhook;
                 subscribeObj.type = "mobile_app/push_notification_channel";
 
-                Task<JObject> subscription = sendAndRecieveAsync(subscribeObj);
-                subscription.Wait(500);
-
-                if (bool.Parse((string) subscription.Result["success"]) != true)
+                JObject subscription = sendAndRecieveAsync(subscribeObj);
+                if (bool.Parse((string) subscription["success"]) != true)
                 {
                     Debug.WriteLine("WS subscription Failed");
                     return;
@@ -95,7 +92,7 @@ namespace HA.Class.HomeAssistant
             }
         }
         
-        private async Task<JObject> sendAndRecieveAsync(dynamic payloadObj)
+        private JObject sendAndRecieveAsync(dynamic payloadObj)
         {
             string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
             
@@ -107,7 +104,8 @@ namespace HA.Class.HomeAssistant
             socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
             Debug.WriteLine("SEND/RECIEVING");
             interactions = interactions + 1;
-            WebSocketReceiveResult result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            
+            WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
             string JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
