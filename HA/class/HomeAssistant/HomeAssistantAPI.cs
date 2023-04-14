@@ -25,6 +25,11 @@ namespace HA.Class.HomeAssistant
         private string webhookId = null;
         private string secret = null;
 
+        //Erro Handling
+        private bool failed = false;
+        private int failedAttempts = 0;
+
+
         private List<HomeAssistatnSensors> sensorsBuffer = new List<HomeAssistatnSensors>();
 
         public string getWebhookID()
@@ -81,6 +86,7 @@ namespace HA.Class.HomeAssistant
             }
             else
             {
+                failedAttempts++;
                 throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
         }
@@ -110,6 +116,7 @@ namespace HA.Class.HomeAssistant
             }
             else
             {
+                failedAttempts++;
                 throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
         }
@@ -167,9 +174,18 @@ namespace HA.Class.HomeAssistant
 
             request.SetData(sensorsBuffer);
             request.SetType("update_sensor_states");
+            JObject jObject = new JObject();
 
-            var jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
-            sensorsBuffer.Clear();
+            try
+            {
+                jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
+                sensorsBuffer.Clear();
+            }
+            catch (Exception ex)
+            {
+                failedAttempts++;
+                Debug.WriteLine(ex.Message);
+            }
             
             return jObject.ToString();
         }

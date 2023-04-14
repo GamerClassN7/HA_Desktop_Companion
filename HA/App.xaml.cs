@@ -86,8 +86,8 @@ namespace HA
             {
                 HomeAssistatnDevice device = new HomeAssistatnDevice
                 {
-                    device_name = "DEBUG_" + System.Environment.MachineName,
-                    device_id = "DEBUG_" + System.Environment.MachineName,
+                    device_name = "DEBUG_" + Environment.MachineName,
+                    device_id = "DEBUG_" + Environment.MachineName,
                     app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
                     app_name = Assembly.GetExecutingAssembly().GetName().Name,
                     app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
@@ -209,11 +209,11 @@ namespace HA
                                 className += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
                             }
 
-                            Debug.WriteLine(className);
 
                             Type SensorTypeClass = Type.GetType(className);
                             if (SensorTypeClass == null)
                             {
+                                Debug.WriteLine(className);
                                 Debug.WriteLine(className + " Class Not Found");
                                 continue;
                             }

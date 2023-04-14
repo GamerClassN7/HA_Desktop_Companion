@@ -13,9 +13,6 @@ namespace HA.Class.Sensors
     {
         public static string GetValue(string wmic_class, string wmic_selector, string wmic_namespace = @"root\\wmi")
         {
-            Debug.WriteLine("NAMESPACE " + wmic_namespace);
-            Debug.WriteLine("SELECT " + wmic_selector + " FROM " + wmic_class);
-
             try
             {
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(wmic_namespace, ("SELECT " + wmic_selector +  " FROM " + wmic_class));
@@ -31,6 +28,8 @@ namespace HA.Class.Sensors
             }
             catch (Exception e)
             {
+                Debug.WriteLine("NAMESPACE " + wmic_namespace);
+                Debug.WriteLine("SELECT " + wmic_selector + " FROM " + wmic_class);
                 Debug.WriteLine("An error occurred while querying for WMI data: " + e.Message);
             }
 

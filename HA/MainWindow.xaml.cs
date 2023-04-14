@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -72,12 +73,12 @@ namespace HA
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             var app = Application.Current as App;
-            app.ShowNotification(System.Reflection.Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
+            app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
 
-            this.ShowInTaskbar = false;
-            this.Hide();
+            //this.ShowInTaskbar = false;
+            //this.Hide();
 
-            e.Cancel = true;
+            //e.Cancel = true;
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
