@@ -5,16 +5,20 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.Policy;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace HA.Class.HomeAssistant
 {
@@ -28,6 +32,8 @@ namespace HA.Class.HomeAssistant
         private byte[] buffer = new byte[2048];
         private int interactions = 1;
         private bool isSubscribed = false;
+        private bool isPingEnabled = false;
+        static DispatcherTimer updatePingTimer = new DispatcherTimer();
 
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
         {
@@ -43,7 +49,6 @@ namespace HA.Class.HomeAssistant
             try
             {
                 Uri wsAddress = new Uri(url + "api/websocket");
-                MessageBox.Show(wsAddress.ToString());
                 var exitEvent = new ManualResetEvent(false);
                 socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
@@ -75,42 +80,49 @@ namespace HA.Class.HomeAssistant
                 subscribeObj.type = "mobile_app/push_notification_channel";
 
                 JObject subscription = sendAndRecieveAsync(subscribeObj);
-                if (bool.Parse((string) subscription["success"]) != true)
+                if (bool.Parse((string)subscription["success"]) != true)
                 {
                     Debug.WriteLine("WS subscription Failed");
                     return;
                 }
                 Debug.WriteLine("WS subscription OK");
                 isSubscribed = true;
+                isPingEnabled = true;
+
+                StartPingAsyncTask();
 
                 ReceiveLoopAsync();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("WS error " + ex.Message);
-                socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                Close();
             }
         }
-        
+
         private JObject sendAndRecieveAsync(dynamic payloadObj)
         {
             string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
-            
-            Debug.WriteLine("SEND"); 
+
+            Debug.WriteLine("SEND");
             Debug.WriteLine(JSONPayload);
 
             ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
 
             socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
-            Debug.WriteLine("SEND/RECIEVING");
-            interactions = interactions + 1;
-            
-            WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
-            string JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            string JSONRecievedpayload =  "";
+      
+                Debug.WriteLine("SEND/RECIEVING");
+                interactions = interactions + 1;
 
-            Debug.WriteLine("RECIEVE");
-            Debug.WriteLine(JSONRecievedpayload);
+                WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
+
+                JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+                Debug.WriteLine("RECIEVE");
+                Debug.WriteLine(JSONRecievedpayload);
+         
 
             return JObject.Parse(JSONRecievedpayload);
         }
@@ -127,11 +139,45 @@ namespace HA.Class.HomeAssistant
             return JObject.Parse(JSONRecievedpayload);
         }
 
+        private async Task Send(dynamic payloadObj)
+        {
+            string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
+
+            Debug.WriteLine("SEND");
+            Debug.WriteLine(JSONPayload);
+            interactions = interactions + 1;
+
+            ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
+
+            socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+        }
+        private async Task StartPingAsyncTask()
+        {
+            Debug.WriteLine("Initializing Ping");
+            updatePingTimer = new DispatcherTimer();
+            updatePingTimer.Interval = TimeSpan.FromMinutes(30);
+            updatePingTimer.Tick += UpdatePingTick;
+            updatePingTimer.Start();
+        }
+
+        private async void UpdatePingTick(object sender, EventArgs e)
+        {
+            if (isPingEnabled == true)
+            {
+
+                HAWSPing pingObj = new HAWSPing { };
+                pingObj.type = "ping";
+                pingObj.id = interactions;
+
+                Send(pingObj);
+            }
+        }
+
         private async Task ReceiveLoopAsync()
         {
             try
             {
-                Debug.Write("WS RECEEVE LOOP STARTED");
+                Debug.WriteLine("WS RECEEVE LOOP STARTED");
                 var localBuffer = new ArraySegment<byte>(new byte[2048]);
                 do
                 {
@@ -202,6 +248,7 @@ namespace HA.Class.HomeAssistant
 
         public void Close()
         {
+            updatePingTimer.Stop();
             socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
             Debug.WriteLine("WS closed");
         }

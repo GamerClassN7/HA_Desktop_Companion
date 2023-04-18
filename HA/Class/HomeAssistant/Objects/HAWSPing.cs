@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace HA.Class.HomeAssistant.Objects
 {
-    internal class HAWSRequest
+    internal class HAWSPing
     {
         public int id = 1;
-        public string type = "";
-        public string webhook_id = null;
-        public bool support_confirm = false;
+        public string type = "ping";
     }
 }
