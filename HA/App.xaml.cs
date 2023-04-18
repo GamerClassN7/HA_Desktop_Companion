@@ -353,6 +353,15 @@ namespace HA
                 mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
             }
 
+            if (ws.getConectionStatus())
+            {
+                mw.ws_status.Foreground = new SolidColorBrush(Colors.Green);
+            }
+            else
+            {
+                mw.ws_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
+
             if (configData.ContainsKey("ip_location"))
             {
 

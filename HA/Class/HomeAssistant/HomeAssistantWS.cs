@@ -33,6 +33,8 @@ namespace HA.Class.HomeAssistant
         private int interactions = 1;
         private bool isSubscribed = false;
         private bool isPingEnabled = false;
+        private bool isConnected = false;
+
         static DispatcherTimer updatePingTimer = new DispatcherTimer();
 
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
@@ -90,8 +92,9 @@ namespace HA.Class.HomeAssistant
                 isPingEnabled = true;
 
                 StartPingAsyncTask();
-
+                isConnected = true;
                 ReceiveLoopAsync();
+
             }
             catch (Exception ex)
             {
@@ -150,6 +153,11 @@ namespace HA.Class.HomeAssistant
             ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
 
             socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+        }
+
+        public bool getConectionStatus()
+        {
+             return isConnected;
         }
         private async Task StartPingAsyncTask()
         {
@@ -248,6 +256,10 @@ namespace HA.Class.HomeAssistant
 
         public void Close()
         {
+            isSubscribed = false;
+            isPingEnabled = false;
+            isConnected = false;
+
             updatePingTimer.Stop();
             socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
             Debug.WriteLine("WS closed");
