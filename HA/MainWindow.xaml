@@ -8,7 +8,7 @@
         Title="MainWindow" 
         Loaded="Window_Loaded"
         Background="#FF03A9F4"
-        Height="180"
+        Height="196"
         Width="450"
         WindowStartupLocation="CenterScreen" 
         ResizeMode="NoResize"
@@ -30,6 +30,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
                 <RowDefinition/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
@@ -48,6 +49,19 @@
                 </Grid.ColumnDefinitions>
                 <Button x:Name="save" Content="Save" Margin="0,5,1.5,0" Click="Save_Click"/>
                 <Button x:Name="close" Content="Close" Margin="1.5,5,0,0" Click="Close_Click" Grid.Column="1"/>
+            </Grid>
+
+            <Grid Grid.Row="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="api_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="0" FontWeight="Bold" FontSize="9" Foreground="Red">
+                    <Run Language="cs-cz" Text="Api"/>
+                </TextBlock>
+                <TextBlock x:Name="ws_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="1" FontWeight="Bold" FontSize="9" Foreground="Red">
+                    <Run Language="cs-cz" Text="WebSocket"/>
+                </TextBlock>
             </Grid>
         </Grid>
     </Grid>

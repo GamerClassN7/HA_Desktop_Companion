@@ -37,6 +37,14 @@ namespace HA.Class.HomeAssistant
             return webhookId;
         }
 
+        public bool getConectionStatus()
+        {
+            if (failedAttempts > 0)
+                return false;
+
+            return true;
+        }
+
         public string getSecret()
         {
             return secret;
@@ -180,6 +188,7 @@ namespace HA.Class.HomeAssistant
             {
                 jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
                 sensorsBuffer.Clear();
+                failedAttempts = 0;
             }
             catch (Exception ex)
             {

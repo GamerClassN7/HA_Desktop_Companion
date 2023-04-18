@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using HA.Class.HomeAssistant;
 using HA.Class.HomeAssistant.Objects;
@@ -41,8 +42,12 @@ namespace HA
         private Forms.NotifyIcon notifyIcon;
         private static Mutex _mutex = null;
 
+        private static MainWindow mw = null;
+
         public static bool Start()
         {
+            mw = (MainWindow)Application.Current.MainWindow;
+
             //Clear check Buffers
             sensorLastValues.Clear();
             sensorUpdatedAtList.Clear();
@@ -342,6 +347,11 @@ namespace HA
             }
 
             ha.sendSensorBuffer();
+            if (ha.getConectionStatus()) {
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Green);
+            } else { 
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
 
             if (configData.ContainsKey("ip_location"))
             {
