@@ -43,7 +43,14 @@ namespace HA.Class.HomeAssistant
             token = apiToken;
             webhook = webhookId;
 
-            registerAsync();
+            try
+            {
+                registerAsync();
+            } catch (Exception ex) {
+                isSubscribed = false;
+                isPingEnabled = false;
+                isConnected = false;
+            }
         }
 
         private async Task registerAsync()
