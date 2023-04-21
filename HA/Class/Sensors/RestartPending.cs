@@ -11,33 +11,36 @@ namespace HA.Class.Sensors
     {
         public static bool GetValue()
         {
-            using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"))
+            try
             {
-                if (rootKey != null)
+                using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"))
                 {
-                    if (rootKey.GetSubKeyNames().Length > 0)
-                        return true;
+                    if (rootKey != null)
+                    {
+                        if (rootKey.GetSubKeyNames().Length > 0)
+                            return true;
+                    }
+                }
+
+                using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"))
+                {
+                    if (rootKey != null)
+                    {
+                        if (rootKey.GetSubKeyNames().Length > 0)
+                            return true;
+                    }
+                }
+
+                using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager"))
+                {
+                    if (rootKey != null)
+                    {
+                        if (rootKey.GetValueKind("PendingFileRenameOperations") != null)
+                            return true;
+                    }
                 }
             }
-
-            using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"))
-            {
-                if (rootKey != null)
-                {
-                    if (rootKey.GetSubKeyNames().Length > 0)
-                        return true;
-                }
-            }
-
-            using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager"))
-            {
-                if (rootKey != null)
-                {
-                    if (rootKey.GetValueKind("PendingFileRenameOperations") != null)
-                        return true;
-                }
-            }
-
+            catch (Exception) { }
             return false;
         }
     }
