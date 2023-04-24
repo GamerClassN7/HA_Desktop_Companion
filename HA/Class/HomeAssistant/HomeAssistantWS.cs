@@ -31,9 +31,11 @@ namespace HA.Class.HomeAssistant
         private ClientWebSocket socket = new ClientWebSocket();
         private byte[] buffer = new byte[2048];
         private int interactions = 1;
+
         private bool isSubscribed = false;
         private bool isPingEnabled = false;
         private bool isConnected = false;
+        private int retryCount = 0;
 
         static DispatcherTimer updatePingTimer = new DispatcherTimer();
 
@@ -99,7 +101,10 @@ namespace HA.Class.HomeAssistant
                 isPingEnabled = true;
 
                 StartPingAsyncTask();
+                d
                 isConnected = true;
+                retryCount = 0;
+
                 ReceiveLoopAsync();
 
             }
@@ -107,6 +112,10 @@ namespace HA.Class.HomeAssistant
             {
                 Debug.WriteLine("WS error " + ex.Message);
                 Close();
+                if (retryCount >= 5)
+                {
+                    registerAsync();
+                }
             }
         }
 
@@ -164,7 +173,7 @@ namespace HA.Class.HomeAssistant
 
         public bool getConectionStatus()
         {
-             return isConnected;
+             return (isConnected && isSubscribed);
         }
         private async Task StartPingAsyncTask()
         {
@@ -221,7 +230,12 @@ namespace HA.Class.HomeAssistant
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("WS RECEEVED" + ex.Message);
+                Debug.WriteLine("WS RECEEVE ERROR" + ex.Message);
+                Close();
+                if (retryCount >= 5)
+                {
+                    registerAsync();
+                }
             }
         }
 
