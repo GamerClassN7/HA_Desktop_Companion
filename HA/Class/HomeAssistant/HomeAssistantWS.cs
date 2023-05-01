@@ -101,7 +101,7 @@ namespace HA.Class.HomeAssistant
                 isPingEnabled = true;
 
                 StartPingAsyncTask();
-                d
+                
                 isConnected = true;
                 retryCount = 0;
 
@@ -111,6 +111,8 @@ namespace HA.Class.HomeAssistant
             catch (Exception ex)
             {
                 Debug.WriteLine("WS error " + ex.Message);
+                Debug.WriteLine("WS URL " + url);
+
                 Close();
                 if (retryCount >= 5)
                 {
