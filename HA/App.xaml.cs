@@ -43,10 +43,11 @@ namespace HA
         private static Mutex _mutex = null;
 
         private static MainWindow mw = null;
+        private static  bool connectionError = false;
 
         public static bool Start()
         {
-            mw = (MainWindow)Application.Current.MainWindow;
+            mw = (MainWindow) Application.Current.MainWindow;
 
             //Clear check Buffers
             sensorLastValues.Clear();
@@ -347,25 +348,31 @@ namespace HA
             }
 
             ha.sendSensorBuffer();
-            if (ha.getConectionStatus()) {
-                mw.api_status.Foreground = new SolidColorBrush(Colors.Green);
-            } else { 
-                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
-            }
 
-            if (ws.getConectionStatus())
-            {
-                mw.ws_status.Foreground = new SolidColorBrush(Colors.Green);
-            }
-            else
-            {
-                mw.ws_status.Foreground = new SolidColorBrush(Colors.Red);
+            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red)) ;
+            mw.ws_status.Foreground = (ws.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
+
+            bool lastConnectionStatus = connectionError;
+            if (!ha.getConectionStatus() || !ws.getConectionStatus()) { 
+                connectionError = true;
+                if (lastConnectionStatus != connectionError && connectionError == true)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Unable to connect to Home Assistant!");
+                }
+            } else {
+                connectionError = false;
+                if (lastConnectionStatus != connectionError && connectionError == false)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Connection re-established to Home Assistant!");
+                }
             }
 
             if (configData.ContainsKey("ip_location"))
             {
-
             }
+
 
         }
 

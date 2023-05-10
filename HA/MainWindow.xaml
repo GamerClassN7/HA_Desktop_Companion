@@ -36,11 +36,11 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Margin="0,2,0,5" TextWrapping="Wrap" Grid.Row="0"><Run Language="cs-cz" Text="Home Assistant URL"/></TextBlock>
-            <TextBox x:Name="url" Margin="0,0,0,0" TextWrapping="Wrap" Text="http://homeassistant:8123" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1" FontSize="16"/>
+            <TextBlock Margin="0,2,0,5" TextWrapping="Wrap" Grid.Row="0"><Run Language="cs-cz" Text="Home Assistant URL" /></TextBlock>
+            <TextBox x:Name="url" x:FieldModifier="public" Margin="0,0,0,0" TextWrapping="Wrap" Text="http://homeassistant:8123" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1" FontSize="16"/>
 
-            <TextBlock Grid.Column="1" Margin="0,2,0,5" TextWrapping="Wrap" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Grid.Row="2"><Run Language="cs-cz" Text="API Token"/></TextBlock>
-            <TextBox x:Name="token" Margin="0,0,0,0" TextWrapping="Wrap" Text="" Grid.ColumnSpan="2" Grid.Row="3" Grid.Column="1" FontSize="16"/>
+            <TextBlock Grid.Column="1" Margin="0,2,0,5" TextWrapping="Wrap" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Grid.Row="2"><Run Language="cs-cz" Text="API Token" /></TextBlock>
+            <TextBox x:Name="token" x:FieldModifier="public" Margin="0,0,0,0" TextWrapping="Wrap" Text="" Grid.ColumnSpan="2" Grid.Row="3" Grid.Column="1" FontSize="16"/>
 
             <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
@@ -56,10 +56,10 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="api_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="0" FontWeight="Bold" FontSize="9" Foreground="Red">
+                <TextBlock x:Name="api_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="0" FontWeight="Bold" FontSize="9" Foreground="Red" x:FieldModifier="public">
                     <Run Language="cs-cz" Text="Api"/>
                 </TextBlock>
-                <TextBlock x:Name="ws_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="1" FontWeight="Bold" FontSize="9" Foreground="Red">
+                <TextBlock x:Name="ws_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="1" FontWeight="Bold" FontSize="9" Foreground="Red" x:FieldModifier="public">
                     <Run Language="cs-cz" Text="WebSocket"/>
                 </TextBlock>
             </Grid>

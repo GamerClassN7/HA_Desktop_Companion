@@ -88,6 +88,9 @@ namespace HA.Class.HomeAssistant
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
+                Debug.WriteLine("API RESPONSE CODE " + response.StatusCode);
+                Debug.WriteLine("API RESPONSE CODE " + response.Content);
+
                 return response.Content;
                 //  usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
@@ -118,6 +121,9 @@ namespace HA.Class.HomeAssistant
 
             if (response.IsSuccessStatusCode)
             {
+                Debug.WriteLine("API RESPONSE CODE " +  response.StatusCode);
+                Debug.WriteLine("API RESPONSE CODE " + response.Content);
+
                 return response.Content;
                 //usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
@@ -187,6 +193,7 @@ namespace HA.Class.HomeAssistant
             try
             {
                 jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
+                Debug.Write(jObject.ToString());
                 sensorsBuffer.Clear();
                 failedAttempts = 0;
             }
