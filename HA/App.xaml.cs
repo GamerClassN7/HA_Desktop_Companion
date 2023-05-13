@@ -310,7 +310,7 @@ namespace HA
                             {
                                 if (sensorData == sensorLastValues[sensorDefinition["unique_id"]])
                                 {
-                                    Debug.WriteLine("Skiping! Same Data Already Send " + sensorData);
+                                    //Debug.WriteLine("Skiping! Same Data Already Send " + sensorData);
                                     continue;
                                 }
                             }
@@ -371,9 +371,8 @@ namespace HA
 
             if (configData.ContainsKey("ip_location"))
             {
+
             }
-
-
         }
 
         private static Dictionary<string, object> getSensorsConfiguration()
@@ -397,12 +396,12 @@ namespace HA
                 //Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
                 return bool.Parse(variableStr);
             }
-            else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$"))
+            else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$") && (variableStr.Contains(".") || variableStr.Contains(",")))
             {
                 //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
-            else if (Regex.IsMatch(variableStr, @"^\d$"))
+            else if (Regex.IsMatch(variableStr, @"^\d+"))
             {
                 //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);

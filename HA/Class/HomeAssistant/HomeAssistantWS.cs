@@ -114,9 +114,11 @@ namespace HA.Class.HomeAssistant
                 Debug.WriteLine("WS URL " + url);
 
                 Close();
-                if (retryCount >= 5)
+
+                if (retryCount <= 5)
                 {
                     registerAsync();
+                    retryCount++;
                 }
             }
         }
@@ -234,9 +236,11 @@ namespace HA.Class.HomeAssistant
             {
                 Debug.WriteLine("WS RECEEVE ERROR" + ex.Message);
                 Close();
-                if (retryCount >= 5)
+
+                if (retryCount <= 5)
                 {
                     registerAsync();
+                    retryCount++;
                 }
             }
         }

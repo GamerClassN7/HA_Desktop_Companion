@@ -113,7 +113,7 @@ namespace HA.Class.HomeAssistant
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
             Debug.WriteLine(content);
-            Debug.WriteLine(webhookId);
+            //Debug.WriteLine(webhookId);
 
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 

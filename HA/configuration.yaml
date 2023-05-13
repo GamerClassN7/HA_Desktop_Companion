@@ -13,6 +13,7 @@ sensor:
     device_class: battery
     entity_category: "diagnostic"
     update_interval: 16
+    accuracy_decimals: 0
   - platform: wmic
     wmic_class: Win32_Battery
     wmic_selector: BatteryStatus
