@@ -20,7 +20,7 @@ sensor:
     wmic_namespace: root\CIMV2
     value_map: "Unknown|Discharging|On AC|Fully Charged|Low|Critical|Charging|Charging and High|Charging and Low|Charging and Critical|Undefined|Partially Charged"
     name: Battery State
-    unique_id: battery_states
+    unique_id: battery_state
     icon: "mdi:battery-minus"
     entity_category: "diagnostic"
     device_class: battery
