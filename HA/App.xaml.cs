@@ -19,6 +19,7 @@ using HA.Class.Sensors;
 using HA.Class.YamlConfiguration;
 using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
+using Newtonsoft.Json;
 using Forms = System.Windows.Forms;
 
 namespace HA
@@ -259,6 +260,7 @@ namespace HA
                                 {
                                     string[] valueMap = sensorDefinition["value_map"].Split("|");
                                     sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                                    Debug.WriteLine(JsonConvert.SerializeObject(valueMap));
                                 }
 
                                 if (sensorDefinition.ContainsKey("filters"))
