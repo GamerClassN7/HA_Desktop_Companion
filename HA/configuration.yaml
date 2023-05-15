@@ -1,5 +1,7 @@
-﻿websocket:
+﻿
+websocket:
 ip_location:
+debug:
 
 sensor:
   - platform: wmic

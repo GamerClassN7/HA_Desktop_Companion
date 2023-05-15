@@ -92,10 +92,16 @@ namespace HA
 
             if (String.IsNullOrEmpty(webhookId))
             {
+                string prefix = "";
+                if (configData.ContainsKey("debug"))
+                {
+                    prefix = "DEBUG_";
+                }
+
                 HomeAssistatnDevice device = new HomeAssistatnDevice
                 {
-                    device_name = "" + Environment.MachineName,
-                    device_id = "" + Environment.MachineName,
+                    device_name = prefix + Environment.MachineName,
+                    device_id = (prefix + Environment.MachineName).ToLower(),
                     app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
                     app_name = Assembly.GetExecutingAssembly().GetName().Name,
                     app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
@@ -109,10 +115,10 @@ namespace HA
                 };
                 Logger.write(device);
 
+                Dictionary<string, object> senzorTypes = getSensorsConfiguration();
                 device.supports_encryption = false;
                 MessageBox.Show(ha.RegisterDevice(device));
 
-                Dictionary<string, object> senzorTypes = getSensorsConfiguration();
                 foreach (var item in senzorTypes)
                 {
                     string senzorType = item.Key;
