@@ -199,7 +199,7 @@ namespace HA.Class.HomeAssistant
                 pingObj.type = "ping";
                 pingObj.id = interactions;
 
-                Send(pingObj);
+                await Send(pingObj);
             }
         }
 
