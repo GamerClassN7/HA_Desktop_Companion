@@ -94,8 +94,8 @@ namespace HA
             {
                 HomeAssistatnDevice device = new HomeAssistatnDevice
                 {
-                    device_name = "DEBUG_" + Environment.MachineName,
-                    device_id = "DEBUG_" + Environment.MachineName,
+                    device_name = "" + Environment.MachineName,
+                    device_id = "" + Environment.MachineName,
                     app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
                     app_name = Assembly.GetExecutingAssembly().GetName().Name,
                     app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
