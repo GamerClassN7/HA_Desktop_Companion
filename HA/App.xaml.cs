@@ -403,7 +403,7 @@ namespace HA
                 //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
-            else if (Regex.IsMatch(variableStr, @"^\d+"))
+            else if (Regex.IsMatch(variableStr, @"^\d+$"))
             {
                 //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);
