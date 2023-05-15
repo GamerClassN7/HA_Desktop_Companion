@@ -260,7 +260,7 @@ namespace HA
                                 {
                                     string[] valueMap = sensorDefinition["value_map"].Split("|");
                                     sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                                    Debug.WriteLine(JsonConvert.SerializeObject(valueMap));
+                                    //Debug.WriteLine(JsonConvert.SerializeObject(valueMap));
                                 }
 
                                 if (sensorDefinition.ContainsKey("filters"))
