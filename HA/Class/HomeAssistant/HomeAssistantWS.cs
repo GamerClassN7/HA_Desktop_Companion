@@ -37,6 +37,8 @@ namespace HA.Class.HomeAssistant
         private bool isConnected = false;
         private int retryCount = 0;
 
+        private Task recieveLoopObject;
+
         static DispatcherTimer updatePingTimer = new DispatcherTimer();
 
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
@@ -105,7 +107,7 @@ namespace HA.Class.HomeAssistant
                 isConnected = true;
                 retryCount = 0;
 
-                ReceiveLoopAsync();
+                recieveLoopObject = ReceiveLoopAsync();
 
             }
             catch (Exception ex)
@@ -288,8 +290,11 @@ namespace HA.Class.HomeAssistant
             isConnected = false;
 
             updatePingTimer.Stop();
-            socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-            Debug.WriteLine("WS closed");
+            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
+            {
+                socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                Debug.WriteLine("WS closed");
+            }
         }
     }
 }
