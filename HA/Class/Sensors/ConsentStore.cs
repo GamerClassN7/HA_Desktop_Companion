@@ -36,7 +36,7 @@ namespace HA.Class.Sensors
                                     {
 
                                         var endTime = (long)subKey.GetValue("LastUsedTimeStop");
-                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+                                        //Logger.write(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
 
                                         if (endTime == 0)
                                         {
@@ -62,7 +62,7 @@ namespace HA.Class.Sensors
                                     {
 
                                         var endTime = (long)subKey.GetValue("LastUsedTimeStop");
-                                        //Debug.WriteLine(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
+                                        //Logger.write(consent_category + " " + subKey.GetValue("LastUsedTimeStop"));
 
                                         if (endTime == 0)
                                         {

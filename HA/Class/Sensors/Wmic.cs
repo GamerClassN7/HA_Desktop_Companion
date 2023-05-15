@@ -6,6 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
+using HA.Class.Helpers;
 
 namespace HA.Class.Sensors
 {
@@ -28,9 +29,9 @@ namespace HA.Class.Sensors
             }
             catch (Exception e)
             {
-                Debug.WriteLine("NAMESPACE " + wmic_namespace);
-                Debug.WriteLine("SELECT " + wmic_selector + " FROM " + wmic_class);
-                Debug.WriteLine("An error occurred while querying for WMI data: " + e.Message);
+                Logger.write("NAMESPACE " + wmic_namespace);
+                Logger.write("SELECT " + wmic_selector + " FROM " + wmic_class);
+                Logger.write("An error occurred while querying for WMI data: " + e.Message);
             }
 
             return "";

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using HA.Class.Helpers;
 using HA.Class.HomeAssistant;
 using HA.Class.HomeAssistant.Objects;
 using HA.Class.Sensors;
@@ -106,7 +107,7 @@ namespace HA
                         push_websocket_channel = true,
                     }
                 };
-                Debug.WriteLine(device);
+                Logger.write(device);
 
                 device.supports_encryption = false;
                 MessageBox.Show(ha.RegisterDevice(device));
@@ -220,15 +221,15 @@ namespace HA
                             Type SensorTypeClass = Type.GetType(className);
                             if (SensorTypeClass == null)
                             {
-                                Debug.WriteLine(className);
-                                Debug.WriteLine(className + " Class Not Found");
+                                Logger.write(className);
+                                Logger.write(className + " Class Not Found");
                                 continue;
                             }
 
                             MethodInfo method = SensorTypeClass.GetMethod("GetValue");
                             if (method == null)
                             {
-                                Debug.WriteLine("Method Not Found on " + className);
+                                Logger.write("Method Not Found on " + className);
                                 continue;
                             }
 
@@ -260,7 +261,7 @@ namespace HA
                                 {
                                     string[] valueMap = sensorDefinition["value_map"].Split("|");
                                     sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                                    //Debug.WriteLine(JsonConvert.SerializeObject(valueMap));
+                                    //Logger.write(JsonConvert.SerializeObject(valueMap));
                                 }
 
                                 if (sensorDefinition.ContainsKey("filters"))
@@ -304,7 +305,7 @@ namespace HA
 
                             if (string.IsNullOrEmpty(sensorData))
                             {
-                                Debug.WriteLine("No Data Returned to sensor " + sensorUniqueId);
+                                 Logger.write("No Data Returned to sensor " + sensorUniqueId);
                                 continue;
                             }
 
@@ -312,7 +313,7 @@ namespace HA
                             {
                                 if (sensorData == sensorLastValues[sensorDefinition["unique_id"]])
                                 {
-                                    //Debug.WriteLine("Skiping! Same Data Already Send " + sensorData);
+                                    // Logger.write("Skiping! Same Data Already Send " + sensorData);
                                     continue;
                                 }
                             }
@@ -392,24 +393,24 @@ namespace HA
         {
             //ADD double 
             string variableStr = variable.ToString();
-            //Debug.WriteLine("BEFORE CONVERSION" + variableStr);
+            // Logger.write("BEFORE CONVERSION" + variableStr);
             if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
             {
-                //Debug.WriteLine("AFTER CONVERSION (Bool)" + variableStr.ToString());
+                //Logger.write("AFTER CONVERSION (Bool)" + variableStr.ToString());
                 return bool.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$") && (variableStr.Contains(".") || variableStr.Contains(",")))
             {
-                //Debug.WriteLine("AFTER CONVERSION (double)" + variableStr.ToString());
+                //Logger.write("AFTER CONVERSION (double)" + variableStr.ToString());
                 return double.Parse(variableStr);
             }
             else if (Regex.IsMatch(variableStr, @"^\d+$"))
             {
-                //Debug.WriteLine("AFTER CONVERSION (int)" + variableStr.ToString());
+                //Logger.write("AFTER CONVERSION (int)" + variableStr.ToString());
                 return int.Parse(variableStr);
             }
 
-            //Debug.WriteLine("AFTER CONVERSION" + variableStr.ToString());
+            //Logger.write("AFTER CONVERSION" + variableStr.ToString());
             return variableStr;
         }
    
@@ -438,10 +439,10 @@ namespace HA
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     wc.DownloadFile(imageUrl, fileName);
                  
-                    Debug.WriteLine("DOWNLOADED");
+                    Logger.write("DOWNLOADED");
                 }
 
-                Debug.WriteLine("file:///" + fileName);
+                Logger.write("file:///" + fileName);
                 toast.AddInlineImage(new Uri("file:///" + fileName));
             }
 
@@ -454,7 +455,7 @@ namespace HA
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                     wc.DownloadFile(audioUrl, fileName);
                 }
-                Debug.WriteLine(fileName);
+                Logger.write(fileName);
                 
                 playNotificationAudio(fileName, duration);
 

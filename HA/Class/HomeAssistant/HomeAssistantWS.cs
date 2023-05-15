@@ -1,4 +1,5 @@
-﻿using HA.Class.HomeAssistant.Objects;
+﻿using HA.Class.Helpers;
+using HA.Class.HomeAssistant.Objects;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -72,7 +73,7 @@ namespace HA.Class.HomeAssistant
 
                 if (initialization.Result["type"].ToString() != "auth_required")
                 {
-                    Debug.WriteLine("auth Failed");
+                    Logger.write("auth Failed");
                     return;
                 }
 
@@ -82,10 +83,10 @@ namespace HA.Class.HomeAssistant
                 JObject registration = sendAndRecieveAsync(authObj);
                 if (registration["type"].ToString() != "auth_ok")
                 {
-                    Debug.WriteLine("WS Auth error");
+                    Logger.write("WS Auth error");
                     return;
                 }
-                Debug.WriteLine("WS Auth OK");
+                Logger.write("WS Auth OK");
 
                 HAWSRequest subscribeObj = new HAWSRequest { };
                 subscribeObj.id = interactions;
@@ -95,10 +96,10 @@ namespace HA.Class.HomeAssistant
                 JObject subscription = sendAndRecieveAsync(subscribeObj);
                 if (bool.Parse((string)subscription["success"]) != true)
                 {
-                    Debug.WriteLine("WS subscription Failed");
+                    Logger.write("WS subscription Failed");
                     return;
                 }
-                Debug.WriteLine("WS subscription OK");
+                Logger.write("WS subscription OK");
                 isSubscribed = true;
                 isPingEnabled = true;
 
@@ -112,8 +113,8 @@ namespace HA.Class.HomeAssistant
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("WS error " + ex.Message);
-                Debug.WriteLine("WS URL " + url);
+                Logger.write("WS error " + ex.Message);
+                Logger.write("WS URL " + url);
 
                 Close();
 
@@ -129,8 +130,8 @@ namespace HA.Class.HomeAssistant
         {
             string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Debug.WriteLine("SEND");
-            Debug.WriteLine(JSONPayload);
+            Logger.write("SEND");
+            Logger.write(JSONPayload);
 
             ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
 
@@ -138,15 +139,15 @@ namespace HA.Class.HomeAssistant
 
             string JSONRecievedpayload =  "";
       
-                Debug.WriteLine("SEND/RECIEVING");
+                Logger.write("SEND/RECIEVING");
                 interactions = interactions + 1;
 
                 WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
                 JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
-                Debug.WriteLine("RECIEVE");
-                Debug.WriteLine(JSONRecievedpayload);
+                Logger.write("RECIEVE");
+                Logger.write(JSONRecievedpayload);
          
 
             return JObject.Parse(JSONRecievedpayload);
@@ -158,8 +159,8 @@ namespace HA.Class.HomeAssistant
 
             string JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
 
-            Debug.WriteLine("RECIEVE");
-            Debug.WriteLine(JSONRecievedpayload);
+            Logger.write("RECIEVE");
+            Logger.write(JSONRecievedpayload);
 
             return JObject.Parse(JSONRecievedpayload);
         }
@@ -168,8 +169,8 @@ namespace HA.Class.HomeAssistant
         {
             string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Debug.WriteLine("SEND");
-            Debug.WriteLine(JSONPayload);
+            Logger.write("SEND");
+            Logger.write(JSONPayload);
             interactions = interactions + 1;
 
             ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
@@ -183,7 +184,7 @@ namespace HA.Class.HomeAssistant
         }
         private async Task StartPingAsyncTask()
         {
-            Debug.WriteLine("Initializing Ping");
+            Logger.write("Initializing Ping");
             updatePingTimer = new DispatcherTimer();
             updatePingTimer.Interval = TimeSpan.FromMinutes(30);
             updatePingTimer.Tick += UpdatePingTick;
@@ -207,7 +208,7 @@ namespace HA.Class.HomeAssistant
         {
             try
             {
-                Debug.WriteLine("WS RECEEVE LOOP STARTED");
+                Logger.write("WS RECEEVE LOOP STARTED");
                 var localBuffer = new ArraySegment<byte>(new byte[2048]);
                 do
                 {
@@ -227,8 +228,8 @@ namespace HA.Class.HomeAssistant
                         using (var reader = new StreamReader(ms, Encoding.UTF8))
                         {
                             string jsonPayload = await reader.ReadToEndAsync();
-                            Debug.WriteLine("WS RECEEVED");
-                            Debug.WriteLine(JObject.Parse(jsonPayload));
+                            Logger.write("WS RECEEVED");
+                            Logger.write(JObject.Parse(jsonPayload).ToString());
                             HandleEvent(JObject.Parse(jsonPayload));
                         }
                     }
@@ -236,7 +237,7 @@ namespace HA.Class.HomeAssistant
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("WS RECEEVE ERROR" + ex.Message);
+                Logger.write("WS RECEEVE ERROR" + ex.Message);
                 Close();
 
                 if (retryCount <= 5)
@@ -293,7 +294,7 @@ namespace HA.Class.HomeAssistant
             if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
             {
                 socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                Debug.WriteLine("WS closed");
+                Logger.write("WS closed");
             }
         }
     }

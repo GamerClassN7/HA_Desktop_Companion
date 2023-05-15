@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
+using HA.Class.Helpers;
 using HA.Class.HomeAssistant.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -88,9 +89,8 @@ namespace HA.Class.HomeAssistant
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
-                Debug.WriteLine("API RESPONSE CODE " + response.StatusCode);
-                Debug.WriteLine("API RESPONSE CODE " + response.Content);
-
+                Logger.write("API RESPONSE CODE <"+ (int)response.StatusCode + "> " + response.StatusCode.ToString());
+ 
                 return response.Content;
                 //  usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
@@ -112,8 +112,8 @@ namespace HA.Class.HomeAssistant
 
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Debug.WriteLine(content);
-            //Debug.WriteLine(webhookId);
+            Logger.write(content);
+            //Logger.write(webhookId);
 
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
@@ -121,8 +121,7 @@ namespace HA.Class.HomeAssistant
 
             if (response.IsSuccessStatusCode)
             {
-                Debug.WriteLine("API RESPONSE CODE " +  response.StatusCode);
-                Debug.WriteLine("API RESPONSE CODE " + response.Content);
+                Logger.write("API RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
 
                 return response.Content;
                 //usergrid.ItemsSource = users;
@@ -180,7 +179,7 @@ namespace HA.Class.HomeAssistant
         {
             if (sensorsBuffer.Count < 1)
             {
-                Debug.WriteLine("No data to send!");
+                Logger.write("No data to send!");
                 return "";
             }
 
@@ -200,7 +199,7 @@ namespace HA.Class.HomeAssistant
             catch (Exception ex)
             {
                 failedAttempts++;
-                Debug.WriteLine(ex.Message);
+                Logger.write(ex.Message);
             }
             
             return jObject.ToString();
