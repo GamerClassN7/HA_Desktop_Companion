@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using Windows.Storage.Pickers;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -15,7 +18,17 @@ namespace HA.Class.Helpers
     {
         private static bool initialized = false;
         private static string path1;
+        private static string[] secreetsStrings = new string[] { };
 
+        public static void setSecreets(string[] strings)
+        {
+            if (!initialized)
+            {
+                init();
+
+            }
+            secreetsStrings = strings;
+        }
 
         private static void init(string path = "./log.log")
         {
@@ -39,6 +52,7 @@ namespace HA.Class.Helpers
             if (!initialized)
             {
                 init();
+
             }
 
             Debug.WriteLine(msg);
@@ -54,16 +68,19 @@ namespace HA.Class.Helpers
 
             string msg_str = msg.ToString();
             Debug.WriteLine(msg_str);
-            File.AppendAllText(path1, this.getMessage(msg_str, level));
+            File.AppendAllText(path1, getMessage(msg_str, level));
 
         }
         
-        private static string getMessage(string text)
+        private static string getMessage(string text, int level = 0)
         {
             string parsedText = text;
-
-            foreach (string secret in secrets) {
-                parsedText = parsedText.Replace(secret, "");
+            if (secreetsStrings.Length > 0)
+            {
+                foreach (string secret in secreetsStrings) {
+                    parsedText = parsedText.Replace(secret, "***SECRET****");
+                    
+                }
             }
 
             return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm:ss]") + "[" + level + "]" + parsedText + "\n";

@@ -74,6 +74,8 @@ namespace HA
             string webhookId = config.AppSettings.Settings["webhookId"].Value;
             string secret = config.AppSettings.Settings["secret"].Value;
 
+            //Logger.setSecreets(new string[] { token, url, webhookId, secret });
+
             try
             {
                 ha = new HomeAssistantAPI(url, token);
