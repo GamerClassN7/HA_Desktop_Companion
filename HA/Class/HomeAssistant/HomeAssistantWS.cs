@@ -50,6 +50,7 @@ namespace HA.Class.HomeAssistant
 
             try
             {
+                retryCount++;
                 registerAsync();
             } catch (Exception ex) {
                 isSubscribed = false;
@@ -120,8 +121,8 @@ namespace HA.Class.HomeAssistant
 
                 if (retryCount <= 5)
                 {
-                    registerAsync();
                     retryCount++;
+                    registerAsync();
                 }
             }
         }
@@ -242,8 +243,8 @@ namespace HA.Class.HomeAssistant
 
                 if (retryCount <= 5)
                 {
-                    registerAsync();
                     retryCount++;
+                    registerAsync();
                 }
             }
         }
