@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using HA.Class.Helpers;
 
 namespace HA.Class.YamlConfiguration
 {
@@ -19,7 +20,8 @@ namespace HA.Class.YamlConfiguration
 
             if (!File.Exists(path))
             {
-                MessageBox.Show("Conf File not Found", "error");
+                MessageBox.Show(("Conf File not Found \n " + configurationFilePath), "error");
+                logger.write(("Conf File not Found" + configurationFilePath), 3 /*ERROR*/);
             } else
             {
                 LoadConfiguration();

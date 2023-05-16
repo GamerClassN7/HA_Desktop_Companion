@@ -22,7 +22,7 @@ namespace HA.Class.Helpers
             path1 = Path.Combine(path).ToString();
             if (File.Exists(path1))
             {
-                File.WriteAllText(path1, getMessage("Initialization"));
+                File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/));
             }
             initialized = true;
         }
@@ -42,7 +42,7 @@ namespace HA.Class.Helpers
             }
 
             Debug.WriteLine(msg);
-            File.AppendAllText(path1, getMessage(msg));
+            File.AppendAllText(path1, getMessage(msg, level));
         }
 
         public static void write(object msg, int level = 0)
@@ -54,13 +54,19 @@ namespace HA.Class.Helpers
 
             string msg_str = msg.ToString();
             Debug.WriteLine(msg_str);
-            File.AppendAllText(path1, getMessage(msg_str));
+            File.AppendAllText(path1, this.getMessage(msg_str, level));
 
         }
         
         private static string getMessage(string text)
         {
-            return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm:ss]") + text + "\n";
+            string parsedText = text;
+
+            foreach (string secret in secrets) {
+                parsedText = parsedText.Replace(secret, "");
+            }
+
+            return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm:ss]") + "[" + level + "]" + parsedText + "\n";
         }
     }
 }
