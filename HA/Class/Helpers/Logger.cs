@@ -27,7 +27,7 @@ namespace HA.Class.Helpers
                 init();
 
             }
-            secreetsStrings = strings;
+            secreetsStrings = strings.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         }
 
         private static void init(string path = "./log.log")
@@ -79,7 +79,6 @@ namespace HA.Class.Helpers
             {
                 foreach (string secret in secreetsStrings) {
                     parsedText = parsedText.Replace(secret, "***SECRET****");
-                    
                 }
             }
 
