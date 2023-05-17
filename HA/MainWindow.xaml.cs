@@ -51,8 +51,13 @@ namespace HA
             {
                 if (!App.Start())
                 {
-                    MessageBox.Show("Autoregistration Failed", "Error");
+                    MessageBox.Show("Autostart Failed", "Error");
+                    Logger.write("Autostart Failed");
                 }
+            }
+            else
+            {
+                Logger.write("Web-hook not found");
             }
         }
 

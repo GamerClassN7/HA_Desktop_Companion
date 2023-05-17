@@ -35,7 +35,7 @@ namespace HA
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
-        private static string appDir = Directory.GetCurrentDirectory();
+        private static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
@@ -49,12 +49,13 @@ namespace HA
 
         public static bool Start()
         {
-            mw = (MainWindow) Application.Current.MainWindow;
+            mw = (MainWindow)Application.Current.MainWindow;
 
             //Clear check Buffers
             sensorLastValues.Clear();
             sensorUpdatedAtList.Clear();
 
+            MessageBox.Show(appDir);
             //Load Config
             if (!configurationObject.LoadConfiguration())
             {
