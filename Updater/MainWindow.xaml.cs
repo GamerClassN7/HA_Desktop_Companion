@@ -27,45 +27,11 @@ namespace Updater
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly HttpClient client = new HttpClient();
-        private static string appDir = Directory.GetCurrentDirectory();
-
-        private bool isLatest = true;
-        private string zipUrl = "";
-        private string zipName = "";
-        private string versionString = "";
-        private string assemblyString = "";
-
-
-
-
-        internal async void checkForUpdates(string repository_url = "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", string assemblyVersion = "0.0.0")
+        private App app;
+        public MainWindow()
         {
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
-            client.DefaultRequestHeaders.Add("User-Agent", ".NET Foundation Repository Reporter");
-
-            string stringTask = await client.GetStringAsync(repository_url);
-            MessageBox.Show(stringTask);
-
-            JsonArray msg = JsonSerializer.Deserialize<JsonArray>(stringTask);
-            for (int i = 0; i < msg.Count(); i++)
-            {
-
-                versionString = string.Join("", new Regex("[0-9]").Matches(msg[i].AsObject()["tag_name"].ToString()));
-                int versionNumber = Int32.Parse(versionString);
-                assemblyString = string.Join("", new Regex("[0-9]").Matches(assemblyVersion));
-                int assemblyNumber = Int32.Parse(assemblyString);
-
-                if (assemblyNumber < versionNumber)
-                {
-                    isLatest = false;
-                    zipUrl = msg[i].AsObject()["assets"].AsArray()[0].AsObject()["browser_download_url"].ToString();
-                    zipName = msg[i].AsObject()["assets"].AsArray()[0].AsObject()["name"].ToString();
-                    MessageBox.Show(zipUrl);
-                    break;
-                }
-            }
+            app = Application.Current as App;
+            InitializeComponent();
         }
 
         private void Window_Activated(object sender, EventArgs e)
@@ -75,21 +41,20 @@ namespace Updater
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(appDir + "/cache/"))
-                Directory.CreateDirectory(appDir + "/cache/");
+            if (!Directory.Exists(app.appDir + "/cache/"))
+                Directory.CreateDirectory(app.appDir + "/cache/");
 
             using (var client = new WebClient())
             {
-                client.DownloadFile(zipUrl, appDir + "/cache/" + versionString + "_" + zipName);
+                client.DownloadFile(app.zipUrl, app.appDir + "/cache/" + app.versionString + "_" + app.zipName);
             }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            checkForUpdates("https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", "0.0.1");
-            if (isLatest)
+            if (app.isLatest)
             {
-                //System.Windows.Application.Current.Shutdown();
+                Environment.Exit(0);
             }
         }
     }
