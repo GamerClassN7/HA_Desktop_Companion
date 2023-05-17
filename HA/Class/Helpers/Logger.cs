@@ -25,15 +25,14 @@ namespace HA.Class.Helpers
             if (!initialized)
             {
                 init();
-
             }
             secreetsStrings = strings.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         }
 
-        private static void init(string path = "./log.log")
+        public static void init(string path = "./log.log")
         {
             path1 = Path.Combine(path).ToString();
-            if (File.Exists(path1))
+            if (!File.Exists(path1))
             {
                 File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/));
             }

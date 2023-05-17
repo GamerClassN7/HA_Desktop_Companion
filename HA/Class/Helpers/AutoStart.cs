@@ -11,6 +11,7 @@ namespace HA.Class.Helpers
         {
             try
             {
+                // Computer\HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
                 using (RegistryKey key = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run", true))
                 {
                     string assemblyFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

@@ -49,6 +49,7 @@ namespace HA
 
         public static bool Start()
         {
+            Logger.init(appDir + "/log.log");
             mw = (MainWindow)Application.Current.MainWindow;
 
             //Clear check Buffers
@@ -80,7 +81,10 @@ namespace HA
             try
             {
                 ha = new HomeAssistantAPI(url, token);
-            } catch {
+            } catch (Exception ex)
+            {
+                Logger.write("HA Api initialization Failed!", 4);
+                Logger.write(ex.Message, 4);
                 return false;
             }
 
@@ -88,8 +92,10 @@ namespace HA
             {
                 ha.GetVersion();
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.write("Get HA version Failed!", 4);
+                Logger.write(ex.Message, 4);
                 return false;
             }
 
