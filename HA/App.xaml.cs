@@ -84,6 +84,7 @@ namespace HA
         private void NotifyIcon_Click(object? sender, EventArgs e)
         {
             MainWindow.Activate();
+            MainWindow.ShowInTaskbar = true;
             MainWindow.Show();  
         }
 
@@ -544,5 +545,18 @@ namespace HA
             }
             return false;
         }
+
+        public void minimalizeToTray(bool showNotifycation = true)
+        {
+            if (showNotifycation)
+            {
+                ShowNotification("App keeps Running in background!");
+            }
+
+            Logger.write("App minimalized");
+            MainWindow.ShowInTaskbar = false;
+            MainWindow.Hide();
+        }
     }
+
 }

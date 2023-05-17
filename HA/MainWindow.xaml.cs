@@ -34,10 +34,12 @@ namespace HA
             AutoStart.register();
             app.Stop();
 
-            if (!app.Start())
+            if (app.Start())
             {
-                MessageBox.Show("Initialization Failed", "Error");
+                app.minimalizeToTray();
+                return;
             }
+            MessageBox.Show("Initialization Failed", "Error");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -50,25 +52,25 @@ namespace HA
             url.Text = config.AppSettings.Settings["url"].Value;
             string webhookId = config.AppSettings.Settings["webhookId"].Value;
 
-            if (!string.IsNullOrEmpty(webhookId))
-            {
-                if (!app.Start())
-                {
-                    MessageBox.Show("Autostart Failed", "Error");
-                    Logger.write("Autostart Failed");
-                }
-            }
-            else
+            if (string.IsNullOrEmpty(webhookId))
             {
                 Logger.write("Web-hook not found");
+                return;
             }
+
+            if (!app.Start())
+            {
+                MessageBox.Show("Autostart Failed", "Error");
+                Logger.write("Autostart Failed");
+                return;
+            }
+
+            app.minimalizeToTray(false);
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            app.ShowNotification("App keeps Running in background!");
-            this.ShowInTaskbar = false;
-            this.Hide();
+            app.minimalizeToTray();
             e.Cancel = true;
         }
 
