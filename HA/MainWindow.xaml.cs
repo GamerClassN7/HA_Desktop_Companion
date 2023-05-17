@@ -11,8 +11,10 @@ namespace HA
     /// </summary>
     public partial class MainWindow : Window
     {
+        private App app;
         public MainWindow()
         {
+            app = Application.Current as App;
             InitializeComponent();
         }
 
@@ -30,9 +32,9 @@ namespace HA
             config.Save(ConfigurationSaveMode.Modified);
 
             AutoStart.register();
-            App.Stop();
+            app.Stop();
 
-            if (!App.Start())
+            if (!app.Start())
             {
                 MessageBox.Show("Initialization Failed", "Error");
             }
@@ -50,7 +52,7 @@ namespace HA
 
             if (!string.IsNullOrEmpty(webhookId))
             {
-                if (!App.Start())
+                if (!app.Start())
                 {
                     MessageBox.Show("Autostart Failed", "Error");
                     Logger.write("Autostart Failed");
@@ -64,18 +66,15 @@ namespace HA
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var app = Application.Current as App;
-            app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "App keeps Running in background!");
-
-            //this.ShowInTaskbar = false;
-            //this.Hide();
-
-            //e.Cancel = true;
+            app.ShowNotification("App keeps Running in background!");
+            this.ShowInTaskbar = false;
+            this.Hide();
+            e.Cancel = true;
         }
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
-            App.Close();
+            app.Close();
         }
 
         private void token_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)

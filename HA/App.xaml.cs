@@ -63,9 +63,17 @@ namespace HA
             notifyIcon.DoubleClick+= NotifyIcon_Click;
 
             notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
+
+            notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
+
             base.OnStartup(e);
+        }
+
+        private void OnHomeAssistant_Click(object? sender, EventArgs e)
+        {
+            Process.Start("explorer", mw.url.Text);
         }
 
         private void OnQuit_Click(object? sender, EventArgs e)
@@ -75,11 +83,8 @@ namespace HA
 
         private void NotifyIcon_Click(object? sender, EventArgs e)
         {
-            if (MainWindow.WindowState == WindowState.Minimized)
-            {
-                MainWindow.WindowState = WindowState.Normal;
-                MainWindow.Activate();
-            }
+            MainWindow.Activate();
+            MainWindow.Show();  
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -89,7 +94,7 @@ namespace HA
             base.OnExit(e);
         }
 
-        public static bool Start()
+        public bool Start()
         {
             Logger.init(appDir + "/log.log");
             mw = (MainWindow)Application.Current.MainWindow;
@@ -233,7 +238,7 @@ namespace HA
             return true;
         }
 
-        public static void Stop()
+        public void Stop()
         {
             if (update != null)
             {
@@ -241,10 +246,11 @@ namespace HA
             }
         }
 
-        public static void Close()
+        public void Close()
         {
             ws.Close();
             Stop();
+            Environment.Exit(0);
         }
 
         static async void UpdateSensorTick(object sender, EventArgs e)
