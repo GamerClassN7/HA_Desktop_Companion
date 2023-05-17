@@ -56,19 +56,14 @@ namespace HA
             sensorLastValues.Clear();
             sensorUpdatedAtList.Clear();
 
-            MessageBox.Show(appDir);
-            //Load Config
+            //Load Config Yaml
             if (!configurationObject.LoadConfiguration())
             {
                 MessageBox.Show("Config Error Report to Developer!");
             }
             configData = configurationObject.GetConfigurationData();
 
-            if (configData.ContainsKey("ip_location"))
-            {
-                MessageBox.Show("IPLocation");
-            }
-
+            //Load internal Config
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             string token = config.AppSettings.Settings["token"].Value;
