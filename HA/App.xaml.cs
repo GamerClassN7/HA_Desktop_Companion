@@ -13,14 +13,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Toolkit.Uwp.Notifications;
 using HA.Class.Helpers;
 using HA.Class.HomeAssistant;
 using HA.Class.HomeAssistant.Objects;
 using HA.Class.Sensors;
 using HA.Class.YamlConfiguration;
-using Microsoft.Toolkit.Uwp.Notifications;
-using Microsoft.Win32;
-using Newtonsoft.Json;
 using Forms = System.Windows.Forms;
 
 namespace HA
@@ -42,10 +40,54 @@ namespace HA
         static HomeAssistantWS ws;
 
         private Forms.NotifyIcon notifyIcon;
-        private static Mutex _mutex = null;
+        private static MainWindow mw;
 
-        private static MainWindow mw = null;
         private static  bool connectionError = false;
+
+        public App()
+        {
+            notifyIcon = new Forms.NotifyIcon();
+        }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            if (previousProcessDetected())
+            {
+                ShowNotification("Already Running !!!");
+                Environment.Exit(0);
+            }
+
+            notifyIcon.Icon = new System.Drawing.Icon("ha_logo.ico");
+            notifyIcon.Visible = true;
+            notifyIcon.Text = System.AppDomain.CurrentDomain.FriendlyName;
+            notifyIcon.DoubleClick+= NotifyIcon_Click;
+
+            notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
+            notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
+
+            base.OnStartup(e);
+        }
+
+        private void OnQuit_Click(object? sender, EventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
+        private void NotifyIcon_Click(object? sender, EventArgs e)
+        {
+            if (MainWindow.WindowState == WindowState.Minimized)
+            {
+                MainWindow.WindowState = WindowState.Normal;
+                MainWindow.Activate();
+            }
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            notifyIcon.Dispose();
+
+            base.OnExit(e);
+        }
 
         public static bool Start()
         {
@@ -197,6 +239,12 @@ namespace HA
             {
                 update.Stop();
             }
+        }
+
+        public static void Close()
+        {
+            ws.Close();
+            Stop();
         }
 
         static async void UpdateSensorTick(object sender, EventArgs e)
@@ -423,12 +471,6 @@ namespace HA
             //Logger.write("AFTER CONVERSION" + variableStr.ToString());
             return variableStr;
         }
-   
-        public static void Close()
-        {
-            ws.Close();
-            Stop();
-        }
 
         public void ShowNotification(string title = "", string body = "", string imageUrl = "", string audioUrl = "", int duration = 5000)
         {
@@ -483,18 +525,18 @@ namespace HA
             player.Stop();
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        private bool previousProcessDetected()
         {
-            string appName = Assembly.GetExecutingAssembly().GetName().Name;
-            bool createdNew;
-
-            _mutex = new Mutex(true, appName, out createdNew);
-
-            if (!createdNew)
+            Process currentProc = Process.GetCurrentProcess();
+            Process[] processes = Process.GetProcessesByName(currentProc.ProcessName);
+            foreach(Process p in processes)
             {
-                ShowNotification("Already Running !!!");
-                Environment.Exit(0);
+                if ((p.Id != currentProc.Id) && (p.MainModule.FileName == currentProc.MainModule.FileName))
+                {
+                    return true;
+                }
             }
+            return false;
         }
     }
 }

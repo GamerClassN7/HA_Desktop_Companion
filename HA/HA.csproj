@@ -16,7 +16,9 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <Content Include="ha_logo.ico" />
+	  <Content Include="ha_logo.ico">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
   <ItemGroup>
