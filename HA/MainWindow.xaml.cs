@@ -31,6 +31,7 @@ namespace HA
 
             AutoStart.register();
             App.Stop();
+
             if (!App.Start())
             {
                 MessageBox.Show("Initialization Failed", "Error");
