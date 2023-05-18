@@ -20,6 +20,8 @@ using HA.Class.HomeAssistant.Objects;
 using HA.Class.Sensors;
 using HA.Class.YamlConfiguration;
 using Forms = System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
+using System.Linq;
 
 namespace HA
 {
@@ -42,7 +44,7 @@ namespace HA
         private Forms.NotifyIcon notifyIcon;
         private static MainWindow mw;
 
-        private static  bool connectionError = false;
+        private static bool connectionError = false;
 
         public App()
         {
@@ -60,7 +62,7 @@ namespace HA
             notifyIcon.Icon = new System.Drawing.Icon("ha_logo.ico");
             notifyIcon.Visible = true;
             notifyIcon.Text = System.AppDomain.CurrentDomain.FriendlyName;
-            notifyIcon.DoubleClick+= NotifyIcon_Click;
+            notifyIcon.DoubleClick += NotifyIcon_Click;
 
             notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
 
@@ -85,7 +87,7 @@ namespace HA
         {
             MainWindow.Activate();
             MainWindow.ShowInTaskbar = true;
-            MainWindow.Show();  
+            MainWindow.Show();
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -226,7 +228,7 @@ namespace HA
 
 
             if (configData.ContainsKey("websocket"))
-            {                 
+            {
                 //WEBSOCKET INITIALIZATION
                 ws = new HomeAssistantWS(url.Replace("http", "ws"), webhookId, token);
             }
@@ -254,8 +256,10 @@ namespace HA
             Environment.Exit(0);
         }
 
-        static async void UpdateSensorTick(object sender, EventArgs e)
+        private static async void UpdateSensorTick(object sender, EventArgs e)
         {
+            Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
+
             Dictionary<string, object> senzorTypes = getSensorsConfiguration();
             foreach (var item in senzorTypes)
             {
@@ -266,17 +270,52 @@ namespace HA
                     {
                         foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
                         {
-                            if (sensorUpdatedAtList.ContainsKey(sensorDefinition["unique_id"]) && sensorDefinition.ContainsKey("update_interval"))
+                            string sensorUniqueId = sensorDefinition["unique_id"];
+                            if (senzorsQuerys.ContainsKey(sensorUniqueId))
                             {
-                                TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorDefinition["unique_id"]]);
+                                continue;
+                            }
+
+                            if (sensorUpdatedAtList.ContainsKey(sensorUniqueId) && sensorDefinition.ContainsKey("update_interval"))
+                            {
+                                TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorUniqueId]);
                                 if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"]))
                                 {
                                     continue;
                                 }
                             }
 
+                            senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
+                        }
+                    }
+                }
+            }
+
+            //TODO, Create Sensor list to iterate ower when building request to server
+
+            await Task.WhenAll(senzorsQuerys.Values.ToArray());
+            if (senzorsQuerys.Count < 1)
+            {
+                Logger.write("no senzor scheduled!");
+            }
+            Logger.write("all task query Done!");
+            
+            foreach (var item in senzorTypes)
+            {
+                string senzorType = item.Key;
+                foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                {
+                    foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                    {
+                        foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                        {
                             string sensorUniqueId = sensorDefinition["unique_id"];
-                            string sensorData = getSenzorValue(integration, sensorDefinition);
+                            if (!senzorsQuerys.ContainsKey(sensorUniqueId))
+                            {
+                                continue;
+                            }
+
+                            string sensorData = senzorsQuerys[sensorUniqueId].Result;
                             sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorData);
 
                             if (string.IsNullOrEmpty(sensorData))
@@ -307,7 +346,6 @@ namespace HA
                             if (sensorUpdatedAtList.ContainsKey(sensorDefinition["unique_id"]))
                             {
                                 sensorUpdatedAtList[sensorDefinition["unique_id"]] = DateTime.Now;
-
                             }
                             else
                             {
@@ -317,7 +355,6 @@ namespace HA
                             if (sensorLastValues.ContainsKey(sensorDefinition["unique_id"]))
                             {
                                 sensorLastValues[sensorDefinition["unique_id"]] = sensorData;
-
                             }
                             else
                             {
@@ -330,11 +367,11 @@ namespace HA
 
             ha.sendSensorBuffer();
 
-            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red)) ;
+            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
             mw.ws_status.Foreground = (ws.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
 
             bool lastConnectionStatus = connectionError;
-            if (!ha.getConectionStatus() || !ws.getConectionStatus()) { 
+            if (!ha.getConectionStatus() || !ws.getConectionStatus()) {
                 connectionError = true;
                 if (lastConnectionStatus != connectionError && connectionError == true)
                 {
@@ -416,7 +453,7 @@ namespace HA
             return sensorData;
         }
 
-        private static string getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
+        private static async Task<String> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
         {
             string className = "HA.Class.Sensors.";
 
