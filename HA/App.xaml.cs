@@ -269,108 +269,19 @@ namespace HA
                             if (sensorUpdatedAtList.ContainsKey(sensorDefinition["unique_id"]) && sensorDefinition.ContainsKey("update_interval"))
                             {
                                 TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorDefinition["unique_id"]]);
-                                if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"])) {
+                                if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"]))
+                                {
                                     continue;
                                 }
                             }
 
                             string sensorUniqueId = sensorDefinition["unique_id"];
-                            string className = "HA.Class.Sensors.";
-
-                            foreach (var methodNameSegment in integration.Key.Split("_"))
-                            {
-                                className += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
-                            }
-
-
-                            Type SensorTypeClass = Type.GetType(className);
-                            if (SensorTypeClass == null)
-                            {
-                                Logger.write(className);
-                                Logger.write(className + " Class Not Found");
-                                continue;
-                            }
-
-                            MethodInfo method = SensorTypeClass.GetMethod("GetValue");
-                            if (method == null)
-                            {
-                                Logger.write("Method Not Found on " + className);
-                                continue;
-                            }
-
-                            ParameterInfo[] pars = method.GetParameters();
-                            List<object> parameters = new List<object>();
-
-                            foreach (ParameterInfo p in pars)
-                            {
-                                if (sensorDefinition.ContainsKey(p.Name))
-                                {
-                                    parameters.Insert(p.Position, sensorDefinition[p.Name]);
-                                }
-                                else if (p.IsOptional)
-                                {
-                                    parameters.Insert(p.Position, p.DefaultValue);
-                                }
-                            }
-
-                            string sensorData = method.Invoke(null, parameters.ToArray()).ToString();
-
-                            if (senzorType != "binary_sensor")
-                            {
-                                if (string.IsNullOrEmpty(sensorData))
-                                {
-                                    sensorData = "0";
-                                }
-
-                                if (sensorDefinition.ContainsKey("value_map"))
-                                {
-                                    string[] valueMap = sensorDefinition["value_map"].Split("|");
-                                    sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                                    //Logger.write(JsonConvert.SerializeObject(valueMap));
-                                }
-
-                                if (sensorDefinition.ContainsKey("filters"))
-                                {
-                                    bool isNumeric = int.TryParse(sensorData, out _);
-                                    Dictionary<string, string> filters = sensorDefinition["filters"];
-
-                                    if (isNumeric)
-                                    {
-                                        if (filters.ContainsKey("multiply"))
-                                        {
-                                            sensorData = (double.Parse(sensorData) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                                        }
-
-                                        if (filters.ContainsKey("divide"))
-                                        {
-                                            sensorData = (double.Parse(sensorData) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                                        }
-
-                                        if (filters.ContainsKey("deduct"))
-                                        {
-                                            sensorData = (double.Parse(sensorData) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                                        }
-
-                                        if (filters.ContainsKey("add"))
-                                        {
-                                            sensorData = (double.Parse(sensorData) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                                        }
-                                    }
-
-                                }
-
-                                if (sensorDefinition.ContainsKey("accuracy_decimals"))
-                                {
-                                    if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
-                                    {
-                                        sensorData = Math.Round(double.Parse(sensorData), Int32.Parse(sensorDefinition["accuracy_decimals"] ?? 0)).ToString();
-                                    }
-                                }
-                            }
+                            string sensorData = getSenzorValue(integration, sensorDefinition);
+                            sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorData);
 
                             if (string.IsNullOrEmpty(sensorData))
                             {
-                                 Logger.write("No Data Returned to sensor " + sensorUniqueId);
+                                Logger.write("No Data Returned to sensor " + sensorUniqueId);
                                 continue;
                             }
 
@@ -397,7 +308,9 @@ namespace HA
                             {
                                 sensorUpdatedAtList[sensorDefinition["unique_id"]] = DateTime.Now;
 
-                            } else {
+                            }
+                            else
+                            {
                                 sensorUpdatedAtList.Add(sensorDefinition["unique_id"], DateTime.Now);
                             }
 
@@ -441,6 +354,107 @@ namespace HA
             {
 
             }
+        }
+
+        private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
+        {
+            if (senzorType == "binary_sensor")
+            {
+                return sensorData;
+            }
+
+            if (string.IsNullOrEmpty(sensorData))
+            {
+                sensorData = "0";
+            }
+
+            if (sensorDefinition.ContainsKey("value_map"))
+            {
+                string[] valueMap = sensorDefinition["value_map"].Split("|");
+                sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                //Logger.write(JsonConvert.SerializeObject(valueMap));
+            }
+
+            if (sensorDefinition.ContainsKey("filters"))
+            {
+                bool isNumeric = int.TryParse(sensorData, out _);
+                Dictionary<string, string> filters = sensorDefinition["filters"];
+
+                if (isNumeric)
+                {
+                    if (filters.ContainsKey("multiply"))
+                    {
+                        sensorData = (double.Parse(sensorData) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("divide"))
+                    {
+                        sensorData = (double.Parse(sensorData) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("deduct"))
+                    {
+                        sensorData = (double.Parse(sensorData) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("add"))
+                    {
+                        sensorData = (double.Parse(sensorData) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+                }
+
+            }
+
+            if (sensorDefinition.ContainsKey("accuracy_decimals"))
+            {
+                if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
+                {
+                    sensorData = Math.Round(double.Parse(sensorData), Int32.Parse(sensorDefinition["accuracy_decimals"] ?? 0)).ToString();
+                }
+            }
+
+            return sensorData;
+        }
+
+        private static string getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
+        {
+            string className = "HA.Class.Sensors.";
+
+            foreach (var methodNameSegment in integration.Key.Split("_"))
+            {
+                className += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
+            }
+
+            Type SensorTypeClass = Type.GetType(className);
+            if (SensorTypeClass == null)
+            {
+                Logger.write(className + " Class Not Found");
+                throw new Exception(className + " Class Not Found");
+            }
+
+            MethodInfo method = SensorTypeClass.GetMethod("GetValue");
+            if (method == null)
+            {
+                Logger.write("GetValue Method Not Found on " + className);
+                throw new Exception("GetValue Method Not Found on " + className);
+            }
+
+            ParameterInfo[] pars = method.GetParameters();
+            List<object> parameters = new List<object>();
+
+            foreach (ParameterInfo p in pars)
+            {
+                if (sensorDefinition.ContainsKey(p.Name))
+                {
+                    parameters.Insert(p.Position, sensorDefinition[p.Name]);
+                }
+                else if (p.IsOptional)
+                {
+                    parameters.Insert(p.Position, p.DefaultValue);
+                }
+            }
+
+            return method.Invoke(null, parameters.ToArray()).ToString();
         }
 
         private static Dictionary<string, object> getSensorsConfiguration()
