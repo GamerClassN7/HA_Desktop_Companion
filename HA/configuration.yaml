@@ -37,7 +37,7 @@ sensor:
     update_interval: 10
     filters:
       - divide: 1000000
-    accuracy_decimals: 2
+    accuracy_decimals: 1
   - platform: wmic
     wmic_class: Win32_Processor
     wmic_selector: LoadPercentage
