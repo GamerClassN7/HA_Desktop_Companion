@@ -56,13 +56,17 @@ namespace HA.Class.HomeAssistant
                 isSubscribed = false;
                 isPingEnabled = false;
                 isConnected = false;
+
+                throw new Exception("unnable to connect to" + url);
             }
         }
 
-        private async Task registerAsync()
+        public async Task registerAsync()
         {
             try
             {
+                Logger.write("WS INITIALIZATION");
+
                 Uri wsAddress = new Uri(url + "api/websocket");
                 var exitEvent = new ManualResetEvent(false);
                 socket.Options.KeepAliveInterval = TimeSpan.Zero;

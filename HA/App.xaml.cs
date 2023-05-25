@@ -22,6 +22,9 @@ using HA.Class.YamlConfiguration;
 using Forms = System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 using System.Linq;
+using Microsoft.Win32;
+using System.Net.NetworkInformation;
+using System.Security.Policy;
 
 namespace HA
 {
@@ -44,15 +47,36 @@ namespace HA
         private Forms.NotifyIcon notifyIcon;
         private static MainWindow mw;
 
+
         private static bool connectionError = false;
+        private bool networkIsAwailable = false;
 
         public App()
         {
             notifyIcon = new Forms.NotifyIcon();
         }
 
+        private void OnPowerChange(object s, PowerModeChangedEventArgs e, string ip = "8.8.8.8")
+        {
+            switch (e.Mode)
+            {
+                case PowerModes.Resume:
+                    while (!PingHost(ip))
+                    {
+                        Logger.write("Ping "+ ip + " fasle");
+                    }
+
+                    Logger.write("Ping " + ip + " true");
+                    Start(true);
+                    break;
+                case PowerModes.Suspend:
+                    Close(true);
+                    break;
+            }
+        }
         protected override void OnStartup(StartupEventArgs e)
         {
+            //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
             if (previousProcessDetected())
             {
                 ShowNotification("Already Running !!!");
@@ -71,6 +95,32 @@ namespace HA
 
 
             base.OnStartup(e);
+        }
+
+        public static bool PingHost(string nameOrAddress)
+        {
+            bool pingable = false;
+            Ping pinger = null;
+
+            try
+            {
+                pinger = new Ping();
+                PingReply reply = pinger.Send(nameOrAddress);
+                pingable = reply.Status == IPStatus.Success;
+            }
+            catch (PingException)
+            {
+                // Discard PingExceptions and return false;
+            }
+            finally
+            {
+                if (pinger != null)
+                {
+                    pinger.Dispose();
+                }
+            }
+
+            return pingable;
         }
 
         private void OnHomeAssistant_Click(object? sender, EventArgs e)
@@ -97,14 +147,24 @@ namespace HA
             base.OnExit(e);
         }
 
-        public bool Start()
+        public bool Start(bool sleepRecover = false)
         {
-            Logger.init(appDir + "/log.log");
-            mw = (MainWindow)Application.Current.MainWindow;
+            string token = "";
+            string url = "";
+            string webhookId = "";
+            string secret = "";
 
-            //Clear check Buffers
-            sensorLastValues.Clear();
-            sensorUpdatedAtList.Clear();
+            if (!sleepRecover)
+            {
+                Logger.init(appDir + "/log.log");
+                mw = (MainWindow)Application.Current.MainWindow;
+                //Clear check Buffers
+                sensorLastValues.Clear();
+                sensorUpdatedAtList.Clear();
+            }
+            else {
+                Logger.write("HA Recovering Power suspend Mode!", 4);
+            }
 
             //Load Config Yaml
             if (!configurationObject.LoadConfiguration())
@@ -116,11 +176,12 @@ namespace HA
             //Load internal Config
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
-            string token = config.AppSettings.Settings["token"].Value;
-            string url = config.AppSettings.Settings["url"].Value;
-            string webhookId = config.AppSettings.Settings["webhookId"].Value;
-            string secret = config.AppSettings.Settings["secret"].Value;
+            token = config.AppSettings.Settings["token"].Value;
+            url = config.AppSettings.Settings["url"].Value;
+            webhookId = config.AppSettings.Settings["webhookId"].Value;
+            secret = config.AppSettings.Settings["secret"].Value;
 
+            //Values for striping from log messages
             Logger.setSecreets(new string[] { token, url, webhookId, secret });
 
             try
@@ -130,8 +191,11 @@ namespace HA
             {
                 Logger.write("HA Api initialization Failed!", 4);
                 Logger.write(ex.Message, 4);
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
                 return false;
             }
+
+            SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             try
             {
@@ -141,6 +205,7 @@ namespace HA
             {
                 Logger.write("Get HA version Failed!", 4);
                 Logger.write(ex.Message, 4);
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
                 return false;
             }
 
@@ -226,18 +291,21 @@ namespace HA
                 //IpLocation.test();
             }
 
+            if (!sleepRecover)
+            {
+                update = new DispatcherTimer();
+                update.Interval = TimeSpan.FromSeconds(5);
+                update.Tick += UpdateSensorTick;
+            }
+            update.Start();
+            Logger.write("Periodic Timer Start!", 0);
+
 
             if (configData.ContainsKey("websocket"))
             {
                 //WEBSOCKET INITIALIZATION
                 ws = new HomeAssistantWS(url.Replace("http", "ws"), webhookId, token);
             }
-
-            update = new DispatcherTimer();
-            update.Interval = TimeSpan.FromSeconds(5);
-            update.Tick += UpdateSensorTick;
-            update.Start();
-
             return true;
         }
 
@@ -249,14 +317,52 @@ namespace HA
             }
         }
 
-        public void Close()
+        public void Close(bool sleep = false)
         {
             ws.Close();
             Stop();
-            Environment.Exit(0);
+            if (!sleep)
+            { 
+                Environment.Exit(0);
+            }
         }
 
         private static async void UpdateSensorTick(object sender, EventArgs e)
+        {
+            await queryAndSendSenzorData();
+
+            bool lastConnectionStatus = connectionError;
+            if (!ha.getConectionStatus() || !ws.getConectionStatus())
+            {
+                connectionError = true;
+                if (lastConnectionStatus != connectionError && connectionError == true)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Unable to connect to Home Assistant!");
+                    ws.Close();
+                }
+            }
+            else
+            {
+                connectionError = false;
+                if (lastConnectionStatus != connectionError && connectionError == false)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Connection re-established to Home Assistant!");
+                    ws.registerAsync().RunSynchronously();
+                }
+            }
+
+            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
+            mw.ws_status.Foreground = (ws.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
+
+            if (configData.ContainsKey("ip_location"))
+            {
+
+            }
+        }
+
+        private static async Task queryAndSendSenzorData()
         {
             Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
 
@@ -299,7 +405,7 @@ namespace HA
                 Logger.write("no senzor scheduled!");
             }
             Logger.write("all task query Done!");
-            
+
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
@@ -366,31 +472,6 @@ namespace HA
             }
 
             ha.sendSensorBuffer();
-
-            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
-            mw.ws_status.Foreground = (ws.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
-
-            bool lastConnectionStatus = connectionError;
-            if (!ha.getConectionStatus() || !ws.getConectionStatus()) {
-                connectionError = true;
-                if (lastConnectionStatus != connectionError && connectionError == true)
-                {
-                    var app = Application.Current as App;
-                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Unable to connect to Home Assistant!");
-                }
-            } else {
-                connectionError = false;
-                if (lastConnectionStatus != connectionError && connectionError == false)
-                {
-                    var app = Application.Current as App;
-                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Connection re-established to Home Assistant!");
-                }
-            }
-
-            if (configData.ContainsKey("ip_location"))
-            {
-
-            }
         }
 
         private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
