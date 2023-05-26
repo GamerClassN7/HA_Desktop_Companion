@@ -69,11 +69,13 @@ namespace HA
                     Logger.write("Ping " + ip + " true");
                     Start(true);
                     break;
+
                 case PowerModes.Suspend:
                     Close(true);
                     break;
             }
         }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
