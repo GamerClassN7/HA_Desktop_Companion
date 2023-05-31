@@ -85,7 +85,7 @@ namespace HA
                 Environment.Exit(0);
             }
 
-            notifyIcon.Icon = new System.Drawing.Icon("ha_logo.ico");
+            notifyIcon.Icon = new System.Drawing.Icon(appDir + "/ha_logo.ico");
             notifyIcon.Visible = true;
             notifyIcon.Text = System.AppDomain.CurrentDomain.FriendlyName;
             notifyIcon.DoubleClick += NotifyIcon_Click;
@@ -197,7 +197,7 @@ namespace HA
                 return false;
             }
 
-            SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
+            //SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             try
             {

@@ -39,7 +39,8 @@ namespace HA
                 app.minimalizeToTray();
                 return;
             }
-            MessageBox.Show("Initialization Failed", "Error");
+            
+                MessageBox.Show("Initialization Failed", "Error");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
