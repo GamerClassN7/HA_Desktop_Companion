@@ -33,23 +33,23 @@ namespace HA
     /// </summary>
     public partial class App : Application
     {
+        private static bool connectionError = false;
+        private bool networkIsAwailable = false;
+
         static HomeAssistantAPI ha;
         static DispatcherTimer? update = null;
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
+        
+        static HomeAssistantWS ws;
 
-        public static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static string appDir = Directory.GetCurrentDirectory();
+
         private static YamlConfiguration configurationObject;
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
-        static HomeAssistantWS ws;
-
         private Forms.NotifyIcon notifyIcon;
         private static MainWindow mw;
-
-
-        private static bool connectionError = false;
-        private bool networkIsAwailable = false;
 
         public App()
         {
@@ -163,6 +163,7 @@ namespace HA
             string url = "";
             string webhookId = "";
             string secret = "";
+            Logger.write("Starting APP", 4);
 
             if (!sleepRecover)
             {
@@ -204,12 +205,13 @@ namespace HA
                 mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
                 return false;
             }
+            Logger.write("API initiualized", 4);
 
             //SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             try
             {
-                ha.GetVersion();
+                Logger.write(("HA server Version" + ha.GetVersion()), 0);
             }
             catch (Exception ex)
             {
@@ -221,6 +223,7 @@ namespace HA
 
             if (String.IsNullOrEmpty(webhookId))
             {
+                Logger.write("Register Device!", 4);
                 string prefix = "";
                 if (configData.ContainsKey("debug"))
                 {
