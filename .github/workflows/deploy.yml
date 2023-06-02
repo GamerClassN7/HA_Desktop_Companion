@@ -3,10 +3,12 @@ name: "Deploy"
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - '*'
   pull_request:
     branches: [ "master" ]
-    
-
+    tags:
+      - '*'
 env:
   PROJECT_PATH: HA/HA.csproj
 
