@@ -21,8 +21,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          tag_name: ${{ github.event.head_commit.message }}
+          release_name: ${{ github.event.head_commit.message }}
       
       - run: Compress-Archive -Path "HA\bin\Release\net6.0-windows10.0.17763.0\win-x64\publish\" -DestinationPath "HA\bin\Release\net6.0-windows10.0.17763.0\win-x64\publish\${{ github.ref }}.zip"
       - uses: csexton/release-asset-action@v2
