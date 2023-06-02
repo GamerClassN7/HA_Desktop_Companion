@@ -8,7 +8,7 @@ using System.Xml;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices;
 
-namespace HA.@class.HomeAssistant.Objects
+namespace HA.Class.HomeAssistant.Objects
 {
     public class HomeAssistatnDevice
     {

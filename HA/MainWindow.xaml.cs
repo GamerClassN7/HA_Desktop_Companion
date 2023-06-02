@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using HA.@class;
+using HA.Class.Helpers;
 
 namespace HA
 {
@@ -23,8 +12,10 @@ namespace HA
     /// </summary>
     public partial class MainWindow : Window
     {
+        private App app;
         public MainWindow()
         {
+            app = Application.Current as App;
             InitializeComponent();
         }
 
@@ -39,8 +30,65 @@ namespace HA
             config.AppSettings.Settings["url"].Value = url.Text;
             config.AppSettings.Settings["token"].Value = token.Text;
 
-
             config.Save(ConfigurationSaveMode.Modified);
+
+            AutoStart.register();
+            app.Stop();
+
+            if (app.Start())
+            {
+                app.minimalizeToTray();
+                return;
+            }
+            
+                MessageBox.Show("Initialization Failed", "Error");
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            string updaterPath = (app.GetRootDir() + "\\Updater.exe");
+
+            if (System.IO.File.Exists(updaterPath))
+            {
+                Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
+            }
+
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
+            token.Text = config.AppSettings.Settings["token"].Value;
+            url.Text = config.AppSettings.Settings["url"].Value;
+            string webhookId = config.AppSettings.Settings["webhookId"].Value;
+
+            if (string.IsNullOrEmpty(webhookId))
+            {
+                Logger.write("Web-hook not found");
+                return;
+            }
+
+            if (!app.Start())
+            {
+                MessageBox.Show("Autostart Failed", "Error");
+                Logger.write("Autostart Failed");
+                return;
+            }
+
+            app.minimalizeToTray(false);
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            app.minimalizeToTray();
+            e.Cancel = true;
+        }
+
+        private void Close_Click(object sender, RoutedEventArgs e)
+        {
+            app.Close();
+        }
+
+        private void token_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            
         }
     }
 }

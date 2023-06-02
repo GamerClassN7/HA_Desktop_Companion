@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
-namespace HA.@class.HomeAssistant.Objects
+namespace HA.Class.HomeAssistant.Objects
 {
     internal class HomeAssistantRequest
     {

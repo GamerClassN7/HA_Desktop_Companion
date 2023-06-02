@@ -10,11 +10,12 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
-using HA.@class.HomeAssistant.Objects;
+using HA.Class.Helpers;
+using HA.Class.HomeAssistant.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace HA.@class.HomeAssistant
+namespace HA.Class.HomeAssistant
 {
     public class HomeAssistantAPI
     {
@@ -25,12 +26,36 @@ namespace HA.@class.HomeAssistant
         private string webhookId = null;
         private string secret = null;
 
+        //Erro Handling
+        private bool failed = false;
+        private int failedAttempts = 0;
+
+
         private List<HomeAssistatnSensors> sensorsBuffer = new List<HomeAssistatnSensors>();
+
+        public string getWebhookID()
+        {
+            return webhookId;
+        }
+
+        public bool getConectionStatus()
+        {
+            if (failedAttempts > 0)
+                return false;
+
+            return true;
+        }
+
+        public string getSecret()
+        {
+            return secret;
+        }
 
         public void setWebhookID(string apiWebhookId)
         {
             webhookId = apiWebhookId;
         }
+
         public void setSecret(string apiSecret)
         {
             secret = apiSecret;
@@ -64,12 +89,15 @@ namespace HA.@class.HomeAssistant
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
+                Logger.write("API RESPONSE CODE <"+ (int)response.StatusCode + "> " + response.StatusCode.ToString());
+ 
                 return response.Content;
                 //  usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
             }
             else
             {
+                failedAttempts++;
                 throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
         }
@@ -84,8 +112,8 @@ namespace HA.@class.HomeAssistant
 
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Debug.WriteLine(content);
-            Debug.WriteLine(webhookId);
+            Logger.write(content);
+            //Logger.write(webhookId);
 
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
@@ -93,12 +121,15 @@ namespace HA.@class.HomeAssistant
 
             if (response.IsSuccessStatusCode)
             {
+                Logger.write("API RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
+
                 return response.Content;
                 //usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
             }
             else
             {
+                failedAttempts++;
                 throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
         }
@@ -146,13 +177,30 @@ namespace HA.@class.HomeAssistant
 
         public string sendSensorBuffer()
         {
+            if (sensorsBuffer.Count < 1)
+            {
+                Logger.write("No data to send!");
+                return "";
+            }
+
             HomeAssistantRequest request = new HomeAssistantRequest();
 
             request.SetData(sensorsBuffer);
             request.SetType("update_sensor_states");
+            JObject jObject = new JObject();
 
-            var jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
-            sensorsBuffer.Clear();
+            try
+            {
+                jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
+                Debug.Write(jObject.ToString());
+                sensorsBuffer.Clear();
+                failedAttempts = 0;
+            }
+            catch (Exception ex)
+            {
+                failedAttempts++;
+                Logger.write(ex.Message);
+            }
             
             return jObject.ToString();
         }

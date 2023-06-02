@@ -1,85 +1,702 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
-using System.Linq;
+using System.Diagnostics;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Net;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
-using HA.@class.HomeAssistant;
-using HA.@class.HomeAssistant.Objects;
+using Microsoft.Toolkit.Uwp.Notifications;
+using HA.Class.Helpers;
+using HA.Class.HomeAssistant;
+using HA.Class.HomeAssistant.Objects;
+using HA.Class.Sensors;
+using HA.Class.YamlConfiguration;
+using Forms = System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
+using System.Linq;
+using Microsoft.Win32;
+using System.Net.NetworkInformation;
+using System.Security.Policy;
 
 namespace HA
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// Interaction logic for App.xaml test 
     /// </summary>
     public partial class App : Application
     {
-        HomeAssistantAPI ha;
+        static HomeAssistantAPI ha;
+        static DispatcherTimer? update = null;
+        static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
+        static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
-        void App_Startup(object sender, StartupEventArgs e)
+        public static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
+        private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
+
+        static HomeAssistantWS ws;
+
+        private Forms.NotifyIcon notifyIcon;
+        private static MainWindow mw;
+
+
+        private static bool connectionError = false;
+        private bool networkIsAwailable = false;
+
+        public App()
         {
+            notifyIcon = new Forms.NotifyIcon();
+        }
+
+       
+        private void OnPowerChange(object s, PowerModeChangedEventArgs e, string ip = "8.8.8.8")
+        {
+            switch (e.Mode)
+            {
+                case PowerModes.Resume:
+                    while (!PingHost(ip))
+                    {
+                        Logger.write("Ping "+ ip + " fasle");
+                    }
+
+                    Logger.write("Ping " + ip + " true");
+                    Start(true);
+                    break;
+
+                case PowerModes.Suspend:
+                    Close(true);
+                    break;
+            }
+        }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
+            if (previousProcessDetected())
+            {
+                ShowNotification("Already Running !!!");
+                Environment.Exit(0);
+            }
+
+            notifyIcon.Icon = new System.Drawing.Icon(appDir + "/ha_logo.ico");
+            notifyIcon.Visible = true;
+            notifyIcon.Text = System.AppDomain.CurrentDomain.FriendlyName;
+            notifyIcon.DoubleClick += NotifyIcon_Click;
+
+            notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
+
+            notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
+            notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
+
+
+            base.OnStartup(e);
+        }
+
+        public static bool PingHost(string nameOrAddress)
+        {
+            bool pingable = false;
+            Ping pinger = null;
+
+            try
+            {
+                pinger = new Ping();
+                PingReply reply = pinger.Send(nameOrAddress);
+                pingable = reply.Status == IPStatus.Success;
+            }
+            catch (PingException)
+            {
+                // Discard PingExceptions and return false;
+            }
+            finally
+            {
+                if (pinger != null)
+                {
+                    pinger.Dispose();
+                }
+            }
+
+            return pingable;
+        }
+
+        private void OnHomeAssistant_Click(object? sender, EventArgs e)
+        {
+            Process.Start("explorer", mw.url.Text);
+        }
+
+        private void OnQuit_Click(object? sender, EventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
+        private void NotifyIcon_Click(object? sender, EventArgs e)
+        {
+            MainWindow.Activate();
+            MainWindow.ShowInTaskbar = true;
+            MainWindow.Show();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            notifyIcon.Dispose();
+
+            base.OnExit(e);
+        }
+
+        public string GetRootDir()
+        {
+            return appDir;
+        }
+
+        public bool Start(bool sleepRecover = false)
+        {
+            string token = "";
+            string url = "";
+            string webhookId = "";
+            string secret = "";
+
+            if (!sleepRecover)
+            {
+                Logger.init(appDir + "/log.log");
+                mw = (MainWindow)Application.Current.MainWindow;
+                //Clear check Buffers
+                sensorLastValues.Clear();
+                sensorUpdatedAtList.Clear();
+            }
+            else {
+                Logger.write("HA Recovering Power suspend Mode!", 4);
+            }
+
+            //Load Config Yaml
+            if (!configurationObject.LoadConfiguration())
+            {
+                MessageBox.Show("Config Error Report to Developer!");
+            }
+            configData = configurationObject.GetConfigurationData();
+
+            //Load internal Config
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            string token = config.AppSettings.Settings["token"].Value;
-            string url = config.AppSettings.Settings["url"].Value;
-            string webhookId = config.AppSettings.Settings["webhookId"].Value;
-            string secret = config.AppSettings.Settings["secret"].Value;
 
-            ha = new HomeAssistantAPI(url, token);
+            token = config.AppSettings.Settings["token"].Value;
+            url = config.AppSettings.Settings["url"].Value;
+            webhookId = config.AppSettings.Settings["webhookId"].Value;
+            secret = config.AppSettings.Settings["secret"].Value;
 
-            MessageBoxResult messageBoxResult = MessageBox.Show(ha.GetVersion());
+            //Values for striping from log messages
+            Logger.setSecreets(new string[] { token, url, webhookId, secret });
+
+            try
+            {
+                ha = new HomeAssistantAPI(url, token);
+            } catch (Exception ex)
+            {
+                Logger.write("HA Api initialization Failed!", 4);
+                Logger.write(ex.Message, 4);
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
+                return false;
+            }
+
+            //SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
+
+            try
+            {
+                ha.GetVersion();
+            }
+            catch (Exception ex)
+            {
+                Logger.write("Get HA version Failed!", 4);
+                Logger.write(ex.Message, 4);
+                mw.api_status.Foreground = new SolidColorBrush(Colors.Red);
+                return false;
+            }
 
             if (String.IsNullOrEmpty(webhookId))
             {
-                HomeAssistatnDevice device = new HomeAssistatnDevice();
-                device.device_id = System.Environment.MachineName;
-                device.app_id = "awesome_home";
-                device.app_name = "Awesome Home";
-                device.app_version = "1.2.0";
-                device.device_name = System.Environment.MachineName;
-                device.manufacturer = "Apple, Inc.";
-                device.model = "iPhone X";
-                device.os_name = "Windows";
-                device.os_version = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
+                string prefix = "";
+                if (configData.ContainsKey("debug"))
+                {
+                    prefix = "DEBUG_";
+                }
+
+                HomeAssistatnDevice device = new HomeAssistatnDevice
+                {
+                    device_name = prefix + Environment.MachineName,
+                    device_id = (prefix + Environment.MachineName).ToLower(),
+                    app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
+                    app_name = Assembly.GetExecutingAssembly().GetName().Name,
+                    app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
+                    manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
+                    model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
+                    os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
+                    os_version = Environment.OSVersion.ToString(),
+                    app_data = new {
+                        push_websocket_channel = true,
+                    }
+                };
+                Logger.write(device);
+
+                Dictionary<string, object> senzorTypes = getSensorsConfiguration();
                 device.supports_encryption = false;
                 MessageBox.Show(ha.RegisterDevice(device));
- 
-                HomeAssistatnSensors senzor = new HomeAssistatnSensors();
-                senzor.device_class = "battery";
-                senzor.icon = "mdi:battery";
-                senzor.name = "Battery State";
-                senzor.state = "12345";
-                senzor.type = "sensor";
-                senzor.unique_id = "battery_state";
-                senzor.unit_of_measurement = "%";
-                senzor.state_class = "measurement";
-                senzor.entity_category = "diagnostic";
-                senzor.disabled = false;
-                MessageBox.Show(ha.RegisterSensorData(senzor));
-            } else {
+
+                foreach (var item in senzorTypes)
+                {
+                    string senzorType = item.Key;
+                    foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                    {
+                        foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                        {
+                            foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                            {
+                                HomeAssistatnSensors senzor = new HomeAssistatnSensors();
+
+                                senzor.type = senzorType;
+                                senzor.name = sensorDefinition["name"];
+                                senzor.unique_id = sensorDefinition["unique_id"];
+
+                                if (sensorDefinition.ContainsKey("device_class"))
+                                    senzor.device_class = sensorDefinition["device_class"];
+
+                                if (sensorDefinition.ContainsKey("icon"))
+                                    senzor.icon = sensorDefinition["icon"];
+
+                                if (sensorDefinition.ContainsKey("unit_of_measurement"))
+                                    senzor.unit_of_measurement = sensorDefinition["unit_of_measurement"];
+
+                                if (sensorDefinition.ContainsKey("state_class"))
+                                    senzor.state_class = sensorDefinition["state_class"];
+
+                                if (sensorDefinition.ContainsKey("entity_category"))
+                                    senzor.entity_category = sensorDefinition["entity_category"];
+
+                                if (sensorDefinition.ContainsKey("disabled"))
+                                    senzor.device_class = sensorDefinition["disabled"];
+
+                                if (senzorType == "binary_sensor")
+                                    senzor.state = false;
+
+                                ha.RegisterSensorData(senzor);
+                                Thread.Sleep(100);
+
+                                webhookId = ha.getWebhookID();
+                                secret = ha.getSecret();
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
                 ha.setWebhookID(webhookId);
                 ha.setSecret(secret);
+                //IpLocation.test();
             }
 
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(1);
-            timer.Tick += UpdateSenzorTick;
-            timer.Start();
+            if (!sleepRecover)
+            {
+                update = new DispatcherTimer();
+                update.Interval = TimeSpan.FromSeconds(5);
+                update.Tick += UpdateSensorTick;
+            }
+            update.Start();
+            Logger.write("Periodic Timer Start!", 0);
+
+
+            if (configData.ContainsKey("websocket"))
+            {
+                //WEBSOCKET INITIALIZATION
+                ws = new HomeAssistantWS(url.Replace("http", "ws"), webhookId, token);
+            }
+            return true;
         }
-        async void UpdateSenzorTick(object sender, EventArgs e)
+
+        public void Stop()
         {
-            HomeAssistatnSensors senzor = new HomeAssistatnSensors();
+            if (update != null)
+            {
+                update.Stop();
+            }
+        }
 
-            Random random = new Random();
+        public void Close(bool sleep = false)
+        {
+            ws.Close();
+            Stop();
+            if (!sleep)
+            { 
+                Environment.Exit(0);
+            }
+        }
 
-            senzor.icon = "mdi:battery";
-            senzor.state = random.Next(1, 100).ToString();
-            senzor.type = "sensor";
-            senzor.unique_id = "battery_state";
+        private static async void UpdateSensorTick(object sender, EventArgs e)
+        {
+            await queryAndSendSenzorData();
 
-            ha.AddSensorData(senzor);
+            bool lastConnectionStatus = connectionError;
+            if (!ha.getConectionStatus() || !ws.getConectionStatus())
+            {
+                connectionError = true;
+                if (lastConnectionStatus != connectionError && connectionError == true)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Unable to connect to Home Assistant!");
+                    ws.Close();
+                }
+            }
+            else
+            {
+                connectionError = false;
+                if (lastConnectionStatus != connectionError && connectionError == false)
+                {
+                    var app = Application.Current as App;
+                    app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Connection re-established to Home Assistant!");
+                    ws.registerAsync().RunSynchronously();
+                }
+            }
+
+            mw.api_status.Foreground = (ha.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
+            mw.ws_status.Foreground = (ws.getConectionStatus() ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red));
+
+            if (configData.ContainsKey("ip_location"))
+            {
+
+            }
+        }
+
+        private static async Task queryAndSendSenzorData()
+        {
+            Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
+
+            Dictionary<string, object> senzorTypes = getSensorsConfiguration();
+            foreach (var item in senzorTypes)
+            {
+                string senzorType = item.Key;
+                foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                {
+                    foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                    {
+                        foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                        {
+                            string sensorUniqueId = sensorDefinition["unique_id"];
+                            if (senzorsQuerys.ContainsKey(sensorUniqueId))
+                            {
+                                continue;
+                            }
+
+                            if (sensorUpdatedAtList.ContainsKey(sensorUniqueId) && sensorDefinition.ContainsKey("update_interval"))
+                            {
+                                TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorUniqueId]);
+                                if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"]))
+                                {
+                                    continue;
+                                }
+                            }
+
+                            senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
+                        }
+                    }
+                }
+            }
+
+            //TODO, Create Sensor list to iterate ower when building request to server
+
+            await Task.WhenAll(senzorsQuerys.Values.ToArray());
+            if (senzorsQuerys.Count < 1)
+            {
+                Logger.write("no senzor scheduled!");
+            }
+            Logger.write("all task query Done!");
+
+            foreach (var item in senzorTypes)
+            {
+                string senzorType = item.Key;
+                foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                {
+                    foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                    {
+                        foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                        {
+                            string sensorUniqueId = sensorDefinition["unique_id"];
+                            if (!senzorsQuerys.ContainsKey(sensorUniqueId))
+                            {
+                                continue;
+                            }
+
+                            string sensorData = senzorsQuerys[sensorUniqueId].Result;
+                            sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorData);
+
+                            if (string.IsNullOrEmpty(sensorData))
+                            {
+                                Logger.write("No Data Returned to sensor " + sensorUniqueId);
+                                continue;
+                            }
+
+                            if (sensorLastValues.ContainsKey(sensorDefinition["unique_id"]))
+                            {
+                                if (sensorData == sensorLastValues[sensorDefinition["unique_id"]])
+                                {
+                                    // Logger.write("Skiping! Same Data Already Send " + sensorData);
+                                    continue;
+                                }
+                            }
+
+                            HomeAssistatnSensors senzor = new HomeAssistatnSensors();
+
+                            senzor.unique_id = sensorDefinition["unique_id"];
+                            senzor.icon = sensorDefinition["icon"];
+                            senzor.state = convertToType(sensorData);
+                            senzor.type = senzorType;
+                            senzor.unique_id = sensorDefinition["unique_id"];
+
+                            ha.AddSensorData(senzor);
+
+                            if (sensorUpdatedAtList.ContainsKey(sensorDefinition["unique_id"]))
+                            {
+                                sensorUpdatedAtList[sensorDefinition["unique_id"]] = DateTime.Now;
+                            }
+                            else
+                            {
+                                sensorUpdatedAtList.Add(sensorDefinition["unique_id"], DateTime.Now);
+                            }
+
+                            if (sensorLastValues.ContainsKey(sensorDefinition["unique_id"]))
+                            {
+                                sensorLastValues[sensorDefinition["unique_id"]] = sensorData;
+                            }
+                            else
+                            {
+                                sensorLastValues.Add(sensorDefinition["unique_id"], sensorData);
+                            }
+                        }
+                    }
+                }
+            }
+
             ha.sendSensorBuffer();
         }
+
+        private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
+        {
+            if (senzorType == "binary_sensor")
+            {
+                return sensorData;
+            }
+
+            if (string.IsNullOrEmpty(sensorData))
+            {
+                sensorData = "0";
+            }
+
+            if (sensorDefinition.ContainsKey("value_map"))
+            {
+                string[] valueMap = sensorDefinition["value_map"].Split("|");
+                sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
+                //Logger.write(JsonConvert.SerializeObject(valueMap));
+            }
+
+            if (sensorDefinition.ContainsKey("filters"))
+            {
+                bool isNumeric = int.TryParse(sensorData, out _);
+                Dictionary<string, string> filters = sensorDefinition["filters"];
+
+                if (isNumeric)
+                {
+                    if (filters.ContainsKey("multiply"))
+                    {
+                        sensorData = (double.Parse(sensorData) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("divide"))
+                    {
+                        sensorData = (double.Parse(sensorData) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("deduct"))
+                    {
+                        sensorData = (double.Parse(sensorData) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+
+                    if (filters.ContainsKey("add"))
+                    {
+                        sensorData = (double.Parse(sensorData) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
+                    }
+                }
+
+            }
+
+            if (sensorDefinition.ContainsKey("accuracy_decimals"))
+            {
+                if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
+                {
+                    sensorData = Math.Round(double.Parse(sensorData), Int32.Parse(sensorDefinition["accuracy_decimals"] ?? 0)).ToString();
+                }
+            }
+
+            return sensorData;
+        }
+
+        private static async Task<String> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
+        {
+            string className = "HA.Class.Sensors.";
+
+            foreach (var methodNameSegment in integration.Key.Split("_"))
+            {
+                className += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
+            }
+
+            Type SensorTypeClass = Type.GetType(className);
+            if (SensorTypeClass == null)
+            {
+                Logger.write(className + " Class Not Found");
+                throw new Exception(className + " Class Not Found");
+            }
+
+            MethodInfo method = SensorTypeClass.GetMethod("GetValue");
+            if (method == null)
+            {
+                Logger.write("GetValue Method Not Found on " + className);
+                throw new Exception("GetValue Method Not Found on " + className);
+            }
+
+            ParameterInfo[] pars = method.GetParameters();
+            List<object> parameters = new List<object>();
+
+            foreach (ParameterInfo p in pars)
+            {
+                if (sensorDefinition.ContainsKey(p.Name))
+                {
+                    parameters.Insert(p.Position, sensorDefinition[p.Name]);
+                }
+                else if (p.IsOptional)
+                {
+                    parameters.Insert(p.Position, p.DefaultValue);
+                }
+            }
+
+            return method.Invoke(null, parameters.ToArray()).ToString();
+        }
+
+        private static Dictionary<string, object> getSensorsConfiguration()
+        {
+            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            senzorTypes.Add("sensor", configData["sensor"]);
+
+            if (configData.ContainsKey("binary_sensor"))
+                senzorTypes.Add("binary_sensor", configData["binary_sensor"]);
+
+            return senzorTypes;
+        }
+
+        private static dynamic convertToType(dynamic variable)
+        {
+            //ADD double 
+            string variableStr = variable.ToString();
+            // Logger.write("BEFORE CONVERSION" + variableStr);
+            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
+            {
+                //Logger.write("AFTER CONVERSION (Bool)" + variableStr.ToString());
+                return bool.Parse(variableStr);
+            }
+            else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$") && (variableStr.Contains(".") || variableStr.Contains(",")))
+            {
+                //Logger.write("AFTER CONVERSION (double)" + variableStr.ToString());
+                return double.Parse(variableStr);
+            }
+            else if (Regex.IsMatch(variableStr, @"^\d+$"))
+            {
+                //Logger.write("AFTER CONVERSION (int)" + variableStr.ToString());
+                return int.Parse(variableStr);
+            }
+
+            //Logger.write("AFTER CONVERSION" + variableStr.ToString());
+            return variableStr;
+        }
+
+        public void ShowNotification(string title = "", string body = "", string imageUrl = "", string audioUrl = "", int duration = 5000)
+        {
+            ToastContentBuilder toast = new ToastContentBuilder();
+            toast.AddText(body);
+
+            if (!String.IsNullOrEmpty(title))
+            {
+                toast.AddText(title);
+            }
+
+            if (!String.IsNullOrEmpty(imageUrl))
+            {
+                string fileName = string.Format("{0}{1}.png", System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+                if (imageUrl.StartsWith("http"))
+                {
+                    WebClient wc = new WebClient();
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    wc.DownloadFile(imageUrl, fileName);
+                 
+                    Logger.write("DOWNLOADED");
+                }
+
+                Logger.write("file:///" + fileName);
+                toast.AddInlineImage(new Uri("file:///" + fileName));
+            }
+
+            if (!String.IsNullOrEmpty(audioUrl))
+            {
+                string fileName = string.Format("{0}{1}.wav", System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
+                if (audioUrl.StartsWith("http"))
+                {
+                    WebClient wc = new WebClient();
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    wc.DownloadFile(audioUrl, fileName);
+                }
+                Logger.write(fileName);
+                
+                playNotificationAudio(fileName, duration);
+
+            }
+           
+            toast.Show();
+        }
+
+        private async Task playNotificationAudio(string fileName, int duration)
+        {
+            System.Media.SoundPlayer player = new System.Media.SoundPlayer();
+            player.SoundLocation = fileName;
+            player.Play();
+            await Task.Delay(duration);
+            player.Stop();
+        }
+
+        private bool previousProcessDetected()
+        {
+            Process currentProc = Process.GetCurrentProcess();
+            Process[] processes = Process.GetProcessesByName(currentProc.ProcessName);
+            foreach(Process p in processes)
+            {
+                if ((p.Id != currentProc.Id) && (p.MainModule.FileName == currentProc.MainModule.FileName))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void minimalizeToTray(bool showNotifycation = true)
+        {
+            if (showNotifycation)
+            {
+                ShowNotification("App keeps Running in background!");
+            }
+
+            Logger.write("App minimalized");
+            MainWindow.ShowInTaskbar = false;
+            MainWindow.Hide();
+        }
     }
+
 }

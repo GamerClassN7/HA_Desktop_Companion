@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 using System.Windows.Markup;
 using Newtonsoft.Json.Linq;
 
-namespace HA.@class.HomeAssistant.Objects
+namespace HA.Class.HomeAssistant.Objects
 {
     public class HomeAssistatnSensors
     {
         public string device_class = null;
         public string icon = "mdi:battery";
         public string name = null;
-        public string state = null;
+        public dynamic state = null;
         public string type = "sensor";
         public string unique_id = null;
         public string unit_of_measurement = null;
