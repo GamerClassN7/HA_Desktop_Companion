@@ -14,9 +14,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-dotnet@v
+      - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 6.0-windows10.0.17763.0
+          dotnet-version: 6.*
 
       - run: dotnet restore ${env.PROJECT_PATH}
 
