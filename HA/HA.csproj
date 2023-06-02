@@ -9,9 +9,21 @@
 	<ApplicationIcon>ha_logo.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="configuration.yaml" />
+    <None Remove="ha_logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="configuration.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
 	<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
 	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Management" Version="7.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="ha_logo.png" />
   </ItemGroup>
   <ItemGroup>
     <None Update="App.config">
@@ -20,11 +32,5 @@
 	<None Update="ha_logo.ico">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	</None>
-	<None Update="ha_logo.png">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	</None>
-    <None Update="configuration.yaml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 </Project>
