@@ -38,7 +38,7 @@ namespace HA
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
-        private static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        public static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
@@ -56,6 +56,7 @@ namespace HA
             notifyIcon = new Forms.NotifyIcon();
         }
 
+       
         private void OnPowerChange(object s, PowerModeChangedEventArgs e, string ip = "8.8.8.8")
         {
             switch (e.Mode)
@@ -147,6 +148,11 @@ namespace HA
             notifyIcon.Dispose();
 
             base.OnExit(e);
+        }
+
+        public string GetRootDir()
+        {
+            return appDir;
         }
 
         public bool Start(bool sleepRecover = false)

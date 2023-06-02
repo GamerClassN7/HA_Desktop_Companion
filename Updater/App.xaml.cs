@@ -20,7 +20,7 @@ namespace Updater
     /// </summary>
     public partial class App : Application
     {
-        public string actualVersion = "";
+        public string assemblyVersion = "";
         public string repositoryUrl = "";
 
         public string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -28,21 +28,24 @@ namespace Updater
         public bool isLatest = false;
         public string zipUrl = "";
         public string zipName = "";
+
         public string versionString = "";
-        private string assemblyString = "";
+        public string assemblyString = "";
 
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            /*actualVersion = e.Args[0].ToString();
-            repositoryUrl = e.Args[1].ToString();*/
-            checkForUpdates("https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases", "1.0.0");
+            assemblyVersion = e.Args[1].ToString();
+            repositoryUrl = e.Args[0].ToString();
+            MessageBox.Show(assemblyVersion, repositoryUrl);
 
+            checkForUpdates(repositoryUrl, assemblyVersion);
             base.OnStartup(e);
+
         }
 
         private void checkForUpdates(string repository_url = "", string assemblyVersion = "0.0.0")
-        {
+        {        
             assemblyString = string.Join("", new Regex("[0-9]").Matches(assemblyVersion));
             int assemblyNumber = Int32.Parse(assemblyString);
 

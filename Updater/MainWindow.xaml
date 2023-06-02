@@ -5,9 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Updater"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+        Title="MainWindow" 
+        Height="85" 
+        Width="293"
+        Loaded="Window_Loaded"
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="NoResize"
+        SizeToContent="Manual"
+        >
     <Grid>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="265,166,0,0" VerticalAlignment="Top" Click="Button_Click"/>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid Grid.RowSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+        </Grid>
 
+        <Label x:Name="actual_version" Content="Label" VerticalAlignment="Top" HorizontalAlignment="Left" Grid.Row="0" Grid.Column="0"/>
+        <Label x:Name="new_version" Content="Label"  VerticalAlignment="Top" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="1"/>
+
+        <Button Content="Button" HorizontalAlignment="Center" Margin="1px,1px,1px,1px" Click="Button_Click" Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="1" VerticalAlignment="Center"/>
     </Grid>
 </Window>

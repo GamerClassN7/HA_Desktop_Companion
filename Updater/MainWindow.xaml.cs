@@ -30,23 +30,23 @@ namespace Updater
         private App app;
         public MainWindow()
         {
-            app = Application.Current as App;
             InitializeComponent();
+            app = Application.Current as App;
         }
 
         private void Window_Activated(object sender, EventArgs e)
         {
-          
+            
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(app.appDir + "/cache/"))
-                Directory.CreateDirectory(app.appDir + "/cache/");
+            if (!Directory.Exists(app.appDir + "/updater_cache/"))
+                Directory.CreateDirectory(app.appDir + "/updater_cache/");
 
             using (var client = new WebClient())
             {
-                client.DownloadFile(app.zipUrl, app.appDir + "/cache/" + app.versionString + "_" + app.zipName);
+                client.DownloadFile(app.zipUrl, app.appDir + "/updater_cache/" + app.versionString + "_" + app.zipName);
             }
         }
 
@@ -54,8 +54,11 @@ namespace Updater
         {
             if (app.isLatest)
             {
-                Environment.Exit(0);
+                //Environment.Exit(0);
             }
+
+            this.new_version.Content = app.versionString;
+            this.actual_version.Content = app.assemblyVersion;
         }
     }
 }

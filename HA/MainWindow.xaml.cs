@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using HA.Class.Helpers;
@@ -45,7 +46,12 @@ namespace HA
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //Process.Start(".\\Updater.exe", "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.1");
+            string updaterPath = (app.GetRootDir() + "\\Updater.exe");
+
+            if (System.IO.File.Exists(updaterPath))
+            {
+                Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
+            }
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 

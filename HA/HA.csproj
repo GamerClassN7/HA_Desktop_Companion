@@ -1,45 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-	  <TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
-	  <Nullable>enable</Nullable>
+	<TargetFramework>net6.0-windows10.0.17763.0</TargetFramework>
+	<Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
 	<UseWindowsForms>true</UseWindowsForms>
 	<PackageIcon>ha_logo.ico</PackageIcon>
 	<ApplicationIcon>ha_logo.ico</ApplicationIcon>
   </PropertyGroup>
-
-	<ItemGroup>
-	<None Remove="ha_logo.ico" />
-    <None Remove="ha_logo.png" />
-  </ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="ha_logo.ico">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-
   <ItemGroup>
-	  <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	<PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
+	<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Management" Version="7.0.1" />
   </ItemGroup>
-
-	<ItemGroup>
-    <Resource Include="ha_logo.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
-
   <ItemGroup>
     <None Update="App.config">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
+	<None Update="ha_logo.ico">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+	<None Update="ha_logo.png">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
     <None Update="configuration.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>
