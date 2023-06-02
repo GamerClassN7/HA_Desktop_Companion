@@ -8,6 +8,7 @@ Why did I make this app ?
 Cause I don't like existing implementations using MQTT and I took inspiration from awesome ESPhome and its native communication protocol to HA and implemented it my own way :)
 
 Feel free to contribute any time :)
+
 [HomeAssistant Comunity Forum Thread](https://community.home-assistant.io/t/ha-desktop-companion/)
 
 ## Installation

@@ -17,6 +17,11 @@ namespace HA
         {
             app = Application.Current as App;
             InitializeComponent();
+            AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
+            {
+                Logger.write(eventArgs.Exception.ToString(), 1);
+            };
+
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -33,7 +38,10 @@ namespace HA
             config.Save(ConfigurationSaveMode.Modified);
 
             AutoStart.register();
+            Logger.write("Autostart", 1);
+
             app.Stop();
+            Logger.write("Stoping Instances", 1);
 
             if (app.Start())
             {
@@ -41,16 +49,16 @@ namespace HA
                 return;
             }
             
-                MessageBox.Show("Initialization Failed", "Error");
+            MessageBox.Show("Initialization Failed", "Error");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             string updaterPath = (app.GetRootDir() + "\\Updater.exe");
-
-            if (System.IO.File.Exists(updaterPath))
-            {
+            if (System.IO.File.Exists(updaterPath)) {
                 Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
+            } else {
+                Logger.write("Updater not found",1);
             }
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
