@@ -14,12 +14,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
+      - run: dotnet restore ${{env.PROJECT_PATH}}
 
-      - run: dotnet publish ${{env.PROJECT_PATH}} --self-contained -r win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+      - run: dotnet build ${{env.PROJECT_PATH}} -c Release --no-restore 
+
+      - run: dotnet publish ${{env.PROJECT_PATH}} -c Release --no-restore --self-contained -r win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 
       - uses: actions/create-release@v1
         env:
-          GITHUB-TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
