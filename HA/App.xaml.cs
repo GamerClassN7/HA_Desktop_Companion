@@ -39,7 +39,7 @@ namespace HA
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
 
         public static string appDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
+        private static YamlConfiguration configurationObject;
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
         static HomeAssistantWS ws;
@@ -85,6 +85,8 @@ namespace HA
                 ShowNotification("Already Running !!!");
                 Environment.Exit(0);
             }
+
+            configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
 
             notifyIcon.Icon = new System.Drawing.Icon(appDir + "/ha_logo.ico");
             notifyIcon.Visible = true;
