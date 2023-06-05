@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using Windows.Storage.Pickers;
+using Windows.Storage.Provider;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace HA.Class.Helpers
@@ -69,6 +70,11 @@ namespace HA.Class.Helpers
             Debug.WriteLine(msg_str);
             File.AppendAllText(path1, getMessage(msg_str, level));
 
+        }
+
+        public static string getLogPath()
+        {
+            return path1;
         }
         
         private static string getMessage(string text, int level = 0)

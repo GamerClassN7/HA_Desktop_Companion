@@ -96,10 +96,16 @@ namespace HA
             notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
 
             notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
+            notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
 
             base.OnStartup(e);
+        }
+
+        private void OnLog_Click(object? sender, EventArgs e)
+        {
+            Process.Start("notepad", Logger.getLogPath());
         }
 
         public static bool PingHost(string nameOrAddress)
