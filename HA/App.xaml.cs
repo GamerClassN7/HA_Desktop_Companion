@@ -41,7 +41,7 @@ namespace HA
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
         
-        static HomeAssistantWS ws;
+        public static HomeAssistantWS ws;
 
         public static string appDir = Directory.GetCurrentDirectory();
 
@@ -197,6 +197,9 @@ namespace HA
             url = config.AppSettings.Settings["url"].Value;
             webhookId = config.AppSettings.Settings["webhookId"].Value;
             secret = config.AppSettings.Settings["secret"].Value;
+            
+            //Initialize sleep Backup
+            SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             //Values for striping from log messages
             Logger.setSecreets(new string[] { token, url, webhookId, secret });
@@ -213,7 +216,6 @@ namespace HA
             }
             Logger.write("API initiualized", 4);
 
-            //SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             try
             {
