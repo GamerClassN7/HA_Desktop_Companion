@@ -41,9 +41,13 @@ namespace HA
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
         
-        static HomeAssistantWS ws;
+        public static HomeAssistantWS ws;
 
+#if DEBUG
         public static string appDir = Directory.GetCurrentDirectory();
+#else
+        public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
 
         private static YamlConfiguration configurationObject;
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
@@ -96,10 +100,16 @@ namespace HA
             notifyIcon.ContextMenuStrip = new Forms.ContextMenuStrip();
 
             notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
+            notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
 
             base.OnStartup(e);
+        }
+
+        private void OnLog_Click(object? sender, EventArgs e)
+        {
+            Process.Start("notepad", Logger.getLogPath());
         }
 
         public static bool PingHost(string nameOrAddress)
@@ -191,6 +201,9 @@ namespace HA
             url = config.AppSettings.Settings["url"].Value;
             webhookId = config.AppSettings.Settings["webhookId"].Value;
             secret = config.AppSettings.Settings["secret"].Value;
+            
+            //Initialize sleep Backup
+            SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             //Values for striping from log messages
             Logger.setSecreets(new string[] { token, url, webhookId, secret });
@@ -207,7 +220,6 @@ namespace HA
             }
             Logger.write("API initiualized", 4);
 
-            //SystemEvents.PowerModeChanged += (sender, e) => OnPowerChange(sender, e, new Uri(url).Host);
 
             try
             {

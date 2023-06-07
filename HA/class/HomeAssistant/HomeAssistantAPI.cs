@@ -92,7 +92,7 @@ namespace HA.Class.HomeAssistant
                 Logger.write("API RESPONSE CODE <"+ (int)response.StatusCode + "> " + response.StatusCode.ToString());
  
                 return response.Content;
-                //  usergrid.ItemsSource = users;
+                // usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
             }
             else
