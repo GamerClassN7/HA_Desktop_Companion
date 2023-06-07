@@ -43,7 +43,11 @@ namespace HA
         
         public static HomeAssistantWS ws;
 
+#if DEBUG
         public static string appDir = Directory.GetCurrentDirectory();
+#else
+        public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
 
         private static YamlConfiguration configurationObject;
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
