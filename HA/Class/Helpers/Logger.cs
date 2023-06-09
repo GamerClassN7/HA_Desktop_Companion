@@ -21,6 +21,12 @@ namespace HA.Class.Helpers
         private static string path1;
         private static string[] secreetsStrings = new string[] { };
 
+#if DEBUG
+        private static string appDir = Directory.GetCurrentDirectory();
+#else
+        private static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
+
         public static void setSecreets(string[] strings)
         {
             if (!initialized)
@@ -32,7 +38,7 @@ namespace HA.Class.Helpers
 
         public static void init(string path = "./log.log")
         {
-            path1 = Path.Combine(path).ToString();
+            path1 = Path.Combine(appDir, path).ToString();
             if (!File.Exists(path1))
             {
                 File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/));

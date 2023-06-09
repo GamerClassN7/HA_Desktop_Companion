@@ -34,14 +34,12 @@ namespace HA
     public partial class App : Application
     {
         private static bool connectionError = false;
-        private bool networkIsAwailable = false;
-
-        static HomeAssistantAPI ha;
         static DispatcherTimer? update = null;
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
-        
-        public static HomeAssistantWS ws;
+
+        public HomeAssistantAPI ha;
+        public HomeAssistantWS ws;
 
 #if DEBUG
         public static string appDir = Directory.GetCurrentDirectory();
@@ -49,11 +47,11 @@ namespace HA
         public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
 
-        private static YamlConfiguration configurationObject;
+        private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
+        private MainWindow mw;
         private Forms.NotifyIcon notifyIcon;
-        private static MainWindow mw;
 
         public App()
         {
@@ -89,8 +87,6 @@ namespace HA
                 ShowNotification("Already Running !!!");
                 Environment.Exit(0);
             }
-
-            configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
 
             notifyIcon.Icon = new System.Drawing.Icon(appDir + "/ha_logo.ico");
             notifyIcon.Visible = true;
@@ -177,8 +173,8 @@ namespace HA
 
             if (!sleepRecover)
             {
-                Logger.init(appDir + "/log.log");
                 mw = (MainWindow)Application.Current.MainWindow;
+                Logger.init(appDir + "/log.log");
                 //Clear check Buffers
                 sensorLastValues.Clear();
                 sensorUpdatedAtList.Clear();
@@ -352,7 +348,7 @@ namespace HA
             }
         }
 
-        private static async void UpdateSensorTick(object sender, EventArgs e)
+        private async void UpdateSensorTick(object sender, EventArgs e)
         {
             await queryAndSendSenzorData();
 
@@ -387,7 +383,7 @@ namespace HA
             }
         }
 
-        private static async Task queryAndSendSenzorData()
+        private async Task queryAndSendSenzorData()
         {
             Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
 
@@ -496,7 +492,7 @@ namespace HA
                 }
             }
 
-            ha.sendSensorBuffer();
+            this.ha.sendSensorBuffer();
         }
 
         private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
