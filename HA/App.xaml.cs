@@ -42,7 +42,8 @@ namespace HA
         public HomeAssistantWS ws;
 
 #if DEBUG
-        public static string appDir = Directory.GetCurrentDirectory();
+        public static string exeFullName = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        public static string appDir = System.IO.Path.GetDirectoryName(exeFullName);
 #else
         public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
