@@ -41,7 +41,7 @@ namespace HA.Class.Helpers
             path1 = Path.Combine(appDir, path).ToString();
             if (!File.Exists(path1))
             {
-                File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/));
+                File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/), System.Text.Encoding.UTF8);
             }
             initialized = true;
         }
@@ -74,7 +74,8 @@ namespace HA.Class.Helpers
 
             string msg_str = msg.ToString();
             Debug.WriteLine(msg_str);
-            File.AppendAllText(path1, getMessage(msg_str, level));
+            
+            File.AppendAllText(path1, getMessage(msg_str, level), System.Text.Encoding.UTF8);
 
         }
 
