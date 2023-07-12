@@ -100,7 +100,7 @@ namespace HA
             notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
-
+            Thread.Sleep(5000);
             base.OnStartup(e);
         }
 
