@@ -711,6 +711,17 @@ namespace HA
             MainWindow.ShowInTaskbar = false;
             MainWindow.Hide();
         }
+
+        private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+
+        }
+
+        private void UnhandeledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show("An unhandled exception just occurred: " + e.Exception.Message, "Exception Sample", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.Handled = true;
+        }
     }
 
 }
