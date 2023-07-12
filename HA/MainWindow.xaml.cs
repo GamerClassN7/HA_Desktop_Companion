@@ -54,12 +54,12 @@ namespace HA
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            string updaterPath = (app.GetRootDir() + "\\Updater.exe");
-            if (System.IO.File.Exists(updaterPath)) {
-                Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
-            } else {
-                Logger.write("Updater not found",1);
-            }
+            //string updaterPath = (app.GetRootDir() + "\\Updater.exe");
+            //if (System.IO.File.Exists(updaterPath)) {
+            //    Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
+            //} else {
+           //     Logger.write("Updater not found",1);
+            //}
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -69,10 +69,12 @@ namespace HA
 
             if (string.IsNullOrEmpty(webhookId))
             {
+                MessageBox.Show("Web-hook");
+
                 Logger.write("Web-hook not found");
                 return;
             }
-
+         
             if (!app.Start())
             {
                 MessageBox.Show("Autostart Failed", "Error");

@@ -54,7 +54,7 @@ namespace Updater
         {
             if (app.isLatest)
             {
-                //Environment.Exit(0);
+                Environment.Exit(0);
             }
 
             this.new_version.Content = app.versionString;

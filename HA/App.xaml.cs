@@ -59,7 +59,6 @@ namespace HA
             notifyIcon = new Forms.NotifyIcon();
         }
 
-       
         private void OnPowerChange(object s, PowerModeChangedEventArgs e, string ip = "8.8.8.8")
         {
             switch (e.Mode)
@@ -99,8 +98,7 @@ namespace HA
             notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
-
-            Thread.Sleep(5000);
+            
             base.OnStartup(e);
         }
 
@@ -166,6 +164,8 @@ namespace HA
 
         public bool Start(bool sleepRecover = false)
         {
+            Logger.init(appDir + "/log.log");
+
             string token = "";
             string url = "";
             string webhookId = "";
@@ -175,7 +175,7 @@ namespace HA
             if (!sleepRecover)
             {
                 mw = (MainWindow)Application.Current.MainWindow;
-                Logger.init(appDir + "/log.log");
+                
                 //Clear check Buffers
                 sensorLastValues.Clear();
                 sensorUpdatedAtList.Clear();
