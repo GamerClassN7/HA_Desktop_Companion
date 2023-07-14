@@ -61,7 +61,7 @@ namespace HA.Class.Helpers
             }
 
             Debug.WriteLine(msg);
-            var writer = new FileStream(path1, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+            var writer = new FileStream(path1, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
             var streamWriter = new StreamWriter(writer);
 
             streamWriter.Write(getMessage(msg, level));
