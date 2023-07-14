@@ -58,11 +58,16 @@ namespace HA.Class.Helpers
             if (!initialized)
             {
                 init();
-
             }
 
             Debug.WriteLine(msg);
-            File.AppendAllText(path1, getMessage(msg, level));
+            var writer = new FileStream(path1, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+            var streamWriter = new StreamWriter(writer);
+
+            streamWriter.Write(getMessage(msg, level));
+
+            streamWriter.Dispose();
+            writer.Dispose();
         }
 
         public static void write(object msg, int level = 0)
