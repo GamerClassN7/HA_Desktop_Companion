@@ -19,7 +19,7 @@ namespace HA
             InitializeComponent();
             AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
             {
-                Logger.write(eventArgs.Exception.ToString(), 1);
+                Logger.write("["+ AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 1);
             };
 
         }
