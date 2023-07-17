@@ -11,7 +11,10 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="configuration.yaml" />
-    <None Remove="ha_logo.png" />
+    <None Remove="Resources\configuration.yaml" />
+    <None Remove="Resources\ha_loading.gif" />
+    <None Remove="Resources\ha_logo.ico" />
+    <None Remove="Resources\ha_logo.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="configuration.yaml">
@@ -24,7 +27,23 @@
     <PackageReference Include="System.Management" Version="7.0.2" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="ha_logo.png" />
+    <Resource Include="Resources\configuration.yaml" />
+    <Resource Include="Resources\ha_loading.gif" />
+    <Resource Include="Resources\ha_logo.ico" />
+    <Resource Include="Resources\ha_logo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Resource.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resource.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resource.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Update="App.config">

@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using HA.Class.Helpers;
 
@@ -26,6 +27,7 @@ namespace HA
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            loading.Visibility = Visibility.Visible;
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             foreach (var key in config.AppSettings.Settings.AllKeys)
             {
@@ -45,6 +47,7 @@ namespace HA
 
             if (app.Start())
             {
+                loading.Visibility = Visibility.Hidden;
                 app.minimalizeToTray();
                 return;
             }
@@ -82,6 +85,7 @@ namespace HA
                 return;
             }
 
+            loading.Visibility = Visibility.Hidden;
             app.minimalizeToTray(false);
         }
 
