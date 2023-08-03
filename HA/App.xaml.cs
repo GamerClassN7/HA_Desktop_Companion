@@ -91,7 +91,8 @@ namespace HA
         protected override void OnStartup(StartupEventArgs e)
         {
             AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
-
+            AutoUpdater.Synchronous = true;
+            AutoUpdater.ShowRemindLaterButton = false;
 
             //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
             if (previousProcessDetected())

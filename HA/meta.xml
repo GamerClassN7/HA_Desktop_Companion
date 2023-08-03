@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <item>
-	<version>0.0.6.0</version>
-	<url>https://github.com/GamerClassN7/HA_Desktop_Companion/releases/download/0.0.6/HA_Self_Contained.zip</url>
+	<version>0.0.8.0</version>
+	<url>https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/HA_Self_Contained.zip</url>
 	<changelog>https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest</changelog>
 	<mandatory>false</mandatory>
 </item>

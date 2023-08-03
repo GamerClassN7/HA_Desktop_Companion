@@ -8,6 +8,7 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<PackageIcon>ha_logo.ico</PackageIcon>
 	<ApplicationIcon>ha_logo.ico</ApplicationIcon>
+	<AssemblyVersion>0.0.7.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="configuration.yaml" />
@@ -30,7 +31,9 @@
   <ItemGroup>
     <Resource Include="Resources\configuration.yaml" />
     <Resource Include="Resources\ha_loading.gif" />
-    <Resource Include="Resources\ha_logo.ico" />
+    <Resource Include="Resources\ha_logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Resources\ha_logo.png" />
   </ItemGroup>
   <ItemGroup>
@@ -50,8 +53,11 @@
     <None Update="App.config">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-	<None Update="ha_logo.ico">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="ha_logo.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+	<None Update="meta.xml">
+	  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</None>
   </ItemGroup>
 </Project>
