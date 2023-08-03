@@ -25,6 +25,7 @@ using System.Linq;
 using Microsoft.Win32;
 using System.Net.NetworkInformation;
 using System.Security.Policy;
+using AutoUpdaterDotNET;
 
 namespace HA
 {
@@ -79,8 +80,19 @@ namespace HA
             }
         }
 
+        private void AutoUpdaterOnParseUpdateInfoEvent(ParseUpdateInfoEventArgs args)
+        {
+            // dynamic json = JsonConvert.DeserializeObject(args.RemoteData);
+            // do stuff
+
+            MessageBox.Show("UpdateFound");
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
+            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
+
+
             //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
             if (previousProcessDetected())
             {
