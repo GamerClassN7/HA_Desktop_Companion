@@ -69,7 +69,7 @@
                     <RowDefinition Height="13*"/>
                     <RowDefinition Height="4*"/>
                 </Grid.RowDefinitions>
-                <Image Margin="0,0,0,0" Source="/Resources/ha_logo.ico" Stretch="Uniform"/>
+                <Image x:Name="loadingScreen" Margin="0,0,0,0" Source="/Resources/ha_logo.ico" Stretch="Uniform"/>
                 <Label Content="Loading..." HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Margin="0,0,0,0"/>
             </Grid>
 

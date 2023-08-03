@@ -72,15 +72,14 @@ namespace HA
 
             if (string.IsNullOrEmpty(webhookId))
             {
-                MessageBox.Show("Web-hook");
-
+                loading.Visibility = Visibility.Hidden;
                 Logger.write("Web-hook not found");
                 return;
             }
          
             if (!app.Start())
             {
-                MessageBox.Show("Autostart Failed", "Error");
+                loading.Visibility = Visibility.Hidden;
                 Logger.write("Autostart Failed");
                 return;
             }
