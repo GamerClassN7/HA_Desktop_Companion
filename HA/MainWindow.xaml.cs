@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using HA.Class.Helpers;
 
@@ -19,13 +20,14 @@ namespace HA
             InitializeComponent();
             AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
             {
-                Logger.write(eventArgs.Exception.ToString(), 1);
+                Logger.write("["+ AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 1);
             };
 
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
+            loading.Visibility = Visibility.Visible;
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             foreach (var key in config.AppSettings.Settings.AllKeys)
             {
@@ -45,6 +47,7 @@ namespace HA
 
             if (app.Start())
             {
+                loading.Visibility = Visibility.Hidden;
                 app.minimalizeToTray();
                 return;
             }
@@ -54,12 +57,12 @@ namespace HA
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            string updaterPath = (app.GetRootDir() + "\\Updater.exe");
-            if (System.IO.File.Exists(updaterPath)) {
-                Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
-            } else {
-                Logger.write("Updater not found",1);
-            }
+            //string updaterPath = (app.GetRootDir() + "\\Updater.exe");
+            //if (System.IO.File.Exists(updaterPath)) {
+            //    Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
+            //} else {
+           //     Logger.write("Updater not found",1);
+            //}
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -69,10 +72,12 @@ namespace HA
 
             if (string.IsNullOrEmpty(webhookId))
             {
+                MessageBox.Show("Web-hook");
+
                 Logger.write("Web-hook not found");
                 return;
             }
-
+         
             if (!app.Start())
             {
                 MessageBox.Show("Autostart Failed", "Error");
@@ -80,6 +85,7 @@ namespace HA
                 return;
             }
 
+            loading.Visibility = Visibility.Hidden;
             app.minimalizeToTray(false);
         }
 

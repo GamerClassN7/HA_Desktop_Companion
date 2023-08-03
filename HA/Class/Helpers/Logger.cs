@@ -21,6 +21,12 @@ namespace HA.Class.Helpers
         private static string path1;
         private static string[] secreetsStrings = new string[] { };
 
+#if DEBUG
+        private static string appDir = Directory.GetCurrentDirectory();
+#else
+        private static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
+
         public static void setSecreets(string[] strings)
         {
             if (!initialized)
@@ -32,10 +38,10 @@ namespace HA.Class.Helpers
 
         public static void init(string path = "./log.log")
         {
-            path1 = Path.Combine(path).ToString();
+            path1 = Path.Combine(appDir, path).ToString();
             if (!File.Exists(path1))
             {
-                File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/));
+                File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/), System.Text.Encoding.UTF8);
             }
             initialized = true;
         }
@@ -52,11 +58,16 @@ namespace HA.Class.Helpers
             if (!initialized)
             {
                 init();
-
             }
 
             Debug.WriteLine(msg);
-            File.AppendAllText(path1, getMessage(msg, level));
+            var writer = new FileStream(path1, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            var streamWriter = new StreamWriter(writer);
+
+            streamWriter.Write(getMessage(msg, level));
+
+            streamWriter.Dispose();
+            writer.Dispose();
         }
 
         public static void write(object msg, int level = 0)
@@ -68,7 +79,8 @@ namespace HA.Class.Helpers
 
             string msg_str = msg.ToString();
             Debug.WriteLine(msg_str);
-            File.AppendAllText(path1, getMessage(msg_str, level));
+            
+            File.AppendAllText(path1, getMessage(msg_str, level), System.Text.Encoding.UTF8);
 
         }
 

@@ -25,6 +25,7 @@ using System.Linq;
 using Microsoft.Win32;
 using System.Net.NetworkInformation;
 using System.Security.Policy;
+using AutoUpdaterDotNET;
 
 namespace HA
 {
@@ -34,33 +35,31 @@ namespace HA
     public partial class App : Application
     {
         private static bool connectionError = false;
-        private bool networkIsAwailable = false;
-
-        static HomeAssistantAPI ha;
         static DispatcherTimer? update = null;
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
-        
-        public static HomeAssistantWS ws;
+
+        public HomeAssistantAPI ha;
+        public HomeAssistantWS ws;
 
 #if DEBUG
-        public static string appDir = Directory.GetCurrentDirectory();
+        public static string exeFullName = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        public static string appDir = System.IO.Path.GetDirectoryName(exeFullName);
 #else
         public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
 
-        private static YamlConfiguration configurationObject;
+        private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
 
+        private MainWindow mw;
         private Forms.NotifyIcon notifyIcon;
-        private static MainWindow mw;
 
         public App()
         {
             notifyIcon = new Forms.NotifyIcon();
         }
 
-       
         private void OnPowerChange(object s, PowerModeChangedEventArgs e, string ip = "8.8.8.8")
         {
             switch (e.Mode)
@@ -81,16 +80,25 @@ namespace HA
             }
         }
 
+        private void AutoUpdaterOnParseUpdateInfoEvent(ParseUpdateInfoEventArgs args)
+        {
+            // dynamic json = JsonConvert.DeserializeObject(args.RemoteData);
+            // do stuff
+
+            MessageBox.Show("UpdateFound");
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
+            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
+
+
             //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
             if (previousProcessDetected())
             {
                 ShowNotification("Already Running !!!");
                 Environment.Exit(0);
             }
-
-            configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
 
             notifyIcon.Icon = new System.Drawing.Icon(appDir + "/ha_logo.ico");
             notifyIcon.Visible = true;
@@ -102,8 +110,7 @@ namespace HA
             notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
-
-
+            
             base.OnStartup(e);
         }
 
@@ -169,6 +176,8 @@ namespace HA
 
         public bool Start(bool sleepRecover = false)
         {
+            Logger.init(appDir + "/log.log");
+
             string token = "";
             string url = "";
             string webhookId = "";
@@ -177,8 +186,8 @@ namespace HA
 
             if (!sleepRecover)
             {
-                Logger.init(appDir + "/log.log");
                 mw = (MainWindow)Application.Current.MainWindow;
+                
                 //Clear check Buffers
                 sensorLastValues.Clear();
                 sensorUpdatedAtList.Clear();
@@ -352,7 +361,7 @@ namespace HA
             }
         }
 
-        private static async void UpdateSensorTick(object sender, EventArgs e)
+        private async void UpdateSensorTick(object sender, EventArgs e)
         {
             await queryAndSendSenzorData();
 
@@ -387,7 +396,7 @@ namespace HA
             }
         }
 
-        private static async Task queryAndSendSenzorData()
+        private async Task queryAndSendSenzorData()
         {
             Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
 
@@ -496,7 +505,7 @@ namespace HA
                 }
             }
 
-            ha.sendSensorBuffer();
+            this.ha.sendSensorBuffer();
         }
 
         private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
@@ -713,6 +722,17 @@ namespace HA
             Logger.write("App minimalized");
             MainWindow.ShowInTaskbar = false;
             MainWindow.Hide();
+        }
+
+        private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+
+        }
+
+        private void UnhandeledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show("An unhandled exception just occurred: " + e.Exception.Message, "Exception Sample", MessageBoxButton.OK, MessageBoxImage.Error);
+            e.Handled = true;
         }
     }
 

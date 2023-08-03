@@ -1,0 +1,106 @@
+﻿
+websocket:
+ip_location:
+debug:
+
+sensor:
+  - platform: wmic
+    wmic_class: Win32_Battery
+    wmic_selector: EstimatedChargeRemaining
+    wmic_namespace: root\CIMV2
+    name: Battery Level
+    unique_id: battery_level
+    icon: "mdi:battery"
+    unit_of_measurement: "%"
+    device_class: battery
+    entity_category: "diagnostic"
+    update_interval: 16
+    accuracy_decimals: 0
+  - platform: wmic
+    wmic_class: Win32_Battery
+    wmic_selector: BatteryStatus
+    wmic_namespace: root\CIMV2
+    name: Battery State
+    unique_id: battery_state
+    icon: "mdi:battery-minus"
+    entity_category: "diagnostic"
+    value_map: "Unknown|Discharging|On AC|Fully Charged|Low|Critical|Charging|Charging and High|Charging and Low|Charging and Critical|Undefined|Partially Charged"
+  - platform: wmic
+    wmic_class: Win32_OperatingSystem
+    wmic_selector: FreePhysicalMemory
+    wmic_namespace: root\CIMV2
+    name: Free Ram
+    unique_id: free_ram
+    unit_of_measurement: "GB"
+    icon: "mdi:clock"
+    entity_category: "diagnostic"
+    update_interval: 10
+    filters:
+      - divide: 1000000
+    accuracy_decimals: 1
+  - platform: wmic
+    wmic_class: Win32_Processor
+    wmic_selector: LoadPercentage
+    wmic_namespace: root\CIMV2
+    name: CPU Usage
+    unique_id: cpu_usage
+    unit_of_measurement: "%"
+    icon: "mdi:cpu-64-bit"
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    update_interval: 10
+  - platform: wifi
+    selector: "State"
+    name: Wifi State
+    unique_id: wifi_state
+    icon: "mdi:wifi"
+    update_interval: 10
+  - platform: wifi
+    selector: "SSID"
+    deselector: "BSSID"
+    name: Wifi SSID
+    unique_id: wifi_ssid
+    icon: "mdi:wifi"
+    update_interval: 10
+  - platform: current_window
+    name: Currently Active Window
+    unique_id: currently_active_window
+    icon: "mdi:application"
+    update_interval: 20
+  - platform: uptime
+    name: Uptime
+    unique_id: uptime
+    icon: "mdi:timer-outline"
+    unit_of_measurement: "h"
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+
+binary_sensor:
+  - platform: consent_store
+    consent_category: webcam
+    name: Camera in use
+    unique_id: camera_in_use
+    icon: "mdi:camera"
+  - platform: consent_store
+    consent_category: microphone
+    name: Microphone in use
+    unique_id: microphone_in_use
+    icon: "mdi:microphone"
+  - platform: consent_store
+    consent_category: location
+    name: Location in use
+    unique_id: location_in_use
+    icon: "mdi:crosshairs-gps"
+  - platform: wmic
+    wmic_class: BatteryStatus
+    wmic_selector: PowerOnline
+    wmic_namespace: root\wmi
+    name: Is Charging
+    unique_id: is_charging
+    icon: "mdi:power-plug-off"
+    device_class: plug
+  - platform: restart_pending
+    name: Restart required
+    unique_id: restart_pending
+    icon: "mdi:restart"
+    entity_category: "diagnostic"
