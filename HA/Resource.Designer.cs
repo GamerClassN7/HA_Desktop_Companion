@@ -61,16 +61,6 @@ namespace HA {
         }
         
         /// <summary>
-        ///   Looks up a localized resource of type System.Byte[].
-        /// </summary>
-        internal static byte[] configuration {
-            get {
-                object obj = ResourceManager.GetObject("configuration", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to .
         /// </summary>
         internal static string ha_loading {

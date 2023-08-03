@@ -51,11 +51,9 @@ namespace HA.Class.HomeAssistant
             try
             {
                 retryCount++;
-                registerAsync();
+                await registerAsync();
             } catch (Exception ex) {
-                isSubscribed = false;
-                isPingEnabled = false;
-                isConnected = false;
+                
 
                 throw new Exception("unnable to connect to" + url);
             }
@@ -122,12 +120,11 @@ namespace HA.Class.HomeAssistant
                 Logger.write("WS URL " + url);
 
                 Close();
-
                 if (retryCount <= 5)
                 {
                     retryCount++;
                     registerAsync();
-                }
+                } 
             }
         }
 
