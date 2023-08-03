@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Configuration;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 using System.Windows;
 using HA.Class.Helpers;
 
@@ -18,31 +21,31 @@ namespace HA
         {
             app = Application.Current as App;
             InitializeComponent();
-            AppDomain.CurrentDomain.FirstChanceException += (sender, eventArgs) =>
-            {
-                Logger.write("["+ AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 1);
-            };
+            Title += (" - " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
+        }
 
+        static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
+        {
+            Logger.write("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 1);
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             loading.Visibility = Visibility.Visible;
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            foreach (var key in config.AppSettings.Settings.AllKeys)
-            {
-                config.AppSettings.Settings[key].Value = "";       
-            }
-
             config.AppSettings.Settings["url"].Value = url.Text;
             config.AppSettings.Settings["token"].Value = token.Text;
-
             config.Save(ConfigurationSaveMode.Modified);
+            loadingScreenStatus.Content = "savving settings ...";
+            Logger.write("settings saved", 1);
 
             AutoStart.register();
+            loadingScreenStatus.Content = "Registering fr autostart...";
             Logger.write("Autostart", 1);
 
             app.Stop();
+            loadingScreenStatus.Content = "Stopping old instances...";
             Logger.write("Stoping Instances", 1);
 
             if (app.Start())
@@ -51,19 +54,15 @@ namespace HA
                 app.minimalizeToTray();
                 return;
             }
-            
+
             MessageBox.Show("Initialization Failed", "Error");
+            loadingScreenStatus.Content = "Initialization Failed!";
+            Thread.Sleep(1000);
+            loading.Visibility = Visibility.Hidden;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //string updaterPath = (app.GetRootDir() + "\\Updater.exe");
-            //if (System.IO.File.Exists(updaterPath)) {
-            //    Process.Start(updaterPath, "https://api.github.com/repos/GamerClassN7/HA_Desktop_Companion/releases 0.0.0");
-            //} else {
-           //     Logger.write("Updater not found",1);
-            //}
-
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             token.Text = config.AppSettings.Settings["token"].Value;
@@ -72,15 +71,14 @@ namespace HA
 
             if (string.IsNullOrEmpty(webhookId))
             {
-                MessageBox.Show("Web-hook");
-
+                loading.Visibility = Visibility.Hidden;
                 Logger.write("Web-hook not found");
                 return;
             }
          
             if (!app.Start())
             {
-                MessageBox.Show("Autostart Failed", "Error");
+                loading.Visibility = Visibility.Hidden;
                 Logger.write("Autostart Failed");
                 return;
             }

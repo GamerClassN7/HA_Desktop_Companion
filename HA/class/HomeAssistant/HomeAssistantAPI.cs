@@ -148,7 +148,6 @@ namespace HA.Class.HomeAssistant
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
             webhookId = jObject["webhook_id"].ToString();
-            MessageBox.Show(webhookId);
             config.AppSettings.Settings["webhookId"].Value = webhookId;
 
             secret = jObject["secret"].ToString();

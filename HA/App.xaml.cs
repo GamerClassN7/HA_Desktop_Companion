@@ -80,18 +80,11 @@ namespace HA
             }
         }
 
-        private void AutoUpdaterOnParseUpdateInfoEvent(ParseUpdateInfoEventArgs args)
-        {
-            // dynamic json = JsonConvert.DeserializeObject(args.RemoteData);
-            // do stuff
-
-            MessageBox.Show("UpdateFound");
-        }
-
         protected override void OnStartup(StartupEventArgs e)
         {
             AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
-
+            AutoUpdater.Synchronous = true;
+            AutoUpdater.ShowRemindLaterButton = false;
 
             //NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
             if (previousProcessDetected())
@@ -270,7 +263,7 @@ namespace HA
 
                 Dictionary<string, object> senzorTypes = getSensorsConfiguration();
                 device.supports_encryption = false;
-                MessageBox.Show(ha.RegisterDevice(device));
+                ha.RegisterDevice(device);
 
                 foreach (var item in senzorTypes)
                 {
