@@ -26,7 +26,6 @@ using Microsoft.Win32;
 using System.Net.NetworkInformation;
 using System.Security.Policy;
 using AutoUpdaterDotNET;
-using System.Windows.Forms;
 using System.Diagnostics.Tracing;
 
 namespace HA
@@ -726,7 +725,6 @@ namespace HA
 
         private void UnhandeledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            # MessageBox.Show("An unhandled exception just occurred: " + e.Exception.Message, "Exception Sample", MessageBoxButton.OK, MessageBoxImage.Error);
             Logger.write("[" + AppDomain.CurrentDomain.FriendlyName + "]" + e.Exception.Message.ToString(), 3);
             e.Handled = true;
         }

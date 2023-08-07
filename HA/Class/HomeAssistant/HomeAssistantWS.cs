@@ -51,7 +51,7 @@ namespace HA.Class.HomeAssistant
             try
             {
                 retryCount++;
-                await registerAsync();
+                registerAsync();
             } catch (Exception ex) {
                 
 
