@@ -379,7 +379,7 @@ namespace HA
                 {
                     var app = Application.Current as App;
                     app.ShowNotification(Assembly.GetExecutingAssembly().GetName().Name, "Connection re-established to Home Assistant!");
-                    ws.registerAsync().RunSynchronously();
+                    ws.registerAsync();
                 }
             }
 
