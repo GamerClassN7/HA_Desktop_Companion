@@ -311,6 +311,8 @@ namespace HA
                         }
                     }
                 }
+
+                config.Save(ConfigurationSaveMode.Modified);
             }
             else
             {
