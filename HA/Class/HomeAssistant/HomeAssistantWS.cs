@@ -197,7 +197,6 @@ namespace HA.Class.HomeAssistant
         {
             if (isPingEnabled == true)
             {
-
                 HAWSPing pingObj = new HAWSPing { };
                 pingObj.type = "ping";
                 pingObj.id = interactions;
@@ -240,8 +239,10 @@ namespace HA.Class.HomeAssistant
             catch (Exception ex)
             {
                 Logger.write("WS RECEEVE ERROR" + ex.Message);
+            }
+            finally
+            {
                 Close();
-
                 if (retryCount <= 5)
                 {
                     retryCount++;
@@ -291,6 +292,7 @@ namespace HA.Class.HomeAssistant
             isSubscribed = false;
             isPingEnabled = false;
             isConnected = false;
+            Logger.write("WS state " + socket.State);
 
             updatePingTimer.Stop();
             if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
