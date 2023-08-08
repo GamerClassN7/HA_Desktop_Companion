@@ -27,7 +27,7 @@ namespace HA
 
         static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
         {
-            Logger.write("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 1);
+            Logger.write("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 3);
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
