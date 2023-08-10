@@ -8,57 +8,59 @@
         Title="MainWindow" 
         Loaded="Window_Loaded"
         Background="#FF03A9F4"
-        Height="196"
-        Width="450"
+        Height="196px"
+        Width="450px"
+        d:DesignHeight="196"
+        d:DesignWidth="450"
+        
+        
         WindowStartupLocation="CenterScreen" 
         ResizeMode="NoResize"
-        SizeToContent="Manual"
+        SizeToContent="WidthAndHeight"
         Closing="Window_Closing"
         >
-    <Grid Margin="5px,5px,5px,5px">
+    <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="440"/>
+            <ColumnDefinition Width="155px"/>
+            <ColumnDefinition Width="290px"/>
         </Grid.ColumnDefinitions>
-        <Border Grid.Row="0" Grid.Column="0" Margin="0,0,290,0">
-            <Image Margin="5px,5px,5px,5px" Source="/Resources/ha_logo.png" />
+        <Border Grid.Column="0" Margin="5px,5px,5px,5px">
+            <Image Source="/Resources/ha_logo.png" />
         </Border>
-        <Grid Margin="155,0,0,0">
+        <Grid Grid.Column="1" Margin="0,5px,5px,5px">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
-                <RowDefinition/>
+                <RowDefinition />
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-            </Grid.ColumnDefinitions>
 
-            <TextBlock Margin="0,2,0,5" TextWrapping="Wrap" Grid.Row="0"><Run Language="cs-cz" Text="Home Assistant URL" /></TextBlock>
-            <TextBox x:Name="url" x:FieldModifier="public" Margin="0,0,0,0" TextWrapping="Wrap" Text="http://homeassistant:8123" Grid.ColumnSpan="2" Grid.Row="1" Grid.Column="1" FontSize="16"/>
+            <TextBlock Margin="0,0,0,0" TextWrapping="NoWrap" Grid.Row="0"><Run Language="cs-cz" FontSize="13" Text="Home Assistant URL" /></TextBlock>
+            <TextBox x:Name="url" x:FieldModifier="public" Margin="0,5px,0,0" TextWrapping="NoWrap" Text="http://homeassistant:8123" Grid.Row="1" FontSize="16"/>
 
-            <TextBlock Grid.Column="1" Margin="0,2,0,5" TextWrapping="Wrap" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Grid.Row="2"><Run Language="cs-cz" Text="API Token" /></TextBlock>
-            <TextBox x:Name="token" x:FieldModifier="public" Margin="0,0,0,0" TextWrapping="Wrap" Text="" Grid.ColumnSpan="2" Grid.Row="3" Grid.Column="1" FontSize="16"/>
-
-            <Grid Grid.Row="4">
+            <TextBlock Margin="0,5px,0,0" TextWrapping="NoWrap" VerticalAlignment="Bottom" FontSize="13" Grid.Row="2"><Run Language="cs-cz" Text="API Token" /></TextBlock>
+            <TextBox x:Name="token" x:FieldModifier="public" TextWrapping="NoWrap" Text="" Grid.Row="3" FontSize="16" Margin="0,5px,0,0"/>
+            
+            <Grid Grid.Row="4" Margin="0,5px,0,0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="save" Content="Save" Margin="0,5,1.5,0" Click="Save_Click"/>
-                <Button x:Name="close" Content="Close" Margin="1.5,5,0,0" Click="Close_Click" Grid.Column="1"/>
+                <Button x:Name="save" Content="Save" Click="Save_Click" FontSize="13" Grid.Column="0" Margin="0,0,1.5,0"/>
+                <Button x:Name="close" Content="Close" Click="Close_Click" FontSize="13" Grid.Column="1" Margin="1.5,0,0,0"/>
             </Grid>
 
-            <Grid Grid.Row="5">
+            <Grid Grid.Row="5" Margin="0,5px,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="api_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="0" FontWeight="Bold" FontSize="9" Foreground="Red" x:FieldModifier="public">
+                <TextBlock x:Name="api_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="0" FontWeight="Bold" FontSize="12" Foreground="Red" x:FieldModifier="public">
                     <Run Language="cs-cz" Text="Api"/>
                 </TextBlock>
-                <TextBlock x:Name="ws_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="1" FontWeight="Bold" FontSize="9" Foreground="Red" x:FieldModifier="public">
+                <TextBlock x:Name="ws_status" Margin="0,0,0,0" TextWrapping="Wrap" Grid.Column="1" FontWeight="Bold" FontSize="12" Foreground="Red" x:FieldModifier="public">
                     <Run Language="cs-cz" Text="WebSocket"/>
                 </TextBlock>
             </Grid>
@@ -72,10 +74,6 @@
                 <Image x:Name="loadingScreen" Margin="0,0,0,0" Source="/Resources/ha_logo.png" Stretch="Uniform"/>
                 <Label x:Name="loadingScreenStatus" Content="Loading..." HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1" Margin="0,0,0,0"/>
             </Grid>
-
         </Border>
-
-
-
     </Grid>
 </Window>
