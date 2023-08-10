@@ -63,7 +63,7 @@
                 </TextBlock>
             </Grid>
         </Grid>
-        <Border Name="loading" Background="Red" Opacity="100">
+        <Border Name="loading" Background="Red" Opacity="100" Visibility="Hidden">
             <Grid >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="13*"/>

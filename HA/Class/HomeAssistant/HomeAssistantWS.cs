@@ -239,15 +239,15 @@ namespace HA.Class.HomeAssistant
             catch (Exception ex)
             {
                 Logger.write("WS RECEEVE ERROR" + ex.Message);
-            }
-            finally
-            {
-                Close();
-                if (retryCount <= 5)
+                if (Close() && retryCount <= 5)
                 {
                     retryCount++;
                     registerAsync();
                 }
+            }
+            finally
+            {
+                Logger.write("WS RECEEVE LOOP ENDED");
             }
         }
 
@@ -287,7 +287,7 @@ namespace HA.Class.HomeAssistant
             }
         }
 
-        public void Close()
+        public bool Close()
         {
             isSubscribed = false;
             isPingEnabled = false;
@@ -300,6 +300,8 @@ namespace HA.Class.HomeAssistant
                 socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                 Logger.write("WS closed");
             }
+
+            return true;
         }
     }
 }

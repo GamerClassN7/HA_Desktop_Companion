@@ -27,6 +27,7 @@ using System.Net.NetworkInformation;
 using System.Security.Policy;
 using AutoUpdaterDotNET;
 using System.Diagnostics.Tracing;
+using Windows.UI.Notifications;
 
 namespace HA
 {
@@ -103,8 +104,9 @@ namespace HA
 
             notifyIcon.ContextMenuStrip.Items.Add("Home Assistant", null, OnHomeAssistant_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Log", null, OnLog_Click);
+            notifyIcon.ContextMenuStrip.Items.Add("Send Test Notification", null, OnTestNotification_Click);
             notifyIcon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
-            
+
             base.OnStartup(e);
         }
 
@@ -147,6 +149,11 @@ namespace HA
         private void OnQuit_Click(object? sender, EventArgs e)
         {
             Environment.Exit(0);
+        }
+
+        private void OnTestNotification_Click(object? sender, EventArgs e)
+        {
+            ShowNotification("Test","test");
         }
 
         private void NotifyIcon_Click(object? sender, EventArgs e)
