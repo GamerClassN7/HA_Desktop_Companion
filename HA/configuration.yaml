@@ -2,6 +2,7 @@
 websocket:
 ip_location:
 debug:
+keys:
 
 sensor:
   - platform: wmic

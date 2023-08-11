@@ -28,6 +28,10 @@ using System.Security.Policy;
 using AutoUpdaterDotNET;
 using System.Diagnostics.Tracing;
 using Windows.UI.Notifications;
+using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
+using System.Windows.Media.Animation;
+using System.Windows.Input;
 
 namespace HA
 {
@@ -691,6 +695,32 @@ namespace HA
            
             toast.Show();
         }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+        public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
+
+
+        public void SendKey(string Key)
+        {
+            //https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+            if (!configData.ContainsKey("keys"))
+            {
+                return;
+            }
+
+            try
+            {
+                uint ukey = (uint)System.Convert.ToUInt32(Key);
+                keybd_event(ukey, 0, 0, 0);
+            }
+            catch (Exception)
+            {
+
+                Logger.write("ERROR Type Key");
+            }
+        }
+
+
 
         private async Task playNotificationAudio(string fileName, int duration)
         {

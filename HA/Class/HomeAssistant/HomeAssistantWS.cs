@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -41,6 +42,10 @@ namespace HA.Class.HomeAssistant
         private Task recieveLoopObject;
 
         static DispatcherTimer updatePingTimer = new DispatcherTimer();
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+        public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
+
 
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
         {
@@ -257,6 +262,7 @@ namespace HA.Class.HomeAssistant
             {
                 if (payloadObj.ContainsKey("event"))
                 {
+                    var app = Application.Current as App;
                     JObject eventData = payloadObj["event"].ToObject<JObject>();
                     if (eventData.ContainsKey("message"))
                     {
@@ -280,8 +286,14 @@ namespace HA.Class.HomeAssistant
                             msg_audio = eventData["data"].ToObject<JObject>()["audio"].ToString();
                         }
 
-                        var app = Application.Current as App;
                         app.ShowNotification(msg_title, msg_text, msg_image, msg_audio);
+                    }
+                    
+                    if (eventData.ContainsKey("data")) {
+                        if (eventData["data"].ToObject<JObject>().ContainsKey("key"))
+                        {
+                            app.SendKey(eventData["data"].ToObject<JObject>()["key"].ToString());
+                        }
                     }
                 }
             }
