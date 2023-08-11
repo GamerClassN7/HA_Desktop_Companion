@@ -65,6 +65,11 @@ Example Inline Image Notification:
 Example Audio Notification:
 ![image](https://user-images.githubusercontent.com/22167469/231707164-9b0cda16-5257-4edc-b275-8fbcac7dfcbf.png)
 
+Example Emulate Send Key Notification:
+* Require `keys:` in your `configuration.yaml`
+![image](https://github.com/GamerClassN7/HA_Desktop_Companion/assets/22167469/730fdbf4-4744-48a5-9b19-379978e81ef5)
+* Keys Codes can be found [Here](//https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes) in Colum: __Value__
+
 ## Automation Ideas:
 Pause TTS when camera is in use (usefull when working from home) credits: [Hellis81](https://community.home-assistant.io/u/Hellis81)
 ```yaml

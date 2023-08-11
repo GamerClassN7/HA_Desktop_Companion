@@ -35,8 +35,15 @@ namespace HA
             loading.Visibility = Visibility.Visible;
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             config.AppSettings.Settings["url"].Value = url.Text;
-            config.AppSettings.Settings["token"].Value = token.Text;
+            
+            if (config.AppSettings.Settings["token"].Value != token.Text)
+            {
+                Logger.write("Saving Difrent Token", 1);
+                config.AppSettings.Settings["token"].Value = token.Text;
+                config.AppSettings.Settings["webhookId"].Value = "";
+            }
             config.Save(ConfigurationSaveMode.Modified);
+
             loadingScreenStatus.Content = "savving settings ...";
             Logger.write("settings saved", 1);
 
