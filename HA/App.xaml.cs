@@ -702,7 +702,6 @@ namespace HA
 
         public void SendKey(string Key)
         {
-            //https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
             if (!configData.ContainsKey("keys"))
             {
                 return;
