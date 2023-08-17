@@ -50,10 +50,10 @@ namespace HA
 
 #if DEBUG
         public static string exeFullName = System.Reflection.Assembly.GetExecutingAssembly().Location;
-        public static string appDir = System.IO.Path.GetDirectoryName(exeFullName);
 #else
-        public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+        public static string exeFullName = Environment.ProcessPath;
 #endif
+        public static string appDir = System.IO.Path.GetDirectoryName(exeFullName);
 
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
@@ -711,6 +711,8 @@ namespace HA
             {
                 uint ukey = (uint)System.Convert.ToUInt32(Key);
                 keybd_event(ukey, 0, 0, 0);
+                keybd_event(ukey, 0, 2, 0);
+
             }
             catch (Exception)
             {
