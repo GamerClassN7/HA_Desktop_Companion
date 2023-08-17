@@ -50,10 +50,10 @@ namespace HA
 
 #if DEBUG
         public static string exeFullName = System.Reflection.Assembly.GetExecutingAssembly().Location;
-#else
-        public static string exeFullName = Environment.ProcessPath;
-#endif
         public static string appDir = System.IO.Path.GetDirectoryName(exeFullName);
+#else
+        public static string appDir = AppDomain.CurrentDomain.BaseDirectory;
+#endif
 
         private static YamlConfiguration configurationObject = new YamlConfiguration(appDir + "/configuration.yaml");
         private static Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configData;
