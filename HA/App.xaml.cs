@@ -341,7 +341,6 @@ namespace HA
             update.Start();
             Logger.write("Periodic Timer Start!", 0);
 
-
             if (configData.ContainsKey("websocket"))
             {
                 //WEBSOCKET INITIALIZATION
