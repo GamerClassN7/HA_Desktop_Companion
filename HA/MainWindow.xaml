@@ -28,7 +28,7 @@
             <TextBlock TextWrapping="NoWrap"><Run Language="cs-cz" FontSize="13" Text="Home Assistant URL" /></TextBlock>
             <TextBox x:Name="url" x:FieldModifier="public" TextWrapping="NoWrap" Text="http://homeassistant:8123" FontSize="18" Height="27" Margin="0,0,5,5"/>
             <TextBlock TextWrapping="NoWrap" VerticalAlignment="Bottom" FontSize="13"><Run Language="cs-cz" Text="API Token" /></TextBlock>
-            <TextBox x:Name="token" x:FieldModifier="public" TextWrapping="NoWrap" Text="" FontSize="18" Height="27" Margin="0,0,5,4" TextAlignment="Center"/>
+            <TextBox x:Name="token" x:FieldModifier="public" TextWrapping="NoWrap" Text="asd" FontSize="18" Height="27" Margin="0,0,5,4"/>
             <Grid Margin="0,0,5,5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
@@ -50,7 +50,7 @@
                 </TextBlock>
             </Grid>
         </StackPanel>
-        <Border Name="loading" Background="Red" Visibility="Visible" Grid.Column="0" Grid.ColumnSpan="2">
+        <Border Name="loading" Background="Red" Visibility="Visible" Grid.Column="0" Grid.ColumnSpan="2" d:IsHidden="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="3*"/>

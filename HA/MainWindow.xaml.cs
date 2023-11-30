@@ -50,14 +50,14 @@ namespace HA
 
             if (string.IsNullOrEmpty(webhookId))
             {
-                //loading_Hide();
+                loading_Hide();
                 Logger.write("Web-hook not found");
                 return;
             }
          
             if (!app.Start())
             {
-                //loading_Hide();
+                loading_Hide();
                 Logger.write("Autostart Failed");
                 return;
             }
