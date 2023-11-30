@@ -8,7 +8,7 @@
 	<UseWindowsForms>true</UseWindowsForms>
 	<PackageIcon>ha_logo.ico</PackageIcon>
 	<ApplicationIcon>ha_logo.ico</ApplicationIcon>
-	<AssemblyVersion>0.0.10.0</AssemblyVersion>
+	<AssemblyVersion>0.0.11.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Resources\ha_loading.gif" />
