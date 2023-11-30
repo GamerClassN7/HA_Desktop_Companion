@@ -22,6 +22,7 @@ namespace HA.Class.YamlConfiguration
             {
                 MessageBox.Show(("Conf File not Found \n " + configurationFilePath), "error");
                 Logger.write(("Conf File not Found" + configurationFilePath), 3 /*ERROR*/);
+                Environment.Exit(0);
             } else
             {
                 LoadConfiguration();

@@ -123,9 +123,10 @@ namespace HA.Class.HomeAssistant
             {
                 Logger.write("WS error " + ex.Message);
                 Logger.write("WS URL " + url);
+                Logger.write("WS State " + socket.State);
 
                 Close();
-                if (retryCount <= 5)
+                if (retryCount <= 5 && socket.State == WebSocketState.Closed)
                 {
                     retryCount++;
                     registerAsync();
