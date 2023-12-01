@@ -58,8 +58,6 @@ namespace HA.Class.HomeAssistant
                 retryCount++;
                 registerAsync();
             } catch (Exception ex) {
-                
-
                 throw new Exception("unnable to connect to" + url);
             }
         }
@@ -118,9 +116,7 @@ namespace HA.Class.HomeAssistant
 
                 recieveLoopObject = ReceiveLoopAsync();
 
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Logger.write("WS error " + ex.Message);
                 Logger.write("WS URL " + url);
                 Logger.write("WS State " + socket.State);
@@ -175,21 +171,27 @@ namespace HA.Class.HomeAssistant
 
         private async Task Send(dynamic payloadObj)
         {
-            string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
+            try { 
+                string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Logger.write("SEND");
-            Logger.write(JSONPayload);
-            interactions = interactions + 1;
+                Logger.write("SEND");
+                Logger.write(JSONPayload);
+                interactions = interactions + 1;
 
-            ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
+                ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
 
-            socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+                socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+            } catch (Exception ex) {
+                Logger.write("SEND FAILED");
+                Logger.write(ex.Message);
+            }
         }
 
         public bool getConectionStatus()
         {
              return (isConnected && isSubscribed);
         }
+       
         private async Task StartPingAsyncTask()
         {
             Logger.write("Initializing Ping");
@@ -206,6 +208,7 @@ namespace HA.Class.HomeAssistant
                 HAWSPing pingObj = new HAWSPing { };
                 pingObj.type = "ping";
                 pingObj.id = interactions;
+                Logger.write("Ping");
 
                 await Send(pingObj);
             }
@@ -213,34 +216,35 @@ namespace HA.Class.HomeAssistant
 
         private async Task ReceiveLoopAsync()
         {
-            try
-            {
+            try {
                 Logger.write("WS RECEEVE LOOP STARTED");
                 var localBuffer = new ArraySegment<byte>(new byte[2048]);
-                do
-                {
-                    WebSocketReceiveResult localResult;
-                    using (var ms = new MemoryStream())
-                    {
-                        do
-                        {
-                            localResult = await socket.ReceiveAsync(localBuffer, CancellationToken.None);
-                            ms.Write(localBuffer.Array, localBuffer.Offset, localResult.Count);
-                        } while (!localResult.EndOfMessage);
+                bool error = false;
+                do {
+                    try {
+                        WebSocketReceiveResult localResult;
+                        using (var ms = new MemoryStream()) {
+                            do {
+                                localResult = await socket.ReceiveAsync(localBuffer, CancellationToken.None);
+                                ms.Write(localBuffer.Array, localBuffer.Offset, localResult.Count);
+                            } while (!localResult.EndOfMessage);
 
-                        if (localResult.MessageType == WebSocketMessageType.Close)
-                            break;
+                            if (localResult.MessageType == WebSocketMessageType.Close)
+                                break;
 
-                        ms.Seek(0, SeekOrigin.Begin);
-                        using (var reader = new StreamReader(ms, Encoding.UTF8))
-                        {
-                            string jsonPayload = await reader.ReadToEndAsync();
-                            Logger.write("WS RECEEVED");
-                            Logger.write(JObject.Parse(jsonPayload).ToString());
-                            HandleEvent(JObject.Parse(jsonPayload));
+                            ms.Seek(0, SeekOrigin.Begin);
+                            using (var reader = new StreamReader(ms, Encoding.UTF8)) {
+                                string jsonPayload = await reader.ReadToEndAsync();
+                                Logger.write("WS RECEEVED");
+                                Logger.write(JObject.Parse(jsonPayload).ToString());
+                                HandleEvent(JObject.Parse(jsonPayload));
+                            }
                         }
+                    } catch (Exception ex) {
+                        error = true;
+                        Logger.write("WS RECEEVE ERROR" + ex.Message);
                     }
-                } while (true);
+                } while (!error);
             }
             catch (Exception ex)
             {
@@ -305,6 +309,7 @@ namespace HA.Class.HomeAssistant
             isSubscribed = false;
             isPingEnabled = false;
             isConnected = false;
+
             Logger.write("WS state " + socket.State);
 
             updatePingTimer.Stop();
