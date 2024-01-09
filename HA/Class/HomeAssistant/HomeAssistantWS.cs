@@ -68,7 +68,7 @@ namespace HA.Class.HomeAssistant
             {
                 Logger.write("WS INITIALIZATION");
 
-                Uri wsAddress = new Uri(url + "api/websocket");
+                Uri wsAddress = new Uri(url.TrimEnd('/') + "/api/websocket");
                 var exitEvent = new ManualResetEvent(false);
                 socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
