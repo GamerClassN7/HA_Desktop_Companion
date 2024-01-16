@@ -69,7 +69,7 @@ namespace HA.Class.HomeAssistant
                 throw new Exception("unnabůle to connect to" + apiRootUrl);
             }
 
-            url = apiRootUrl;
+            url = apiRootUrl.TrimEnd('/');
             token = apiToken;
         }
 

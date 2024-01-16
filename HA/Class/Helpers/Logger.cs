@@ -18,6 +18,7 @@ namespace HA.Class.Helpers
     public class Logger
     {
         private static bool initialized = false;
+        private static DateTime lastInit;
         private static string path1;
         private static string[] secreetsStrings = new string[] { };
 
@@ -36,12 +37,20 @@ namespace HA.Class.Helpers
             secreetsStrings = strings.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         }
 
-        public static void init(string path = "./log.log")
+        public static void init()
         {
-            path1 = Path.Combine(appDir, path).ToString();
+            
+            path1 = Path.Combine(appDir, (DateTime.Now).ToString("MM_dd_yyyy_log.log")).ToString();
+            lastInit = DateTime.Now;
             if (!File.Exists(path1))
             {
                 File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/), System.Text.Encoding.UTF8);
+            }
+
+            string pathToLogToDelete = Path.Combine(appDir, (DateTime.Now).AddDays(-3).ToString("MM_dd_yyyy_log.log")).ToString();
+            if (File.Exists(pathToLogToDelete))
+            {
+                File.Delete(pathToLogToDelete);
             }
             initialized = true;
         }
@@ -55,7 +64,8 @@ namespace HA.Class.Helpers
 
         public static void write(string msg, int level = 0)
         {
-            if (!initialized)
+            int initBeforeDays = (int)(DateTime.Now - lastInit).TotalDays;
+            if (!initialized || initBeforeDays >= 1)
             {
                 init();
             }
@@ -72,7 +82,8 @@ namespace HA.Class.Helpers
 
         public static void write(object msg, int level = 0)
         {
-            if (!initialized)
+            int initBeforeDays = (int)(DateTime.Now - lastInit).TotalDays;
+            if (!initialized || initBeforeDays >= 1)
             {
                 init();
             }
