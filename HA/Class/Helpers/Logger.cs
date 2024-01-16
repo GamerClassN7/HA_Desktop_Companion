@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.Logging;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -40,18 +41,25 @@ namespace HA.Class.Helpers
         public static void init()
         {
             
-            path1 = Path.Combine(appDir, (DateTime.Now).ToString("MM_dd_yyyy_log.log")).ToString();
+            path1 = Path.Combine(appDir, ((DateTime.Now).ToString("MM_dd_yyyy")+ "_log.log")).ToString();
             lastInit = DateTime.Now;
             if (!File.Exists(path1))
             {
                 File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/), System.Text.Encoding.UTF8);
             }
 
-            string pathToLogToDelete = Path.Combine(appDir, (DateTime.Now).AddDays(-3).ToString("MM_dd_yyyy_log.log")).ToString();
+            string pathToLogToDelete = Path.Combine(appDir, ((DateTime.Now).AddDays(-3).ToString("MM_dd_yyyy") + "_log.log")).ToString();
             if (File.Exists(pathToLogToDelete))
             {
                 File.Delete(pathToLogToDelete);
             }
+
+            string oldPathToLogToDelete = Path.Combine(appDir, "log.log").ToString();
+            if (File.Exists(oldPathToLogToDelete))
+            {
+                File.Delete(oldPathToLogToDelete);
+            }
+
             initialized = true;
         }
 
