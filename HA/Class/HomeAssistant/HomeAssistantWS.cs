@@ -49,7 +49,7 @@ namespace HA.Class.HomeAssistant
 
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
         {
-            url = apiUrl;
+            url = apiUrl.TrimEnd('/');
             token = apiToken;
             webhook = webhookId;
 
@@ -68,7 +68,7 @@ namespace HA.Class.HomeAssistant
             {
                 Logger.write("WS INITIALIZATION");
 
-                Uri wsAddress = new Uri(url.TrimEnd('/') + "/api/websocket");
+                Uri wsAddress = new Uri(url + "/api/websocket");
                 var exitEvent = new ManualResetEvent(false);
                 socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
