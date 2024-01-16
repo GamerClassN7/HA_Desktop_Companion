@@ -47,7 +47,7 @@ namespace HA.Class.Helpers
                 File.WriteAllText(path1, getMessage("Initialization", 0 /*info*/), System.Text.Encoding.UTF8);
             }
 
-            string pathToLogToDelete = Path.Combine(appDir, (DateTime.Now).ToString("MM_dd_yyyy_log.log")).ToString();
+            string pathToLogToDelete = Path.Combine(appDir, (DateTime.Now).AddDays(-3).ToString("MM_dd_yyyy_log.log")).ToString();
             if (File.Exists(pathToLogToDelete))
             {
                 File.Delete(pathToLogToDelete);
@@ -82,7 +82,8 @@ namespace HA.Class.Helpers
 
         public static void write(object msg, int level = 0)
         {
-            if (!initialized)
+            int initBeforeDays = (int)(DateTime.Now - lastInit).TotalDays;
+            if (!initialized || initBeforeDays >= 1)
             {
                 init();
             }
