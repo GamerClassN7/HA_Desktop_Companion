@@ -463,6 +463,7 @@ namespace HA
 
                             string sensorData = senzorsQuerys[sensorUniqueId].Result;
                             sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorData);
+                            Logger.write("Filtered Value " + sensorUniqueId + " - " + sensorData);
 
                             if (string.IsNullOrEmpty(sensorData))
                             {
@@ -535,7 +536,7 @@ namespace HA
 
             if (sensorDefinition.ContainsKey("filters"))
             {
-                bool isNumeric = int.TryParse(sensorData, out _);
+                bool isNumeric = double.TryParse(sensorData, out _);
                 Dictionary<string, string> filters = sensorDefinition["filters"];
 
                 if (isNumeric)
@@ -644,7 +645,7 @@ namespace HA
             else if (Regex.IsMatch(variableStr, @"^\d+$"))
             {
                 //Logger.write("AFTER CONVERSION (int)" + variableStr.ToString());
-                return int.Parse(variableStr);
+                return double.Parse(variableStr);
             }
 
             //Logger.write("AFTER CONVERSION" + variableStr.ToString());
