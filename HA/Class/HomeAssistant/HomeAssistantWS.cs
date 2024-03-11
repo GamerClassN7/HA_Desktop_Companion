@@ -2,6 +2,7 @@
 using HA.Class.HomeAssistant.Objects;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,6 @@ namespace HA.Class.HomeAssistant
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
         public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
 
-
         public HomeAssistantWS(string apiUrl, string webhookId, string apiToken)
         {
             url = apiUrl.TrimEnd('/');
@@ -67,9 +67,9 @@ namespace HA.Class.HomeAssistant
             try
             {
                 Logger.write("WS INITIALIZATION");
-
                 Uri wsAddress = new Uri(url + "/api/websocket");
                 var exitEvent = new ManualResetEvent(false);
+                socket = new ClientWebSocket();
                 socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
                 socket.ConnectAsync(wsAddress, CancellationToken.None).Wait();
@@ -110,7 +110,7 @@ namespace HA.Class.HomeAssistant
                 isPingEnabled = true;
 
                 StartPingAsyncTask();
-                
+
                 isConnected = true;
                 retryCount = 0;
 
@@ -122,11 +122,11 @@ namespace HA.Class.HomeAssistant
                 Logger.write("WS State " + socket.State);
 
                 Close();
-                if (retryCount <= 5 && socket.State == WebSocketState.Closed)
+                if (retryCount <= 5 && (socket.State == WebSocketState.Closed || socket.State == WebSocketState.Aborted))
                 {
                     retryCount++;
                     registerAsync();
-                } 
+                }
             }
         }
 
@@ -141,18 +141,18 @@ namespace HA.Class.HomeAssistant
 
             socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
 
-            string JSONRecievedpayload =  "";
-      
-                Logger.write("SEND/RECIEVING");
-                interactions = interactions + 1;
+            string JSONRecievedpayload = "";
 
-                WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
+            Logger.write("SEND/RECIEVING");
+            interactions = interactions + 1;
 
-                JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
 
-                Logger.write("RECIEVE");
-                Logger.write(JSONRecievedpayload);
-         
+            JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+
+            Logger.write("RECIEVE");
+            Logger.write(JSONRecievedpayload);
+
 
             return JObject.Parse(JSONRecievedpayload);
         }
@@ -171,7 +171,7 @@ namespace HA.Class.HomeAssistant
 
         private async Task Send(dynamic payloadObj)
         {
-            try { 
+            try {
                 string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
                 Logger.write("SEND");
@@ -189,9 +189,9 @@ namespace HA.Class.HomeAssistant
 
         public bool getConectionStatus()
         {
-             return (isConnected && isSubscribed);
+            return (isConnected && isSubscribed);
         }
-       
+
         private async Task StartPingAsyncTask()
         {
             Logger.write("Initializing Ping");
@@ -293,7 +293,7 @@ namespace HA.Class.HomeAssistant
 
                         app.ShowNotification(msg_title, msg_text, msg_image, msg_audio);
                     }
-                    
+
                     if (eventData.ContainsKey("data")) {
                         if (eventData["data"].ToObject<JObject>().ContainsKey("key"))
                         {
@@ -312,11 +312,15 @@ namespace HA.Class.HomeAssistant
 
             Logger.write("WS state " + socket.State);
 
-            updatePingTimer.Stop();
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent)
+            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
             {
+                updatePingTimer.Stop();
                 socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                socket.Dispose();
+                socket = null;
+                Thread.Sleep(5000);
                 Logger.write("WS closed");
+                registerAsync();
             }
 
             return true;

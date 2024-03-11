@@ -45,7 +45,7 @@
                 <TextBlock Grid.Column="0"  x:Name="api_status" TextWrapping="Wrap" FontWeight="Bold" FontSize="13" Foreground="Red" x:FieldModifier="public" Margin="2,0,0,0">
                         <Run Language="cs-cz" Text="Api"/>
                 </TextBlock>
-                <TextBlock Grid.Column="1"   x:Name="ws_status"  TextWrapping="Wrap" FontWeight="Bold" FontSize="13" Foreground="Red" x:FieldModifier="public" HorizontalAlignment="Right" Margin="0,0,2,0">
+                <TextBlock Grid.Column="1"   x:Name="ws_status"  TextWrapping="Wrap" FontWeight="Bold" FontSize="13" Foreground="Red" x:FieldModifier="public" HorizontalAlignment="Right" Margin="0,0,2,0" MouseDown="api_status_MouseDown">
                         <Run Language="cs-cz" Text="WebSocket"/>
                 </TextBlock>
             </Grid>
