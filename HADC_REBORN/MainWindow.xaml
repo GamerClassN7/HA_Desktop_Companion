@@ -12,7 +12,7 @@
         d:DesignHeight="196"
         d:DesignWidth="450"
         WindowStartupLocation="CenterScreen" 
-        ResizeMode="NoResize"
+        ResizeMode="NoResize" Closing="Window_Closing"
         >
     <Grid>
         <Grid.ColumnDefinitions>
@@ -33,7 +33,7 @@
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
                 <Button Grid.Column="0" x:Name="save" Content="Save"  FontSize="15" Margin="0,0,2,0" Height="27" Click="save_MouseClick" />
-                <Button Grid.Column="1" x:Name="close" Content="Close"  FontSize="15" Margin="2,0,0,0" Height="27"/>
+                <Button Grid.Column="1" x:Name="close" Content="Close"  FontSize="15" Margin="2,0,0,0" Height="27" Click="close_Click"/>
             </Grid>
             <Grid Margin="0,0,5,5" MouseUp="Grid_MouseUp">
                 <Grid.ColumnDefinitions>

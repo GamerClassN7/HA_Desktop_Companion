@@ -22,7 +22,6 @@ namespace HADC_REBORN
     {
         public MainWindow()
         {
-            this.ShowInTaskbar = false;
             InitializeComponent();
         }
 
@@ -33,15 +32,19 @@ namespace HADC_REBORN
 
         private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
         {
+            this.ShowInTaskbar = true;
+
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            Debug.Write(config.AppSettings.Settings);
+            App.log.writeLine("Loading Setting File");
 
             if (!String.IsNullOrEmpty(config.AppSettings.Settings["url"].Value) || !String.IsNullOrEmpty(config.AppSettings.Settings["token"].Value))
             {
+                App.log.writeLine("Previouse settings found");
                 url.Text = config.AppSettings.Settings["url"].Value;
                 token.Text = config.AppSettings.Settings["token"].Value;
             }
 
+            App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
         }
 
@@ -54,13 +57,23 @@ namespace HADC_REBORN
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             
-            config.AppSettings.Settings["url"].Value = url.Text;
+            config.AppSettings.Settings["url"].Value = url.Text.TrimEnd('/');
             config.AppSettings.Settings["token"].Value = token.Text;
 
             config.Save(ConfigurationSaveMode.Modified);
             App.log.writeLine("Settings Saved");
+            App.SpawnNotification("Settings Saved");
+        }
 
-            System.Windows.MessageBox.Show("SettingsSaved");
+        private void close_Click(object sender, RoutedEventArgs e)
+        {
+            this.ShowInTaskbar = false;
+            App.Close();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            App.SpawnNotification("App keeps Running in background!");
         }
     }
 }

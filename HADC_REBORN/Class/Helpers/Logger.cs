@@ -24,6 +24,11 @@ namespace HADC_REBORN.Class.Helpers
             initialize();
         }
 
+        public string getLogPath()
+        {
+            return logFilePath;
+        }
+
         private void initialize()
         {
             string logFolderPath = Path.Combine(appDir, "logs");
