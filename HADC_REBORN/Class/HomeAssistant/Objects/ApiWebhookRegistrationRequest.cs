@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HADC_REBORN.Class.HomeAssistant.Objects
 {   
-    class ApiWebhookRequest
+    class ApiWebhookRegistrationRequest
     {
         public string token = "";
     }
