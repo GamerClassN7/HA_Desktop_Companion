@@ -21,7 +21,7 @@ namespace HADC_REBORN.Class.Helpers
         private DateTime lastInitializeDateTime;
 
         public Logger() {
-            initialize();
+            logFilePath = initialize();
         }
 
         public string getLogPath()
@@ -29,7 +29,7 @@ namespace HADC_REBORN.Class.Helpers
             return logFilePath;
         }
 
-        private void initialize()
+        private string initialize()
         {
             string logFolderPath = Path.Combine(appDir, "logs");
             Debug.WriteLine(logFolderPath);
@@ -40,7 +40,7 @@ namespace HADC_REBORN.Class.Helpers
             }
 
             string logFileName = "log_" + ((DateTime.Now).ToString("MM_dd_yyyy")) + ".log";
-            logFilePath = Path.Combine(logFolderPath, logFileName);
+            string logFilePath = Path.Combine(logFolderPath, logFileName);
             if (!File.Exists(logFilePath))
             {
                 File.WriteAllText(logFilePath, getLogMessage("Initializing",0), System.Text.Encoding.UTF8);
@@ -49,6 +49,8 @@ namespace HADC_REBORN.Class.Helpers
 
             lastInitializeDateTime = DateTime.Now;
             isInistialized = true;
+
+            return logFilePath;
         }
 
         private void removeOldLogFiles(string rootLogFolderPath, int daysBack = -3)
@@ -71,7 +73,7 @@ namespace HADC_REBORN.Class.Helpers
             int InitilizedBeforeNumberOfDays = (int)(DateTime.Now - lastInitializeDateTime).TotalDays;
             if (!isInistialized || InitilizedBeforeNumberOfDays >= 1)
             {
-                initialize();
+                logFilePath = initialize();
             }
 
             Debug.WriteLine(msg);

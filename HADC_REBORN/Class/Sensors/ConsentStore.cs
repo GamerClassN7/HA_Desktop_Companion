@@ -72,8 +72,9 @@ namespace HADC_REBORN.Class.Sensors
                     }
                 }
             }
-            catch (Exception)
-            { 
+            catch (Exception e)
+            {
+                App.log.writeLine("An error occurred while querying for CONSENT_STORE data: " + e.Message);
             }
 
             return false;

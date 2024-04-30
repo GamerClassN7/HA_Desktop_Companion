@@ -105,7 +105,7 @@ namespace HADC_REBORN
             SpawnNotification("test");
         }
 
-        private void icon_Click(Object sender, EventArgs e)
+        private void icon_Click(Object? sender, EventArgs e)
         {
             MainWindow main = App.Current.Windows.OfType<MainWindow>().FirstOrDefault();
             if (main != null)

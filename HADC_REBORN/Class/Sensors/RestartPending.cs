@@ -11,23 +11,23 @@ namespace HADC_REBORN.Class.Sensors
     {
         public static bool GetValue()
         {
+            string[] registerStores = {
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" ,
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"
+            };
+
             try
             {
-                using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending"))
-                {
-                    if (rootKey != null)
-                    {
-                        if (rootKey.GetSubKeyNames().Length > 0)
-                            return true;
-                    }
-                }
 
-                using (var rootKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"))
+                foreach (string path in registerStores)
                 {
-                    if (rootKey != null)
+                    using (var rootKey = Registry.LocalMachine.OpenSubKey(path))
                     {
-                        if (rootKey.GetSubKeyNames().Length > 0)
-                            return true;
+                        if (rootKey != null)
+                        {
+                            if (rootKey.GetSubKeyNames().Length > 0)
+                                return true;
+                        }
                     }
                 }
 
@@ -35,17 +35,18 @@ namespace HADC_REBORN.Class.Sensors
                 {
                     if (rootKey != null)
                     {
-                        if (rootKey.GetValueKind("PendingFileRenameOperations") != null)
+                        if (!String.IsNullOrEmpty((string)rootKey.GetValue("PendingFileRenameOperations")))
                         {
                             return true;
                         }
                     }
                 }
             }
-            catch (Exception) 
+            catch (Exception e) 
             {
+                App.log.writeLine("An error occurred while querying for RESTART data: " + e.Message);
             }
-            
+
             return false;
         }
     }
