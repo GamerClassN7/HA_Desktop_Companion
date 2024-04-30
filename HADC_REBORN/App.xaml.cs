@@ -60,7 +60,7 @@ namespace HADC_REBORN
         {
             Start();
 
-            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
+            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/update_meta.xml");
             AutoUpdater.Synchronous = false;
             AutoUpdater.ShowRemindLaterButton = false;
         }
