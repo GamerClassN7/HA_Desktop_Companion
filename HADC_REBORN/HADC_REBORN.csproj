@@ -10,18 +10,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="Resource.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resource.resx</DependentUpon>
-    </Compile>
+    <None Remove="Resource\ha_icon.ico" />
+    <None Remove="Resource\ha_loading.gif" />
+    <None Remove="Resource\ha_logo.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Resource.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resource.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <Resource Include="Resource\ha_icon.ico" />
+    <Resource Include="Resource\ha_loading.gif" />
+    <Resource Include="Resource\ha_logo.png" />
   </ItemGroup>
-
+	<ItemGroup>
+		<EmbeddedResource Update="Resource.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resource.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
 </Project>

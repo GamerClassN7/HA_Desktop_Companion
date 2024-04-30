@@ -1,4 +1,7 @@
-﻿using System.Drawing;
+﻿using HADC_REBORN.Class.Helpers;
+using System.Configuration;
+using System.Diagnostics;
+using System.Drawing;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +24,43 @@ namespace HADC_REBORN
         {
             this.ShowInTaskbar = false;
             InitializeComponent();
+        }
+
+        private void loadingScreen_MediaEnded(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            Debug.Write(config.AppSettings.Settings);
+
+            if (!String.IsNullOrEmpty(config.AppSettings.Settings["url"].Value) || !String.IsNullOrEmpty(config.AppSettings.Settings["token"].Value))
+            {
+                url.Text = config.AppSettings.Settings["url"].Value;
+                token.Text = config.AppSettings.Settings["token"].Value;
+            }
+
+            loadingScreen.Visibility = Visibility.Hidden;
+        }
+
+        private void Grid_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+
+        }
+
+        private void save_MouseClick(object sender, RoutedEventArgs e)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            
+            config.AppSettings.Settings["url"].Value = url.Text;
+            config.AppSettings.Settings["token"].Value = token.Text;
+
+            config.Save(ConfigurationSaveMode.Modified);
+            App.log.writeLine("Settings Saved");
+
+            System.Windows.MessageBox.Show("SettingsSaved");
         }
     }
 }

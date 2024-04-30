@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using HADC_REBORN.Class.Helpers;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 
@@ -12,10 +13,12 @@ namespace HADC_REBORN
     public partial class App : System.Windows.Application
     {
         public static NotifyIcon icon;
+        public static Logger log;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             App.icon = new NotifyIcon();
+            App.log = new Logger();
 
             icon.Click += new EventHandler(icon_click);
             icon.Icon = HADC_REBORN.Resource.ha_icon;
