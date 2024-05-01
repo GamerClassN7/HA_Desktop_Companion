@@ -20,6 +20,7 @@ using System.Windows.Threading;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using Windows.Devices.Sensors;
+using System.Runtime.ExceptionServices;
 
 namespace HADC_REBORN
 {
@@ -46,6 +47,8 @@ namespace HADC_REBORN
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
+
             App.icon = new NotifyIcon();
             App.log = new Logger();
 
@@ -61,6 +64,10 @@ namespace HADC_REBORN
             icon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
             base.OnStartup(e);
+        }
+        static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
+        {
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 3);
         }
 
         private void Application_LoadCompleted(object sender, System.Windows.Navigation.NavigationEventArgs e)

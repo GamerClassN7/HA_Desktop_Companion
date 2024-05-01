@@ -9,7 +9,7 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
     public class ApiSensor
     {
         public string device_class = null;
-        public string icon = "mdi:battery";
+        public string icon = "mdi:bug";
         public string name = null;
         public dynamic state = null;
         public string type = "sensor";

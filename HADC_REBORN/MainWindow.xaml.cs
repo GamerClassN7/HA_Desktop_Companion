@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,9 +21,11 @@ namespace HADC_REBORN
     /// </summary>
     public partial class MainWindow : Window
     {
+        private App app;
         public MainWindow()
         {
             InitializeComponent();
+            app = (App)App.Current;
         }
 
         private void loadingScreen_MediaEnded(object sender, RoutedEventArgs e)
@@ -44,6 +47,8 @@ namespace HADC_REBORN
                 token.Text = config.AppSettings.Settings["token"].Value;
             }
 
+            app.Start();
+
             App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
         }
@@ -55,8 +60,9 @@ namespace HADC_REBORN
 
         private void save_MouseClick(object sender, RoutedEventArgs e)
         {
-            App app = (App)App.Current;
+
             app.Stop();
+
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             
             config.AppSettings.Settings["url"].Value = url.Text.TrimEnd('/');
@@ -83,6 +89,11 @@ namespace HADC_REBORN
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             App.SpawnNotification("App keeps Running in background!");
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Title += (" - " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
         }
     }
 }

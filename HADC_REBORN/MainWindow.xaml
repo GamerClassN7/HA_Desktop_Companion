@@ -12,7 +12,7 @@
         d:DesignHeight="196"
         d:DesignWidth="450"
         WindowStartupLocation="CenterScreen" 
-        ResizeMode="NoResize" Closing="Window_Closing"
+        ResizeMode="NoResize" Closing="Window_Closing" Loaded="Window_Loaded"
         >
     <Grid>
         <Grid.ColumnDefinitions>
