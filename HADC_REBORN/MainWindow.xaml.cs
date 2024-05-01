@@ -1,4 +1,5 @@
-﻿using HADC_REBORN.Class.Helpers;
+﻿using HADC_REBORN.Class.Actions;
+using HADC_REBORN.Class.Helpers;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
@@ -47,7 +48,9 @@ namespace HADC_REBORN
                 token.Text = config.AppSettings.Settings["token"].Value;
             }
 
-            app.Start();
+            if (app.isRunning()) {
+                Close();
+            }
 
             App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
@@ -75,20 +78,23 @@ namespace HADC_REBORN
 
             config.Save(ConfigurationSaveMode.Modified);
             App.log.writeLine("Settings Saved");
-            App.SpawnNotification("Settings Saved");
-            app.Start();
+            Notification.Spawn("Settings Saved");
 
+            if (app.Start())
+            {
+                Close();
+            }
         }
 
         private void close_Click(object sender, RoutedEventArgs e)
         {
-            this.ShowInTaskbar = false;
             App.Close();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            App.SpawnNotification("App keeps Running in background!");
+            this.ShowInTaskbar = false;
+            Notification.Spawn("App keeps Running in background!");
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

@@ -36,9 +36,8 @@ namespace HADC_REBORN.Class.Sensors
             }
             catch (Exception e)
             {
-                App.log.writeLine("An error occurred while querying for WMI data: " + e.Message);
-            }
 
+            }
             return "";
         }
     }

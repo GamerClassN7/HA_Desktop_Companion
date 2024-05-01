@@ -21,6 +21,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using Windows.Devices.Sensors;
 using System.Runtime.ExceptionServices;
+using HADC_REBORN.Class.Actions;
 
 namespace HADC_REBORN
 {
@@ -35,15 +36,18 @@ namespace HADC_REBORN
         private string appDir = AppDomain.CurrentDomain.BaseDirectory();
 #endif
 
-        public static NotifyIcon icon;
-        public static Logger log;
-        public static ApiConnector haApiConnector;
-        public static YamlLoader yamlLoader;
+        public static NotifyIcon ?icon = null;
+        public static Logger ?log = null;
+        public static ApiConnector ?haApiConnector = null;
+        public static YamlLoader ?yamlLoader = null;
 
+        private static DispatcherTimer ?apiTimer = null;
         private BackgroundWorker apiWorker;
-        private static DispatcherTimer apiTimer;
         static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
         static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
+        //static Dictionary<string, bool> sensorFailed= new Dictionary<string, bool>();
+
+
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -91,7 +95,7 @@ namespace HADC_REBORN
             AutoUpdater.ShowRemindLaterButton = false;
         }
 
-        public void Start()
+        public bool Start()
         {
             log.writeLine("looking for 'configuration.yaml'");
             string configFilePath = Path.Combine(appDir, "configuration.yaml");
@@ -199,9 +203,11 @@ namespace HADC_REBORN
             catch (Exception e)
             {
                 log.writeLine("Failed to initialize RestAPI" + e.Message);
+                return false;
             }
 
             apiWorker.DoWork += apiWorker_DoWork;
+            return true;
         }
 
         public void Stop()
@@ -210,6 +216,10 @@ namespace HADC_REBORN
             apiTimer.Stop();
         }
 
+        public bool isRunning()
+        {
+            return haApiConnector.getConectionStatus();
+        }
         private async void updateSensors(object? sender, EventArgs e)
         {
             if (apiWorker.IsBusy != true)
@@ -237,6 +247,7 @@ namespace HADC_REBORN
         private static async Task<String> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
         {
             string className = "HADC_REBORN.Class.Sensors.";
+            string sensorUniqueId = sensorDefinition["unique_id"];
 
             foreach (var methodNameSegment in integration.Key.Split("_"))
             {
@@ -272,7 +283,17 @@ namespace HADC_REBORN
                 }
             }
 
-            return method.Invoke(null, parameters.ToArray()).ToString();
+            //try
+            //{
+              //  sensorFailed[sensorUniqueId] = false;
+                return method.Invoke(null, parameters.ToArray()).ToString();
+          //  }
+            //catch (System.Management.ManagementException e)
+            //{
+              //  App.log.writeLine("Sensor Failed with Exception: " + e.InnerException.Message);
+               // sensorFailed[sensorUniqueId] = true;
+                //return "";
+            //}
         }
 
         private async Task queryAndSendSenzorData()
@@ -300,9 +321,16 @@ namespace HADC_REBORN
                                 TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorUniqueId]);
                                 if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"]))
                                 {
+                                    App.log.writeLine("Skiping: " + sensorUniqueId + " sensor Update time not Reached");
                                     continue;
                                 }
                             }
+
+                            //if (sensorFailed.ContainsKey(sensorUniqueId) && sensorFailed[sensorUniqueId] != false)
+                           // {
+                             //   App.log.writeLine("Skiping previouselly failed: " + sensorUniqueId + " sensor");
+                             //   continue;
+                            //}
 
                             senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
                         }
@@ -497,7 +525,7 @@ namespace HADC_REBORN
 
         private void OnTestNotification_Click(object? sender, EventArgs e)
         {
-            SpawnNotification("test");
+            Notification.Spawn("test");
         }
 
         private void icon_Click(Object? sender, EventArgs e)
@@ -518,17 +546,6 @@ namespace HADC_REBORN
             Environment.Exit(0);
         }
 
-        public static void SpawnNotification( string body = "", string title = "", string imageUrl = "", string audioUrl = "", int duration = 500)
-        {
-            ToastContentBuilder toast = new ToastContentBuilder();
-            toast.AddText(body);
-
-            if (!String.IsNullOrEmpty(title))
-            {
-                toast.AddText(title);
-            }
-
-            toast.Show();
-        }
+       
     }
 }
