@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HADC_REBORN.Class.Sensors
 {
-    internal class NetworkInterface
+    class NetworkInterface
     {
         public static string GetValue(string selector, string deselector = "")
         {

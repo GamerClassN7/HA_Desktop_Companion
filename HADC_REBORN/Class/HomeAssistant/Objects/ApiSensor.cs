@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HADC_REBORN.Class.HomeAssistant.Objects
 {
-    class ApiSensor
+    public class ApiSensor
     {
         public string device_class = null;
         public string icon = "mdi:battery";

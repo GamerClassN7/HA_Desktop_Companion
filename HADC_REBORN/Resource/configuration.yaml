@@ -63,13 +63,13 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     update_interval: 10
-  - platform: network_intrface
+  - platform: network_interface
     selector: "State"
     name: Wifi State
     unique_id: wifi_state
     icon: "mdi:wifi"
     update_interval: 10
-  - platform: network_intrface
+  - platform: network_interface
     selector: "SSID"
     deselector: "BSSID"
     name: Wifi SSID

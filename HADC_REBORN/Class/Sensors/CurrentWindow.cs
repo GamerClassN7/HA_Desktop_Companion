@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace HADC_REBORN.Class.Sensors
 {
-    class CurrentWindov
+    class CurrentWindow
     {
-        public string getValue()
+        public static string GetValue()
         {
             try
             {

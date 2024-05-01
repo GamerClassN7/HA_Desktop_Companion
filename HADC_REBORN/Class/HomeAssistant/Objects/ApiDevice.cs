@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HADC_REBORN.Class.HomeAssistant.Objects
 {
-    class ApiDevice
+    public class ApiDevice
     {
         public string device_id = null;
         public string app_id = null;

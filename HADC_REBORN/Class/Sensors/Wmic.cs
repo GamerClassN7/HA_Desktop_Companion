@@ -39,7 +39,7 @@ namespace HADC_REBORN.Class.Sensors
                 App.log.writeLine("An error occurred while querying for WMI data: " + e.Message);
             }
 
-            return "Unknown";
+            return "";
         }
     }
 }

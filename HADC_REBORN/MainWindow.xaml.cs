@@ -55,14 +55,23 @@ namespace HADC_REBORN
 
         private void save_MouseClick(object sender, RoutedEventArgs e)
         {
+            App app = (App)App.Current;
+            app.Stop();
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             
             config.AppSettings.Settings["url"].Value = url.Text.TrimEnd('/');
             config.AppSettings.Settings["token"].Value = token.Text;
 
+            config.AppSettings.Settings["remote_url"].Value = "";
+            config.AppSettings.Settings["cloud_url"].Value = "";
+            config.AppSettings.Settings["webhook_id"].Value = "";
+            config.AppSettings.Settings["secret"].Value = "";
+
             config.Save(ConfigurationSaveMode.Modified);
             App.log.writeLine("Settings Saved");
             App.SpawnNotification("Settings Saved");
+            app.Start();
+
         }
 
         private void close_Click(object sender, RoutedEventArgs e)
