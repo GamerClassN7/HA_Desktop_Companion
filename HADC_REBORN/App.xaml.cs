@@ -53,6 +53,7 @@ namespace HADC_REBORN
             App.log = new Logger();
 
             icon.DoubleClick += new EventHandler(icon_Click);
+
             icon.Icon = HADC_REBORN.Resource.ha_icon;
             icon.Text = System.AppDomain.CurrentDomain.FriendlyName;
             icon.Visible = true;
