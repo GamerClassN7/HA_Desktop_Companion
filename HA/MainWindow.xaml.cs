@@ -130,5 +130,11 @@ namespace HA
             loadingScreenStatus.Content = "Initialization Failed!";
             loading_Hide();
         }
+
+        private void api_status_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            app.ws.Close();
+            app.Start();
+        }
     }
 }
