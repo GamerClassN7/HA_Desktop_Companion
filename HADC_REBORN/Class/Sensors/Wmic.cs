@@ -34,10 +34,11 @@ namespace HADC_REBORN.Class.Sensors
                     i++;
                 }
             }
-            catch (Exception e)
+            catch (ManagementException e)
             {
-
+                App.log.writeLine("ERROR:  " + e.Message);
             }
+
             return "";
         }
     }

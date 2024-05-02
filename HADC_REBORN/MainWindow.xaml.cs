@@ -48,12 +48,14 @@ namespace HADC_REBORN
                 token.Text = config.AppSettings.Settings["token"].Value;
             }
 
-            if (app.isRunning()) {
+            App.log.writeLine("Initial Loading Done");
+            loadingScreen.Visibility = Visibility.Hidden;
+
+            if (app.isRunning() && app.isInitialization == true) {
                 Close();
             }
 
-            App.log.writeLine("Initial Loading Done");
-            loadingScreen.Visibility = Visibility.Hidden;
+            app.isInitialization = false;
         }
 
         private void Grid_MouseUp(object sender, MouseButtonEventArgs e)
