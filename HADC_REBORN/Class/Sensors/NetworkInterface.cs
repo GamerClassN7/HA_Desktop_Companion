@@ -31,12 +31,13 @@ namespace HADC_REBORN.Class.Sensors
 
                 foreach (var item in output)
                 {
-                    if (!(item.Split(":").Count() < 2))
+                    string[] line = item.Split(":");
+                    if (!(line.Length < 2))
                     {
                         continue;
                     }
 
-                    string outputResult = Regex.Replace(item.Split(":")[1].Trim(), @"\t|\n|\r", "").Trim();
+                    string outputResult = Regex.Replace(line[1].Trim(), @"\t|\n|\r", "").Trim();
 
                     if (!String.IsNullOrEmpty(deselector))
                     {

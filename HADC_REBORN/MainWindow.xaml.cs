@@ -51,7 +51,7 @@ namespace HADC_REBORN
             App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
 
-            if (app.isRunning() && app.isInitialization == true) {
+            if (app.isInitialization == true && app.isRunning()) {
                 Close();
             }
 
