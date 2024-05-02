@@ -32,7 +32,7 @@ namespace HADC_REBORN.Class.Sensors
                 foreach (var item in output)
                 {
                     string[] line = item.Split(":");
-                    if (!(line.Length < 2))
+                    if (line.Length < 2)
                     {
                         continue;
                     }
