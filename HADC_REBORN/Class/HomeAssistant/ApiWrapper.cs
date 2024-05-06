@@ -241,7 +241,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             return senzorTypes;
         }
 
-        private static async Task<String> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
+        private static Task<string> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
         {
             string className = "HADC_REBORN.Class.Sensors.";
             string sensorUniqueId = sensorDefinition["unique_id"];
@@ -270,27 +270,24 @@ namespace HADC_REBORN.Class.HomeAssistant
 
             foreach (ParameterInfo p in pars)
             {
-                if (sensorDefinition.ContainsKey(p.Name))
+                if (p == null)
+                {
+                    continue;
+                }
+
+                if (p.Name != null && sensorDefinition.ContainsKey(p.Name))
                 {
                     parameters.Insert(p.Position, sensorDefinition[p.Name]);
                 }
-                else if (p.IsOptional)
+                else if (p.IsOptional && p.DefaultValue != null)
                 {
                     parameters.Insert(p.Position, p.DefaultValue);
                 }
             }
 
-            //try
-            //{
-            //  sensorFailed[sensorUniqueId] = false;
-            return method.Invoke(null, parameters.ToArray()).ToString();
-            //  }
-            //catch (System.Management.ManagementException e)
-            //{
-            //  App.log.writeLine("Sensor Failed with Exception: " + e.InnerException.Message);
-            // sensorFailed[sensorUniqueId] = true;
-            //return "";
-            //}
+            return Task.Run<string>(() => {
+                return method.Invoke(null, parameters.ToArray()).ToString(); 
+            });
         }
     }
 }

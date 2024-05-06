@@ -37,7 +37,7 @@ namespace HADC_REBORN
 #endif
 
         public static NotifyIcon ?icon = null;
-        public static Logger ?log = null;
+        public static Logger log = new Logger();
         public static ApiConnector ?haApiConnector = null;
         public static YamlLoader ?yamlLoader = null;
         public static ApiWrapper ?apiWrapper = null;
@@ -51,7 +51,6 @@ namespace HADC_REBORN
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
 
             App.icon = new NotifyIcon();
-            App.log = new Logger();
 
             icon.DoubleClick += new EventHandler(icon_Click);
 

@@ -29,8 +29,13 @@ namespace HADC_REBORN.Class.Sensors
 
             foreach (ManagementObject ns in nsClass.GetInstances())
             {
+                if (ns["Name"] == null)
+                {
+                    continue;
+                }
+
                 Array.Resize(ref classList, classList.Length + 1);
-                classList[(classList.Length - 1)] = ns["Name"].ToString();
+                classList[(classList.Length - 1)] = (string) ns["Name"];
             }
 
             Wmic.wmicClasses[wmic_namespace] = classList;
@@ -68,7 +73,7 @@ namespace HADC_REBORN.Class.Sensors
                     {
                         if (queryObj.Properties.Count > 0 && queryObj?[wmic_selector]?.ToString() != null) //TODO: Eary Return
                         {
-                            App.log.writeLine("OUTPUT: " + queryObj?[wmic_selector]?.ToString());
+                            App.log.writeLine("OUTPUT: " + queryObj?[wmic_selector]?.ToString());                          
                             return queryObj?[wmic_selector]?.ToString();
                         }
                     }
