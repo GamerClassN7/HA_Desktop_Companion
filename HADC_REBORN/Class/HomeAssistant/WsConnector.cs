@@ -125,14 +125,12 @@ namespace HADC_REBORN.Class.HomeAssistant
             WsPing pingObj = new WsPing { };
             pingObj.type = "ping";
             pingObj.id = interactions;
-            JObject ping = sendAndRecieveAsync(pingObj);
-            App.log.writeLine("[WS] Ping Response: " + ping.ToString());
+            Send(pingObj);
         }
         public void disconnect()
         {
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
+            if (socket != null && (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted))
             {
-                updatePingTimer.Stop();
                 socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
                 socket.Dispose();
                 socket = null;
@@ -142,16 +140,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private JObject sendAndRecieveAsync(dynamic payloadObj)
         {
-            string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
-            
-            App.log.writeLine("[WS] SEND:");
-            App.log.writeLine(JSONPayload)
-                ;
-            ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
-            
-            socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
-
-            interactions = interactions + 1;
+            Send(payloadObj).Wait();
 
             return RecieveAsync();
         }
@@ -164,7 +153,19 @@ namespace HADC_REBORN.Class.HomeAssistant
             App.log.writeLine("[WS] RECIEVED:");
             App.log.writeLine(JSONRecievedpayload);
 
-            return JObject.Parse(JSONRecievedpayload);
+            return JObject.Parse(JSONRecievedpayload);   
+        }
+        private async Task Send(dynamic payloadObj)
+        {
+            string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
+
+            App.log.writeLine("[WS] SEND:");
+            App.log.writeLine(JSONPayload);
+
+            ArraySegment<byte> BYTEPayload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JSONPayload));
+            socket.SendAsync(BYTEPayload, WebSocketMessageType.Text, true, CancellationToken.None).Wait();
+
+            interactions = interactions + 1;
         }
     }
 }

@@ -1,10 +1,16 @@
-﻿using HADC_REBORN.Class.Helpers;
+﻿using HADC_REBORN.Class.Actions;
+using HADC_REBORN.Class.Helpers;
+using Microsoft.VisualBasic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Management;
+using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -16,7 +22,10 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
     {
         private YamlLoader yamlLoader;
         private WsConnector wsConnector;
-        private BackgroundWorker wsWorkerRecieverer;
+
+        private BackgroundWorker wsWorkerRecieverer = new BackgroundWorker();
+        private BackgroundWorker wsWorkerPinger = new BackgroundWorker();
+
         private DispatcherTimer updatePingTimer = new DispatcherTimer();
         public WsWrapper(YamlLoader yamlLoaderDependency, WsConnector wsConnectorDependency)
         {
@@ -26,22 +35,24 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         public void Connect()
         {
-            wsWorkerRecieverer = new BackgroundWorker();
 
             if (!wsConnector.isConnected)
             {
                 wsConnector.register();
-                wsWorkerRecieverer.DoWork += wsWorkerReciever_DoWork;
                 if (wsWorkerRecieverer.IsBusy)
                 {
                     throw new Exception("Already Registered !!!");
                 }
 
+                wsWorkerRecieverer.DoWork += wsWorkerReciever_DoWork;
                 wsWorkerRecieverer.RunWorkerAsync();
-                updatePingTimer = new DispatcherTimer();
-                updatePingTimer.Interval = TimeSpan.FromMinutes(30);
+
+                wsWorkerPinger.DoWork += wsWorkePinger_DoWork;
+                
+                updatePingTimer.Interval = TimeSpan.FromMinutes(5);
                 updatePingTimer.Tick += UpdatePing_Tick;
                 updatePingTimer.Start();
+
                 App.log.writeLine("[WS] Ping Initialized");
             }
         }
@@ -53,19 +64,27 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         private void UpdatePing_Tick(object? sender, EventArgs e)
         {
-            wsConnector.ping();
+            if (wsWorkerPinger.IsBusy != true)
+            {
+                wsWorkerPinger.RunWorkerAsync();
+            }
+        }
+
+        private void wsWorkePinger_DoWork(object? sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                wsConnector.ping();
+            }
+            catch (Exception ex)
+            {
+                App.log.writeLine("[WS] Ping Failed: " + ex.Message);
+            }
         }
 
         private void wsWorkerReciever_DoWork(object? sender, DoWorkEventArgs e)
         {
-            try
-            {
-                wsConnector.receive();
-            }
-            catch (Exception)
-            {
-                restart();
-            }
+            wsConnector.receive();
         }
 
         private void restart()
@@ -77,5 +96,6 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
             } while (wsWorkerRecieverer.IsBusy);
             Connect();
         }
+
     }
 }

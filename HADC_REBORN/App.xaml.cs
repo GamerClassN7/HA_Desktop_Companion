@@ -36,17 +36,17 @@ namespace HADC_REBORN
         private string appDir = AppDomain.CurrentDomain.BaseDirectory();
 #endif
 
-        public static NotifyIcon ?icon = null;
+        public static NotifyIcon? icon = null;
         public static Logger log = new Logger();
-        public static YamlLoader ?yamlLoader = null;
-        
-        public static ApiConnector ?haApiConnector = null;
-        public static ApiWrapper ?apiWrapper = null;
+        public static YamlLoader? yamlLoader = null;
+
+        public static ApiConnector? haApiConnector = null;
+        public static ApiWrapper? apiWrapper = null;
 
         public static WsConnector? haWsConnector = null;
         public static WsWrapper? wsWrapper = null;
 
-        private static DispatcherTimer ?apiTimer = null;
+        private static DispatcherTimer? apiTimer = null;
         private BackgroundWorker apiWorker;
         public bool isInitialization = true;
 
@@ -104,7 +104,9 @@ namespace HADC_REBORN
             {
                 log.writeLine("'configuration.yaml' not found creating new one!");
                 File.WriteAllBytes(configFilePath, HADC_REBORN.Resource.configuration);
-            } else {
+            }
+            else
+            {
                 log.writeLine("'configuration.yaml' found!");
             }
 
@@ -121,12 +123,12 @@ namespace HADC_REBORN
                 log.writeLine("Waiting ntil server response!");
             } while (!Network.PingHost((new Uri(url)).Host));
 
-          try
+            try
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector);
-                
+
                 if (String.IsNullOrEmpty(webhookId))
                 {
                     ApiDevice devideForRegistration = new ApiDevice()
@@ -140,7 +142,8 @@ namespace HADC_REBORN
                         model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
                         os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
                         os_version = Environment.OSVersion.ToString(),
-                        app_data = new {
+                        app_data = new
+                        {
                             push_websocket_channel = true,
                         },
                         supports_encryption = false
@@ -290,7 +293,7 @@ namespace HADC_REBORN
             {
                 main.Focus();
             }
-            else 
+            else
             {
                 new MainWindow().Show();
             }
