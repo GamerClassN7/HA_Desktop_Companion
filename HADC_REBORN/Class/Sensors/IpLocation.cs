@@ -1,11 +1,15 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace HA.Class.Sensors
+namespace HADC_REBORN.Class.Sensors
 {
-    internal class IpLocation
+    class IpLocation
     {
         public static string getData()
         {
@@ -18,15 +22,6 @@ namespace HA.Class.Sensors
             {
                 return "";
             }
-        }
-
-        public static void test()
-        {
-            [DllImport("user32.dll")]
-            static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
-
-            keybd_event((byte)173, 0, 0, 0); // increase volume
-
         }
     }
 }
