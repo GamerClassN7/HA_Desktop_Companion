@@ -38,9 +38,13 @@ namespace HADC_REBORN
 
         public static NotifyIcon ?icon = null;
         public static Logger log = new Logger();
-        public static ApiConnector ?haApiConnector = null;
         public static YamlLoader ?yamlLoader = null;
+        
+        public static ApiConnector ?haApiConnector = null;
         public static ApiWrapper ?apiWrapper = null;
+
+        public static WsConnector? haWsConnector = null;
+        public static WsWrapper? wsWrapper = null;
 
         private static DispatcherTimer ?apiTimer = null;
         private BackgroundWorker apiWorker;
@@ -111,11 +115,18 @@ namespace HADC_REBORN
             string secret = config.AppSettings.Settings["secret"].Value;
 
             yamlLoader = new YamlLoader(configFilePath);
-            haApiConnector = new ApiConnector(url, token);
-            apiWrapper = new ApiWrapper(yamlLoader, haApiConnector);
 
-            try
+            do
             {
+                log.writeLine("Waiting ntil server response!");
+            } while (!Network.PingHost((new Uri(url)).Host));
+
+          try
+            {
+                log.writeLine(url);
+                haApiConnector = new ApiConnector(url, token);
+                apiWrapper = new ApiWrapper(yamlLoader, haApiConnector);
+                
                 if (String.IsNullOrEmpty(webhookId))
                 {
                     ApiDevice devideForRegistration = new ApiDevice()
@@ -201,6 +212,20 @@ namespace HADC_REBORN
             catch (Exception e)
             {
                 log.writeLine("Failed to initialize RestAPI" + e.Message);
+                return false;
+            }
+
+            try
+            {
+                string wsUrl = url.Replace("http", "ws");
+                log.writeLine(wsUrl);
+                haWsConnector = new WsConnector(wsUrl, token, haApiConnector.getWebhookID());
+                wsWrapper = new WsWrapper(yamlLoader, haWsConnector);
+                wsWrapper.Connect();
+            }
+            catch (Exception e)
+            {
+                log.writeLine("Failed to initialize WebbSocket" + e.Message);
                 return false;
             }
 

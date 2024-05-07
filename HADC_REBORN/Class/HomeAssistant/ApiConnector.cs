@@ -27,9 +27,18 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         //Erro Handling
         private int failedAttempts = 0;
-
-
         private List<ApiSensor> sensorsBuffer = new List<ApiSensor>();
+
+        public ApiConnector(string apiRootUrl, string apiToken)
+        {
+           // if (!testApiUrl(apiRootUrl))
+            //{
+             //   throw new Exception("unnabůle to connect to" + apiRootUrl);
+            //}
+
+            url = apiRootUrl.TrimEnd('/');
+            token = apiToken;
+        }
 
         public string getWebhookID()
         {
@@ -58,17 +67,6 @@ namespace HADC_REBORN.Class.HomeAssistant
         {
             secret = apiSecret;
 
-        }
-
-        public ApiConnector(string apiRootUrl, string apiToken)
-        {
-           // if (!testApiUrl(apiRootUrl))
-            //{
-             //   throw new Exception("unnabůle to connect to" + apiRootUrl);
-            //}
-
-            url = apiRootUrl.TrimEnd('/');
-            token = apiToken;
         }
 
         private HttpContent sendApiRequest(string endpoint)

@@ -10,13 +10,15 @@ namespace HADC_REBORN.Class.Sensors
 {
     class Wmic
     {
-        private static Dictionary<string,string[]> wmicClasses = new Dictionary<string, string[]>();
+        private static Dictionary<string,string[]> wmicClasses = new Dictionary<string, string[]>() { };
 
         private static string[] getClasses(string wmic_namespace = @"root\\wmi")
         {
             if (!Wmic.wmicClasses.ContainsKey(wmic_namespace))
             {
-                Wmic.wmicClasses[wmic_namespace] = new string[] { };
+                Dictionary<string, string[]> class_list = Wmic.wmicClasses;
+                class_list[wmic_namespace] = new string[] { };
+                Wmic.wmicClasses = class_list;
             }
 
             if (Wmic.wmicClasses[wmic_namespace].Length > 0)
@@ -46,12 +48,12 @@ namespace HADC_REBORN.Class.Sensors
 
         public static string GetValue(string wmic_class, string wmic_selector, string wmic_namespace = @"root\\wmi", int wmic_iterator_index = 0)
         {
-            string result = getClasses(wmic_namespace).FirstOrDefault(x => x == wmic_class);
-            if (result == null)
-            {
-                App.log.writeLine("Wmic Class '" + wmic_class + "' not found! in namespace " + wmic_namespace);
-                return "";
-            }
+            //string result = getClasses(wmic_namespace).FirstOrDefault(x => x == wmic_class);
+            //if (result == null)
+            //{
+             //   App.log.writeLine("Wmic Class '" + wmic_class + "' not found! in namespace " + wmic_namespace);
+           //     return "";
+            //}
 
             App.log.writeLine("NAMESPACE " + wmic_namespace);
             App.log.writeLine("SELECT " + wmic_selector + " FROM " + wmic_class + "[" + wmic_iterator_index + "]");

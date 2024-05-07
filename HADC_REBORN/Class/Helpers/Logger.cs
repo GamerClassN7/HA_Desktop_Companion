@@ -19,9 +19,19 @@ namespace HADC_REBORN.Class.Helpers
 #endif
         private string logFilePath;
         private DateTime lastInitializeDateTime;
+        private static string[] secreetsStrings = new string[] { };
 
         public Logger() {
             logFilePath = initialize();
+        }
+
+        public void setSecreets(string[] strings)
+        {
+            if (!isInistialized)
+            {
+                logFilePath = initialize();
+            }
+            secreetsStrings = strings.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         }
 
         public string getLogPath()
@@ -65,7 +75,16 @@ namespace HADC_REBORN.Class.Helpers
 
         private string getLogMessage(string text, int type = 0)
         {
-            return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm.ss]") + "[" + type + "]" + text + "\n";
+            string parsedText = text;
+            if (secreetsStrings.Length > 0)
+            {
+                foreach (string secret in secreetsStrings)
+                {
+                    parsedText = parsedText.Replace(secret, "***SECRET****");
+                }
+            }
+
+            return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm.ss]") + "[" + type + "]" + parsedText + "\n";
         }
 
         public void writeLine(string msg, int type = 0)
