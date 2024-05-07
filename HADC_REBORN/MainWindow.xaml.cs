@@ -50,13 +50,13 @@ namespace HADC_REBORN
             if (app.initializing == true && app.Start())
             {
                 Close();
+
+                statusTimer.Interval = TimeSpan.FromSeconds(5);
+                statusTimer.Tick += statusTimer_Tick;
+                statusTimer.Start();
             }
 
             app.initializing = false;
-
-            statusTimer.Interval = TimeSpan.FromSeconds(5);
-            statusTimer.Tick += statusTimer_Tick;
-            statusTimer.Start();
         }
 
         private void statusTimer_Tick(object? sender, EventArgs e)
