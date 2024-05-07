@@ -27,7 +27,7 @@ namespace HADC_REBORN.Class.HomeAssistant
         private int interactions = 1;
 
         private int failedAttempts = 0;
-        public bool isConnected = false;
+        private bool isConnected = false;
 
         private Task recieveLoopObject;
         private static DispatcherTimer updatePingTimer = new DispatcherTimer();
@@ -76,10 +76,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
 
             isConnected = true;
-            MessageBox.Show("WS Registered");
         }
 
-        public void receive()
+        public void receive(Action<JObject> callbackRecieveEvent)
         {
             var localBuffer = new ArraySegment<byte>(new byte[2048]);
             bool error = false;
@@ -107,6 +106,11 @@ namespace HADC_REBORN.Class.HomeAssistant
                         using (var reader = new StreamReader(ms, Encoding.UTF8))
                         {
                             string jsonPayload = reader.ReadToEnd();
+                            if (callbackRecieveEvent != null)
+                            {
+                                callbackRecieveEvent.Invoke(JObject.Parse(jsonPayload));
+                            }
+                            App.log.writeLine("[WS] Recieved in LOOP: " + jsonPayload);
                         }
                     }
                 }
@@ -116,8 +120,6 @@ namespace HADC_REBORN.Class.HomeAssistant
                     error = true;
                 }
             } while (!error);
-
-            throw new Exception("Receive loop failed");
         }
 
         public void ping()
@@ -127,17 +129,29 @@ namespace HADC_REBORN.Class.HomeAssistant
             pingObj.id = interactions;
             Send(pingObj);
         }
+      
         public void disconnect()
         {
-            if (socket != null && (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted))
+            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
             {
-                socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+                if (socket.State == WebSocketState.Aborted)
+                {
+                    socket.Abort();
+                }
+                else
+                {
+                    socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
+
+                }
                 socket.Dispose();
                 socket = null;
-                Thread.Sleep(5000);
             }
         }
 
+        public bool connected()
+        {
+            return (isConnected && (failedAttempts > 5) && socket == null);
+        }
         private JObject sendAndRecieveAsync(dynamic payloadObj)
         {
             Send(payloadObj).Wait();
@@ -153,8 +167,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             App.log.writeLine("[WS] RECIEVED:");
             App.log.writeLine(JSONRecievedpayload);
 
-            return JObject.Parse(JSONRecievedpayload);   
+            return JObject.Parse(JSONRecievedpayload);
         }
+       
         private async Task Send(dynamic payloadObj)
         {
             string JSONPayload = JsonConvert.SerializeObject(payloadObj, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();

@@ -1,13 +1,21 @@
 ﻿using HADC_REBORN.Class.Helpers;
 using HADC_REBORN.Class.HomeAssistant.Objects;
+using HADC_REBORN.Class.Sensors;
+using Microsoft.VisualBasic.Logging;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Configuration;
 using System.Globalization;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
@@ -19,10 +27,16 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private YamlLoader yamlLoader;
         private ApiConnector apiConnector;
+        private Configuration config;
 
-        public ApiWrapper(YamlLoader yamlLoaderDependency, ApiConnector apiConnectorDependency) {
+        private BackgroundWorker apiWorker = new BackgroundWorker();
+
+        private DispatcherTimer apiTimer = new DispatcherTimer();
+
+        public ApiWrapper(YamlLoader yamlLoaderDependency, ApiConnector apiConnectorDependency, Configuration configDependency) {
             yamlLoader = yamlLoaderDependency;
             apiConnector = apiConnectorDependency;
+            config = configDependency;
         }
 
         private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
@@ -203,6 +217,127 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
 
             apiConnector.sendSensorBuffer();
+        }
+
+        public void restart()
+        {
+            disconnect();
+            connect();
+        }
+
+        public void disconnect()
+        {
+            if (apiConnector.connected())
+            {
+                
+            }
+            if (apiTimer.IsEnabled)
+            {
+                App.log.writeLine("[API] Ping stoping");
+                apiTimer.Stop();
+                App.log.writeLine("[API] Ping Stopped");
+            }
+        }
+
+        public void connect()
+        {
+            string webhookId = config.AppSettings.Settings["webhook_id"].Value;
+            string secret = config.AppSettings.Settings["secret"].Value;
+
+            if (String.IsNullOrEmpty(webhookId))
+            {
+                ApiDevice devideForRegistration = new ApiDevice()
+                {
+                    device_name = Environment.MachineName,
+                    device_id = (Environment.MachineName).ToLower(),
+                    app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
+                    app_name = Assembly.GetExecutingAssembly().GetName().Name,
+                    app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
+                    manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
+                    model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
+                    os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
+                    os_version = Environment.OSVersion.ToString(),
+                    app_data = new
+                    {
+                        push_websocket_channel = true,
+                    },
+                    supports_encryption = false
+                };
+                apiConnector.RegisterDevice(devideForRegistration);
+
+                Dictionary<string, object> senzorTypes = getSensorsConfiguration();
+                foreach (var item in senzorTypes)
+                {
+                    string senzorType = item.Key;
+                    foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                    {
+                        foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                        {
+                            foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                            {
+                                ApiSensor senzor = new ApiSensor();
+
+                                senzor.type = senzorType;
+                                senzor.name = sensorDefinition["name"];
+                                senzor.unique_id = sensorDefinition["unique_id"];
+
+                                if (sensorDefinition.ContainsKey("device_class"))
+                                    senzor.device_class = sensorDefinition["device_class"];
+
+                                if (sensorDefinition.ContainsKey("icon"))
+                                    senzor.icon = sensorDefinition["icon"];
+
+                                if (sensorDefinition.ContainsKey("unit_of_measurement"))
+                                    senzor.unit_of_measurement = sensorDefinition["unit_of_measurement"];
+
+                                if (sensorDefinition.ContainsKey("state_class"))
+                                    senzor.state_class = sensorDefinition["state_class"];
+
+                                if (sensorDefinition.ContainsKey("entity_category"))
+                                    senzor.entity_category = sensorDefinition["entity_category"];
+
+                                if (sensorDefinition.ContainsKey("disabled"))
+                                    senzor.device_class = sensorDefinition["disabled"];
+
+                                if (senzorType == "binary_sensor")
+                                    senzor.state = false;
+
+                                apiConnector.RegisterSensorData(senzor);
+                            }
+                        }
+                    }
+                }
+
+                webhookId = apiConnector.getWebhookID();
+                secret = apiConnector.getSecret();
+
+                config.AppSettings.Settings["webhook_id"].Value = webhookId;
+                config.AppSettings.Settings["secret"].Value = secret;
+
+                config.Save(ConfigurationSaveMode.Modified);
+            }
+
+            apiConnector.setWebhookID(webhookId);
+            apiConnector.setSecret(secret);
+
+            apiTimer.Interval = TimeSpan.FromSeconds(5);
+            apiTimer.Tick += updateSensors;
+            apiTimer.Start();
+
+            apiWorker.DoWork += apiWorker_DoWork;
+        }
+
+        private void apiWorker_DoWork(object? sender, DoWorkEventArgs e)
+        {
+            queryAndSendSenzorData();
+        }
+
+        private async void updateSensors(object? sender, EventArgs e)
+        {
+            if (apiWorker.IsBusy != true)
+            {
+                apiWorker.RunWorkerAsync();
+            }
         }
 
         private static dynamic convertToType(dynamic variable)

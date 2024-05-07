@@ -51,11 +51,11 @@ namespace HADC_REBORN
             App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
 
-            if (app.isInitialization == true && app.isRunning()) {
+            if (app.initializing == true && app.Start()) {
                 Close();
             }
 
-            app.isInitialization = false;
+            app.initializing = false;
         }
 
         private void Grid_MouseUp(object sender, MouseButtonEventArgs e)
@@ -66,7 +66,6 @@ namespace HADC_REBORN
         private void save_MouseClick(object sender, RoutedEventArgs e)
         {
 
-            app.Stop();
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             
@@ -82,6 +81,7 @@ namespace HADC_REBORN
             App.log.writeLine("Settings Saved");
             Notification.Spawn("Settings Saved");
 
+            app.Stop();
             if (app.Start())
             {
                 Close();

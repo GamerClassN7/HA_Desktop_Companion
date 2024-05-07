@@ -13,13 +13,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net.Sockets;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
     public class ApiConnector
     {
-        private string url = null;
-        private string token = null;
+        private string url;
+        private string token;
 
         //Data From Registration
         private string webhookId = null;
@@ -45,7 +46,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             return webhookId;
         }
 
-        public bool getConectionStatus()
+        public bool connected()
         {
             if (failedAttempts > 0)
                 return false;

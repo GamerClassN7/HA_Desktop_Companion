@@ -22,6 +22,7 @@ using System.Globalization;
 using Windows.Devices.Sensors;
 using System.Runtime.ExceptionServices;
 using HADC_REBORN.Class.Actions;
+using System.Net.NetworkInformation;
 
 namespace HADC_REBORN
 {
@@ -38,17 +39,14 @@ namespace HADC_REBORN
 
         public static NotifyIcon? icon = null;
         public static Logger log = new Logger();
-        public static YamlLoader? yamlLoader = null;
+        public static YamlLoader yamlLoader;
+        public bool initializing = true;
 
         public static ApiConnector? haApiConnector = null;
         public static ApiWrapper? apiWrapper = null;
 
         public static WsConnector? haWsConnector = null;
         public static WsWrapper? wsWrapper = null;
-
-        private static DispatcherTimer? apiTimer = null;
-        private BackgroundWorker apiWorker;
-        public bool isInitialization = true;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -87,10 +85,6 @@ namespace HADC_REBORN
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            apiWorker = new BackgroundWorker();
-
-            Start();
-
             AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/update_meta.xml");
             AutoUpdater.Synchronous = false;
             AutoUpdater.ShowRemindLaterButton = false;
@@ -113,10 +107,14 @@ namespace HADC_REBORN
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string url = config.AppSettings.Settings["url"].Value;
             string token = config.AppSettings.Settings["token"].Value;
-            string webhookId = config.AppSettings.Settings["webhook_id"].Value;
-            string secret = config.AppSettings.Settings["secret"].Value;
 
             yamlLoader = new YamlLoader(configFilePath);
+
+            if (String.IsNullOrEmpty(url) || String.IsNullOrEmpty(token))
+            {
+                log.writeLine("URL or Token not fount!!");
+                return false;
+            }
 
             do
             {
@@ -127,90 +125,8 @@ namespace HADC_REBORN
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
-                apiWrapper = new ApiWrapper(yamlLoader, haApiConnector);
-
-                if (String.IsNullOrEmpty(webhookId))
-                {
-                    ApiDevice devideForRegistration = new ApiDevice()
-                    {
-                        device_name = Environment.MachineName,
-                        device_id = (Environment.MachineName).ToLower(),
-                        app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
-                        app_name = Assembly.GetExecutingAssembly().GetName().Name,
-                        app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
-                        manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
-                        model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
-                        os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
-                        os_version = Environment.OSVersion.ToString(),
-                        app_data = new
-                        {
-                            push_websocket_channel = true,
-                        },
-                        supports_encryption = false
-                    };
-                    haApiConnector.RegisterDevice(devideForRegistration);
-
-                    Dictionary<string, object> senzorTypes = apiWrapper.getSensorsConfiguration();
-                    foreach (var item in senzorTypes)
-                    {
-                        string senzorType = item.Key;
-                        foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
-                        {
-                            foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
-                            {
-                                foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
-                                {
-                                    ApiSensor senzor = new ApiSensor();
-
-                                    senzor.type = senzorType;
-                                    senzor.name = sensorDefinition["name"];
-                                    senzor.unique_id = sensorDefinition["unique_id"];
-
-                                    if (sensorDefinition.ContainsKey("device_class"))
-                                        senzor.device_class = sensorDefinition["device_class"];
-
-                                    if (sensorDefinition.ContainsKey("icon"))
-                                        senzor.icon = sensorDefinition["icon"];
-
-                                    if (sensorDefinition.ContainsKey("unit_of_measurement"))
-                                        senzor.unit_of_measurement = sensorDefinition["unit_of_measurement"];
-
-                                    if (sensorDefinition.ContainsKey("state_class"))
-                                        senzor.state_class = sensorDefinition["state_class"];
-
-                                    if (sensorDefinition.ContainsKey("entity_category"))
-                                        senzor.entity_category = sensorDefinition["entity_category"];
-
-                                    if (sensorDefinition.ContainsKey("disabled"))
-                                        senzor.device_class = sensorDefinition["disabled"];
-
-                                    if (senzorType == "binary_sensor")
-                                        senzor.state = false;
-
-                                    haApiConnector.RegisterSensorData(senzor);
-                                }
-                            }
-                        }
-                    }
-
-                    webhookId = haApiConnector.getWebhookID();
-                    secret = haApiConnector.getSecret();
-
-                    config.AppSettings.Settings["webhook_id"].Value = webhookId;
-                    config.AppSettings.Settings["secret"].Value = secret;
-
-                    config.Save(ConfigurationSaveMode.Modified);
-                }
-
-                haApiConnector.setWebhookID(webhookId);
-                haApiConnector.setSecret(secret);
-
-                apiTimer = new DispatcherTimer();
-                apiTimer.Interval = TimeSpan.FromSeconds(5);
-                apiTimer.Tick += updateSensors;
-                apiTimer.Start();
-
-                apiWorker.DoWork += apiWorker_DoWork;
+                apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
+                apiWrapper.connect();
             }
             catch (Exception e)
             {
@@ -232,31 +148,29 @@ namespace HADC_REBORN
                 return false;
             }
 
+            NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
+
             return true;
+        }
+
+        private void GetNetworkChange_NetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+        {
+            if (e.IsAvailable)
+            {
+                log.writeLine("network awailable again RestAPI");
+                wsWrapper.restart();
+                apiWrapper.restart();
+            }
         }
 
         public void Stop()
         {
             log.writeLine("stoping RestAPI");
-            apiTimer.Stop();
         }
 
         public bool isRunning()
         {
-            return haApiConnector.getConectionStatus();
-        }
-
-        private async void updateSensors(object? sender, EventArgs e)
-        {
-            if (apiWorker.IsBusy != true)
-            {
-                apiWorker.RunWorkerAsync();
-            }
-        }
-
-        private void apiWorker_DoWork(object? sender, DoWorkEventArgs e)
-        {
-            apiWrapper.queryAndSendSenzorData();
+            return (haApiConnector.connected() && haWsConnector.connected());
         }
 
         protected override void OnExit(ExitEventArgs e)
