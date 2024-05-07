@@ -42,10 +42,10 @@ namespace HADC_REBORN
         public static YamlLoader yamlLoader;
         public bool initializing = true;
 
-        public static ApiConnector? haApiConnector = null;
+        public ApiConnector? haApiConnector = null;
         public static ApiWrapper? apiWrapper = null;
 
-        public static WsConnector? haWsConnector = null;
+        public WsConnector? haWsConnector = null;
         public static WsWrapper? wsWrapper = null;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -72,10 +72,6 @@ namespace HADC_REBORN
         static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
         {
             log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 3);
-        }
-
-        private void Application_LoadCompleted(object sender, System.Windows.Navigation.NavigationEventArgs e)
-        {
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
@@ -116,21 +112,24 @@ namespace HADC_REBORN
                 return false;
             }
 
-            do
-            {
-                log.writeLine("Waiting ntil server response!");
-            } while (!Network.PingHost((new Uri(url)).Host));
+            //int pingLoopIndex = 0;
+            //do
+            //{
+            //    log.writeLine("Waiting ntil server response!");
+            //    pingLoopIndex++;
+            //} while (!Network.PingHost((new Uri(url)).Host) && pingLoopIndex < 5);
 
             try
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
-                apiWrapper.connect();
+                //apiWrapper.connect();
+                log.writeLine("RestAPI registered");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log.writeLine("Failed to initialize RestAPI" + e.Message);
+                log.writeLine("Failed to initialize RestAPI" + ex.Message);
                 return false;
             }
 
@@ -141,15 +140,28 @@ namespace HADC_REBORN
                 haWsConnector = new WsConnector(wsUrl, token, haApiConnector.getWebhookID());
                 wsWrapper = new WsWrapper(yamlLoader, haWsConnector);
                 wsWrapper.Connect();
+                log.writeLine("Websocket registered");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log.writeLine("Failed to initialize WebbSocket" + e.Message);
+                log.writeLine("Failed to initialize WebbSocket" + ex.Message);
                 return false;
             }
 
             NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
 
+            try
+            {
+                Autostart.register();
+                log.writeLine("Autostart registered");
+            }
+            catch (Exception ex)
+            {
+                log.writeLine("Autostart registration failed" + ex.Message);
+                return false;
+            }
+
+            log.writeLine("Initialization Compleeted");
             return true;
         }
 
@@ -164,6 +176,8 @@ namespace HADC_REBORN
             else
             {
                 log.writeLine("Network Disconnected!");
+                wsWrapper.Disconnect();
+                apiWrapper.disconnect();
             }
         }
 

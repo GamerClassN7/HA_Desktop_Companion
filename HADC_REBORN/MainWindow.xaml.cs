@@ -1,5 +1,4 @@
 ﻿using HADC_REBORN.Class.Actions;
-using HADC_REBORN.Class.Helpers;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
@@ -14,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace HADC_REBORN
 {
@@ -23,15 +23,11 @@ namespace HADC_REBORN
     public partial class MainWindow : Window
     {
         private App app;
+        private DispatcherTimer statusTimer = new DispatcherTimer();
         public MainWindow()
         {
             InitializeComponent();
             app = (App)App.Current;
-        }
-
-        private void loadingScreen_MediaEnded(object sender, RoutedEventArgs e)
-        {
-
         }
 
         private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
@@ -51,24 +47,43 @@ namespace HADC_REBORN
             App.log.writeLine("Initial Loading Done");
             loadingScreen.Visibility = Visibility.Hidden;
 
-            if (app.initializing == true && app.Start()) {
+            if (app.initializing == true && app.Start())
+            {
                 Close();
             }
 
             app.initializing = false;
+
+            statusTimer.Interval = TimeSpan.FromSeconds(5);
+            statusTimer.Tick += statusTimer_Tick;
+            statusTimer.Start();
         }
 
-        private void Grid_MouseUp(object sender, MouseButtonEventArgs e)
+        private void statusTimer_Tick(object? sender, EventArgs e)
         {
+            if (app.haApiConnector.connected())
+            {
+                api_status.Foreground = new SolidColorBrush(Colors.Green);
+            }
+            else
+            {
+                api_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
 
+            if (app.haWsConnector.connected())
+            {
+                ws_status.Foreground = new SolidColorBrush(Colors.Green);
+            }
+            else
+            {
+                ws_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
         }
 
         private void save_MouseClick(object sender, RoutedEventArgs e)
         {
-
-
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            
+
             config.AppSettings.Settings["url"].Value = url.Text.TrimEnd('/');
             config.AppSettings.Settings["token"].Value = token.Text;
 
