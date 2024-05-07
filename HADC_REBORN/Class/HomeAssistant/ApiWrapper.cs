@@ -229,7 +229,8 @@ namespace HADC_REBORN.Class.HomeAssistant
         {
             if (apiConnector.connected())
             {
-                
+                App.log.writeLine("[API] Disconecting");
+                App.log.writeLine("[API] Disconected");
             }
             if (apiTimer.IsEnabled)
             {
@@ -320,11 +321,11 @@ namespace HADC_REBORN.Class.HomeAssistant
             apiConnector.setWebhookID(webhookId);
             apiConnector.setSecret(secret);
 
-            apiTimer.Interval = TimeSpan.FromSeconds(5);
-            apiTimer.Tick += updateSensors;
-            apiTimer.Start();
+           // apiWorker.DoWork += apiWorker_DoWork;
 
-            apiWorker.DoWork += apiWorker_DoWork;
+           // apiTimer.Interval = TimeSpan.FromSeconds(5);
+           // apiTimer.Tick += updateSensors;
+           // apiTimer.Start();
         }
 
         private void apiWorker_DoWork(object? sender, DoWorkEventArgs e)
@@ -334,6 +335,8 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private async void updateSensors(object? sender, EventArgs e)
         {
+            apiTimer.Stop();
+            disconnect();
             if (apiWorker.IsBusy != true)
             {
                 apiWorker.RunWorkerAsync();

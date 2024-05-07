@@ -141,16 +141,19 @@ namespace HADC_REBORN.Class.HomeAssistant
                 else
                 {
                     socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-
                 }
-                socket.Dispose();
-                socket = null;
+
+                if (socket != null)
+                {
+                    socket.Dispose();
+                    socket = null;
+                }
             }
         }
 
         public bool connected()
         {
-            return (isConnected && (failedAttempts > 5) && socket == null);
+            return (isConnected && (failedAttempts < 5) && socket != null);
         }
         private JObject sendAndRecieveAsync(dynamic payloadObj)
         {

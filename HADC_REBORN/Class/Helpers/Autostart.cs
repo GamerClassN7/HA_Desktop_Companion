@@ -11,12 +11,12 @@ namespace HADC_REBORN.Class.Helpers
     internal class Autostart
     {
 #if DEBUG
-        private string appDir = Directory.GetCurrentDirectory();
+        private static string appDir = Directory.GetCurrentDirectory();
 #else
-        private string appDir = AppDomain.CurrentDomain.BaseDirectory();
+        private static string appDir = AppDomain.CurrentDomain.BaseDirectory();
 #endif
 
-        public void register()
+        public static void register()
         {
             try
             {

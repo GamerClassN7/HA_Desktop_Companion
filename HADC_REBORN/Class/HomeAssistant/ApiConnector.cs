@@ -48,7 +48,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         public bool connected()
         {
-            if (failedAttempts > 0)
+            if (failedAttempts > 5)
                 return false;
 
             return true;
@@ -67,7 +67,6 @@ namespace HADC_REBORN.Class.HomeAssistant
         public void setSecret(string apiSecret)
         {
             secret = apiSecret;
-
         }
 
         private HttpContent sendApiRequest(string endpoint)
@@ -81,7 +80,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
-                App.log.writeLine("API RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
+                App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
 
                 return response.Content;
                 // usergrid.ItemsSource = users;
@@ -104,16 +103,16 @@ namespace HADC_REBORN.Class.HomeAssistant
 
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
+            App.log.writeLine("[API] SEND:");
             App.log.writeLine(content);
-            //Logger.write(webhookId);
-
+            
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = client.PostAsync(endpoint, stringContent).Result;
 
             if (response.IsSuccessStatusCode)
             {
-                App.log.writeLine("API RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
+                App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
 
                 return response.Content;
                 //usergrid.ItemsSource = users;
@@ -181,7 +180,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             catch (Exception ex)
             {
                 failedAttempts++;
-                App.log.writeLine(ex.Message);
+                App.log.writeLine("[API] " + ex.Message);
             }
 
             return jObject.ToString();
