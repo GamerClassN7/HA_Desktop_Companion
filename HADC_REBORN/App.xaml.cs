@@ -157,9 +157,13 @@ namespace HADC_REBORN
         {
             if (e.IsAvailable)
             {
-                log.writeLine("network awailable again RestAPI");
+                log.writeLine("Network Connected!");
                 wsWrapper.restart();
                 apiWrapper.restart();
+            }
+            else
+            {
+                log.writeLine("Network Disconnected!");
             }
         }
 
