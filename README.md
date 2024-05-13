@@ -10,6 +10,8 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 Feel free to contribute any time :)
 
 [HomeAssistant Comunity Forum Thread](https://community.home-assistant.io/t/ha-desktop-companion/)
+[Discord](https://discord.com/invite/Kth2GyZMU7)
+
 
 ## Installation
 1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
