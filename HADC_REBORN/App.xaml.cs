@@ -133,6 +133,7 @@ namespace HADC_REBORN
                 return false;
             }
 
+
             try
             {
                 string wsUrl = url.Replace("http", "ws");
@@ -149,6 +150,7 @@ namespace HADC_REBORN
             }
 
             NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
+            log.setSecreets([token, haApiConnector.getSecret(), haApiConnector.getWebhookID()]);
 
             try
             {
@@ -160,6 +162,8 @@ namespace HADC_REBORN
                 log.writeLine("Autostart registration failed" + ex.Message);
                 return false;
             }
+
+            
 
             log.writeLine("Initialization Compleeted");
             return true;
