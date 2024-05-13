@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace HA.Class.Sensors
 {
-    internal class IpLocation
+    internal class Notification 
     {
         public static string getData()
         {

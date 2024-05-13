@@ -141,6 +141,11 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
                 Notification.Spawn(msg_text, msg_title, msg_image, msg_audio);
             }
+
+            if (eventPayloadData.ContainsKey("data") && eventPayloadData["data"].ToObject<JObject>().ContainsKey("key"))
+            {
+                Keyboard.SendKey(eventData["data"].ToObject<JObject>()["key"].ToString());
+            }
         }
 
         private void wsWorkerReciever_DoWork(object? sender, DoWorkEventArgs e)

@@ -12,7 +12,7 @@ namespace HADC_REBORN.Class
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
         public static extern void keybd_event(uint bVk, uint bScan, uint dwFlags, uint dwExtraInfo);
 
-        public void SendKey(string Key)
+        public static void SendKey(string Key)
         {
             if (!App.yamlLoader.getConfigurationData().ContainsKey("keys"))
             {

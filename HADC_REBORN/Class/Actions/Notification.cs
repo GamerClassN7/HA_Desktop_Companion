@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Media;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,10 +46,22 @@ namespace HADC_REBORN.Class.Actions
                     wc.DownloadFile(audioUrl, fileName);
                 }
 
-                //playNotificationAudio(fileName, duration);
+                playAudio(fileName, duration);
             }
 
             toast.Show();
+        }
+
+        private static void playAudio(string fileName, int duration)
+        {
+            new Thread(() =>
+            {
+                SoundPlayer player = new SoundPlayer();
+                player.SoundLocation = fileName;
+                player.Play();
+                Thread.Sleep(duration);
+                player.Stop();
+            }).Start();
         }
     }
 }
