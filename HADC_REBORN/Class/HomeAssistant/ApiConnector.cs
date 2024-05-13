@@ -14,6 +14,7 @@ using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Sockets;
+using System.Security.Policy;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
@@ -26,15 +27,17 @@ namespace HADC_REBORN.Class.HomeAssistant
         private string webhookId = null;
         private string secret = null;
 
+        private HttpClient client = new HttpClient();
+
         //Erro Handling
         private int failedAttempts = 0;
         private List<ApiSensor> sensorsBuffer = new List<ApiSensor>();
 
         public ApiConnector(string apiRootUrl, string apiToken)
         {
-           // if (!testApiUrl(apiRootUrl))
+            // if (!testApiUrl(apiRootUrl))
             //{
-             //   throw new Exception("unnabůle to connect to" + apiRootUrl);
+            //   throw new Exception("unnabůle to connect to" + apiRootUrl);
             //}
 
             url = apiRootUrl.TrimEnd('/');
@@ -71,12 +74,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private HttpContent sendApiRequest(string endpoint)
         {
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(url);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+            inicialize();
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
@@ -95,17 +93,12 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private HttpContent sendApiPOSTRequest(string endpoint, object payload)
         {
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(url);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+            inicialize();
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
             App.log.writeLine("[API] SEND:");
             App.log.writeLine(content);
-            
+
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = client.PostAsync(endpoint, stringContent).Result;
@@ -113,7 +106,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             if (response.IsSuccessStatusCode)
             {
                 App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
-
+                failedAttempts = 0;
                 return response.Content;
                 //usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
@@ -184,6 +177,18 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
 
             return jObject.ToString();
+        }
+
+        private void inicialize(){
+            if (client == null)
+            {
+                return;
+            }
+
+            client = new HttpClient();
+            client.BaseAddress = new Uri(url);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));            
         }
     }
 }

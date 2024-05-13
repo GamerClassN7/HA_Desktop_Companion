@@ -124,7 +124,7 @@ namespace HADC_REBORN
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
-                //apiWrapper.connect();
+                apiWrapper.connect();
                 log.writeLine("RestAPI registered");
             }
             catch (Exception ex)

@@ -24,10 +24,14 @@ namespace HADC_REBORN
     {
         private App app;
         private DispatcherTimer statusTimer = new DispatcherTimer();
+
         public MainWindow()
         {
             InitializeComponent();
             app = (App)App.Current;
+
+            statusTimer.Interval = TimeSpan.FromSeconds(5);
+            statusTimer.Tick += statusTimer_Tick;
         }
 
         private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
@@ -50,10 +54,6 @@ namespace HADC_REBORN
             if (app.initializing == true && app.Start())
             {
                 Close();
-
-                statusTimer.Interval = TimeSpan.FromSeconds(5);
-                statusTimer.Tick += statusTimer_Tick;
-                statusTimer.Start();
             }
 
             app.initializing = false;
@@ -61,23 +61,7 @@ namespace HADC_REBORN
 
         private void statusTimer_Tick(object? sender, EventArgs e)
         {
-            if (app.haApiConnector.connected())
-            {
-                api_status.Foreground = new SolidColorBrush(Colors.Green);
-            }
-            else
-            {
-                api_status.Foreground = new SolidColorBrush(Colors.Red);
-            }
-
-            if (app.haWsConnector.connected())
-            {
-                ws_status.Foreground = new SolidColorBrush(Colors.Green);
-            }
-            else
-            {
-                ws_status.Foreground = new SolidColorBrush(Colors.Red);
-            }
+            updateStatus();
         }
 
         private void save_MouseClick(object sender, RoutedEventArgs e)
@@ -112,11 +96,35 @@ namespace HADC_REBORN
         {
             this.ShowInTaskbar = false;
             Notification.Spawn("App keeps Running in background!");
+            statusTimer.Stop();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Title += (" - " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            updateStatus();
+            statusTimer.Start();
+        }
+
+        private void updateStatus()
+        {
+            if (app.haApiConnector != null && app.haApiConnector.connected() == true)
+            {
+                api_status.Foreground = new SolidColorBrush(Colors.Green);
+            }
+            else
+            {
+                api_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
+
+            if (app.haWsConnector != null && app.haWsConnector.connected() == true)
+            {
+                ws_status.Foreground = new SolidColorBrush(Colors.Green);
+            }
+            else
+            {
+                ws_status.Foreground = new SolidColorBrush(Colors.Red);
+            }
         }
     }
 }
