@@ -104,7 +104,7 @@ namespace HADC_REBORN
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string url = config.AppSettings.Settings["url"].Value;
             string token = config.AppSettings.Settings["token"].Value;
-            log.setSecreets(new string[] { token, url});
+            log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", "")});
 
             yamlLoader = new YamlLoader(configFilePath);
 
@@ -128,7 +128,7 @@ namespace HADC_REBORN
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
                 apiWrapper.connect();
                 log.writeLine("RestAPI registered");
-                log.setSecreets(new string[] { token, url, haApiConnector.getSecret(), haApiConnector.getWebhookID() });
+                log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", ""), haApiConnector.getSecret(), haApiConnector.getWebhookID() });
             }
             catch (Exception ex)
             {
