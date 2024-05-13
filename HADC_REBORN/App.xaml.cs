@@ -23,6 +23,7 @@ using Windows.Devices.Sensors;
 using System.Runtime.ExceptionServices;
 using HADC_REBORN.Class.Actions;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace HADC_REBORN
 {
@@ -103,6 +104,7 @@ namespace HADC_REBORN
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string url = config.AppSettings.Settings["url"].Value;
             string token = config.AppSettings.Settings["token"].Value;
+            log.setSecreets(new string[] { token, url});
 
             yamlLoader = new YamlLoader(configFilePath);
 
@@ -126,13 +128,13 @@ namespace HADC_REBORN
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
                 apiWrapper.connect();
                 log.writeLine("RestAPI registered");
+                log.setSecreets(new string[] { token, url, haApiConnector.getSecret(), haApiConnector.getWebhookID() });
             }
             catch (Exception ex)
             {
                 log.writeLine("Failed to initialize RestAPI" + ex.Message);
                 return false;
             }
-
 
             try
             {
@@ -150,7 +152,6 @@ namespace HADC_REBORN
             }
 
             NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
-            log.setSecreets([token, haApiConnector.getSecret(), haApiConnector.getWebhookID()]);
 
             try
             {
@@ -162,8 +163,6 @@ namespace HADC_REBORN
                 log.writeLine("Autostart registration failed" + ex.Message);
                 return false;
             }
-
-            
 
             log.writeLine("Initialization Compleeted");
             return true;
