@@ -12,6 +12,7 @@ Feel free to contribute any time :)
 [HomeAssistant Comunity Forum](https://community.home-assistant.io/t/ha-desktop-companion/)
 
 [![Join our Discord server!](https://invidget.switchblade.xyz/Kth2GyZMU7)](http://discord.gg/Kth2GyZMU7)
+
 [Discord](https://discord.com/invite/Kth2GyZMU7)
 
 ## Installation
