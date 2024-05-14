@@ -3,15 +3,16 @@
 # HA Desktop Companion - Reborn
 [![Github All Releases](https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg)]()
 
-# Looking for linux version ?
-[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
-
 Why did I make this app ? 
 
 Cause I don't like existing implementations using MQTT and I took inspiration from awesome ESPhome and its native communication protocol to HA and implemented it my own way :)
 
 Feel free to contribute any time :)
 
+### Looking for linux version ?
+[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
+
+### Comunity Contact
 [HomeAssistant Comunity Forum](https://community.home-assistant.io/t/ha-desktop-companion/)
 
 [![Join our Discord server!](https://invidget.switchblade.xyz/Kth2GyZMU7)](http://discord.gg/Kth2GyZMU7)
