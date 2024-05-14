@@ -4,7 +4,7 @@
 [![Github All Releases](https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg)]()
 
 # Looking for linux version ?
-[halinuxcompanion]([https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg](https://github.com/muniter/halinuxcompanion))]
+[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
 
 Why did I make this app ? 
 
