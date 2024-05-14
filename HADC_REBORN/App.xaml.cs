@@ -136,6 +136,12 @@ namespace HADC_REBORN
                 return false;
             }
 
+            if (String.IsNullOrEmpty(haApiConnector.getWebhookID()))
+            {
+                log.writeLine("Failed to get webhook_id from RestAPI");
+                return false;
+            }
+
             try
             {
                 string wsUrl = url.Replace("http", "ws");
