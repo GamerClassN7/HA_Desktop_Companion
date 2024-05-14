@@ -11,6 +11,9 @@ Feel free to contribute any time :)
 
 [HomeAssistant Comunity Forum Thread](https://community.home-assistant.io/t/ha-desktop-companion/)
 
+### Looking for linux version ?
+[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
+
 ## Installation
 1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
 2) Extract the zip file to some folder on your system, 
