@@ -107,14 +107,17 @@ namespace HADC_REBORN.Class.HomeAssistant
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = client.PostAsync(endpoint, stringContent).Result;
+            App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
 
             if (response.IsSuccessStatusCode)
             {
-                App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
                 failedAttempts = 0;
                 return response.Content;
-                //usergrid.ItemsSource = users;
-                //.ReadAsAsync<IEnumerable<Users>>().Result
+            }
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                failedAttempts = 6;
+                throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
             else
             {

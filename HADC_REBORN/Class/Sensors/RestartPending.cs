@@ -35,7 +35,7 @@ namespace HADC_REBORN.Class.Sensors
                 {
                     if (rootKey != null)
                     {
-                        if (!String.IsNullOrEmpty((string) rootKey.GetValue("PendingFileRenameOperations").ToString()))
+                        if (rootKey != null || !String.IsNullOrEmpty((string) rootKey.GetValue("PendingFileRenameOperations").ToString()))
                         {
                             return true;
                         }
