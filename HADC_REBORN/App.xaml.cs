@@ -24,6 +24,11 @@ using System.Runtime.ExceptionServices;
 using HADC_REBORN.Class.Actions;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Windows.UI.ViewManagement;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
+using System.Diagnostics.Eventing.Reader;
+using System.Windows.Media.Imaging;
 
 namespace HADC_REBORN
 {
@@ -67,8 +72,19 @@ namespace HADC_REBORN
             icon.ContextMenuStrip.Items.Add("Send Test Notification", null, OnTestNotification_Click);
             icon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
+            UISettings settings = new UISettings();
+            Theme.setTheme(Theme.isColorLight(settings.GetColorValue(UIColorType.Background)));
+            settings.ColorValuesChanged += theme_Changed;
+
             base.OnStartup(e);
         }
+
+        private void theme_Changed(UISettings sender, object args)
+        {
+            Theme.setTheme(Theme.isColorLight(sender.GetColorValue(UIColorType.Background)));
+        }
+
+     
 
         static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
         {

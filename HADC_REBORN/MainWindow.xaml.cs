@@ -1,14 +1,17 @@
 ﻿using HADC_REBORN.Class.Actions;
+using HADC_REBORN.Class.Helpers;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -34,6 +37,17 @@ namespace HADC_REBORN
             statusTimer.Tick += statusTimer_Tick;
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            var isLightTheme = Theme.isLightTheme();
+            HwndSource source = (HwndSource)PresentationSource.FromVisual(this);
+            Theme.UseImmersiveDarkMode(source.Handle, !isLightTheme);
+            Theme.setTheme(isLightTheme);
+        }
+
+        
         private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
         {
             this.ShowInTaskbar = true;
