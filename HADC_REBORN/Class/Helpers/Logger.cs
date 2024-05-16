@@ -51,10 +51,12 @@ namespace HADC_REBORN.Class.Helpers
 
             string logFileName = "log_" + ((DateTime.Now).ToString("MM_dd_yyyy")) + ".log";
             string logFilePath = Path.Combine(logFolderPath, logFileName);
+
             if (!File.Exists(logFilePath))
             {
                 File.WriteAllText(logFilePath, getLogMessage("Initializing",0), System.Text.Encoding.UTF8);
             }
+
             removeOldLogFiles(logFolderPath);
 
             lastInitializeDateTime = DateTime.Now;
@@ -90,7 +92,7 @@ namespace HADC_REBORN.Class.Helpers
         public void writeLine(string msg, int type = 0)
         {
             int InitilizedBeforeNumberOfDays = (int)(DateTime.Now - lastInitializeDateTime).TotalDays;
-            if (!isInistialized || InitilizedBeforeNumberOfDays >= 1)
+            if (!isInistialized || InitilizedBeforeNumberOfDays > 0)
             {
                 logFilePath = initialize();
             }

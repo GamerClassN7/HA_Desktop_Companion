@@ -72,6 +72,11 @@ namespace HADC_REBORN.Class.HomeAssistant
             secret = apiSecret;
         }
 
+        public Uri getUrl()
+        {
+            return new Uri(url);
+        }
+
         private HttpContent sendApiRequest(string endpoint)
         {
             inicialize();

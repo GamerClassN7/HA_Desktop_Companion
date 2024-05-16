@@ -155,6 +155,7 @@ namespace HADC_REBORN.Class.HomeAssistant
         {
             return (isConnected && (failedAttempts < 5) && socket != null);
         }
+
         private JObject sendAndRecieveAsync(dynamic payloadObj)
         {
             Send(payloadObj).Wait();

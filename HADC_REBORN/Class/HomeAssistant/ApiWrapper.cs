@@ -242,6 +242,13 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         public void connect()
         {
+            int pingLoopIndex = 0;
+            do
+            {
+                App.log.writeLine("Waiting ntil server response!");
+                pingLoopIndex++;
+            } while (!Network.PingHost(apiConnector.getUrl().Host) && pingLoopIndex < 5);
+
             string webhookId = config.AppSettings.Settings["webhook_id"].Value;
             string secret = config.AppSettings.Settings["secret"].Value;
 
