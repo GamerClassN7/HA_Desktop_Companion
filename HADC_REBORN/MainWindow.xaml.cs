@@ -1,5 +1,6 @@
 ﻿using HADC_REBORN.Class.Actions;
 using HADC_REBORN.Class.Helpers;
+using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
@@ -47,7 +48,7 @@ namespace HADC_REBORN
             Theme.setTheme(isLightTheme);
         }
 
-        
+
         private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
         {
             this.ShowInTaskbar = true;
@@ -115,7 +116,7 @@ namespace HADC_REBORN
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Title += (" - " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            Title += (" - " + App.version);
             updateStatus();
             statusTimer.Start();
         }

@@ -54,6 +54,7 @@ namespace HADC_REBORN
         public WsConnector? haWsConnector = null;
         public static WsWrapper? wsWrapper = null;
 
+        public static string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         protected override void OnStartup(StartupEventArgs e)
         {
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
@@ -77,14 +78,14 @@ namespace HADC_REBORN
             settings.ColorValuesChanged += theme_Changed;
 
             base.OnStartup(e);
+
+            log.writeLine("starting version: " + version);
         }
 
         private void theme_Changed(UISettings sender, object args)
         {
             Theme.setTheme(Theme.isColorLight(sender.GetColorValue(UIColorType.Background)));
         }
-
-     
 
         static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
         {
