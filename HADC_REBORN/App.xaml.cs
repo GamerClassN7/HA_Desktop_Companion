@@ -128,7 +128,7 @@ namespace HADC_REBORN
             yamlLoader = new YamlLoader(configFilePath);
         }
 
-        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> getYAMLComfig()
+        public Dictionary<string, dynamic> getYAMLComfig()
         {
             return yamlLoader.getConfigurationData();
         }

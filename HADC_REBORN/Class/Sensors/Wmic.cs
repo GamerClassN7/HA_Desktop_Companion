@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Management;
 using System.Xml.Linq;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace HADC_REBORN.Class.Sensors
 {
@@ -60,23 +61,44 @@ namespace HADC_REBORN.Class.Sensors
             App.log.writeLine("ITERATOR " + wmic_iterator_index);
 
             ManagementScope scope = new ManagementScope(wmic_namespace);
-            scope.Connect();
-            
-            WqlObjectQuery query = new WqlObjectQuery(("SELECT " + wmic_selector + " FROM " + wmic_class));
-
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query, null);
-            int i = 0;
+            try
+            {
+                scope.Connect();
+            }
+            catch (ManagementException e)
+            {
+                App.log.writeLine("ERROR: Unable to connect to namespace " + wmic_namespace + ": " + e.Message);
+                return "";
+            }
 
             try
             {
+
+                // Check if the class exists in the specified namespace
+                var classQuery = new SelectQuery("SELECT * FROM meta_class WHERE __class = '" + wmic_class + "'");
+                using (var classSearcher = new ManagementObjectSearcher(scope, classQuery))
+                {
+                    if (!classSearcher.Get().Cast<ManagementObject>().Any())
+                    {
+                        App.log.writeLine("Wmic Class '" + wmic_class + "' not found in namespace " + wmic_namespace);
+                        scope.Clone();
+                        return "";
+                    }
+                }
+
+                WqlObjectQuery query = new WqlObjectQuery(("SELECT " + wmic_selector + " FROM " + wmic_class));
+
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query, null);
+                int i = 0;
+
                 foreach (ManagementObject queryObj in searcher.Get())
                 {
-                    if (!Equals(queryObj, null) && queryObj != null && queryObj != new ManagementObject() { } && wmic_iterator_index == i)
+                    if (queryObj != null && wmic_iterator_index == i)
                     {
-                        if (queryObj.Properties.Count > 0 && queryObj?[wmic_selector]?.ToString() != null) //TODO: Eary Return
+                        if (queryObj.Properties.Count > 0 && !String.IsNullOrEmpty(queryObj[wmic_selector]?.ToString())) //TODO: Eary Return
                         {
-                            App.log.writeLine("OUTPUT: " + queryObj?[wmic_selector]?.ToString());                          
-                            return queryObj?[wmic_selector]?.ToString();
+                            App.log.writeLine("OUTPUT: " + queryObj[wmic_selector]?.ToString());                          
+                            return queryObj[wmic_selector]?.ToString();
                         }
                     }
 
@@ -89,6 +111,7 @@ namespace HADC_REBORN.Class.Sensors
             }
 
             scope.Clone();
+
             return "";
         }
     }
