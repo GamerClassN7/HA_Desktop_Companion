@@ -1,2 +1,4 @@
 ## Build Command:
-`dotnet publish HA -r win-x64 -c Release /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --output .\ha\bin\net6.0-windows10.0.17763.0\release\publish_self_contained`
+```powersehll
+dotnet publish HADC_REBORN -r win-x64 -c Release --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --output .\HADC_REBORN\bin\Publish\net8.0-windows10.0.17763.0\
+```

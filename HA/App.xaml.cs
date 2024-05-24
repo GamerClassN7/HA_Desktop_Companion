@@ -181,7 +181,7 @@ namespace HA
 
         public bool Start(bool sleepRecover = false)
         {
-            Logger.init(appDir + "/log.log");
+            Logger.init();
 
             string token = "";
             string url = "";

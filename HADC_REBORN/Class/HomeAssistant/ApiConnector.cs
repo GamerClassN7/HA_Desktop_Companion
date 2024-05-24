@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HADC_REBORN.Class.HomeAssistant.Objects;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -10,37 +11,47 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
-using HA.Class.Helpers;
-using HA.Class.HomeAssistant.Objects;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Net.Sockets;
+using System.Security.Policy;
 
-namespace HA.Class.HomeAssistant
+namespace HADC_REBORN.Class.HomeAssistant
 {
-    public class HomeAssistantAPI
+    public class ApiConnector
     {
-        private string url = null;
-        private string token = null;
+        private string url;
+        private string token;
 
         //Data From Registration
         private string webhookId = null;
         private string secret = null;
 
+        private HttpClient client = new HttpClient();
+
         //Erro Handling
-        private bool failed = false;
         private int failedAttempts = 0;
+        private List<ApiSensor> sensorsBuffer = new List<ApiSensor>();
 
+        public ApiConnector(string apiRootUrl, string apiToken)
+        {
+            // if (!testApiUrl(apiRootUrl))
+            //{
+            //   throw new Exception("unnabůle to connect to" + apiRootUrl);
+            //}
 
-        private List<HomeAssistatnSensors> sensorsBuffer = new List<HomeAssistatnSensors>();
+            url = apiRootUrl.TrimEnd('/');
+            token = apiToken;
+        }
 
         public string getWebhookID()
         {
             return webhookId;
         }
 
-        public bool getConectionStatus()
+        public bool connected()
         {
-            if (failedAttempts > 0)
+            if (failedAttempts > 5)
                 return false;
 
             return true;
@@ -59,38 +70,21 @@ namespace HA.Class.HomeAssistant
         public void setSecret(string apiSecret)
         {
             secret = apiSecret;
-
         }
 
-        public HomeAssistantAPI(string apiRootUrl, string apiToken)
+        public Uri getUrl()
         {
-            if (!testApiUrl(apiRootUrl))
-            {
-                throw new Exception("unnabůle to connect to" + apiRootUrl);
-            }
-
-            url = apiRootUrl.TrimEnd('/');
-            token = apiToken;
-        }
-
-        public bool testApiUrl(string apiRootUrl)
-        {
-            return true;
+            return new Uri(url);
         }
 
         private HttpContent sendApiRequest(string endpoint)
         {
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(url);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+            inicialize();
             HttpResponseMessage response = client.GetAsync(endpoint).Result;
             if (response.IsSuccessStatusCode)
             {
-                Logger.write("API RESPONSE CODE <"+ (int)response.StatusCode + "> " + response.StatusCode.ToString());
- 
+                App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
+
                 return response.Content;
                 // usergrid.ItemsSource = users;
                 //.ReadAsAsync<IEnumerable<Users>>().Result
@@ -104,28 +98,26 @@ namespace HA.Class.HomeAssistant
 
         private HttpContent sendApiPOSTRequest(string endpoint, object payload)
         {
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(url);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+            inicialize();
             string content = JsonConvert.SerializeObject(payload, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }).ToString();
 
-            Logger.write(content);
-            //Logger.write(webhookId);
+            App.log.writeLine("[API] SEND:");
+            App.log.writeLine(content);
 
             var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = client.PostAsync(endpoint, stringContent).Result;
+            App.log.writeLine("[API] RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
 
             if (response.IsSuccessStatusCode)
             {
-                Logger.write("API RESPONSE CODE <" + (int)response.StatusCode + "> " + response.StatusCode.ToString());
-
+                failedAttempts = 0;
                 return response.Content;
-                //usergrid.ItemsSource = users;
-                //.ReadAsAsync<IEnumerable<Users>>().Result
+            }
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                failedAttempts = 6;
+                throw new Exception("Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase);
             }
             else
             {
@@ -140,28 +132,19 @@ namespace HA.Class.HomeAssistant
             return jObject["version"].ToString();
         }
 
-        public string RegisterDevice(HomeAssistatnDevice device)
+        public string RegisterDevice(ApiDevice device)
         {
             //https://developers.home-assistant.io/docs/api/native-app-integration/setup
             var jObject = JObject.Parse(sendApiPOSTRequest("/api/mobile_app/registrations", device).ReadAsStringAsync().Result);
-
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-
             webhookId = jObject["webhook_id"].ToString();
-            config.AppSettings.Settings["webhookId"].Value = webhookId;
-
             secret = jObject["secret"].ToString();
-            config.AppSettings.Settings["secret"].Value = secret;
-
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
 
             return jObject.ToString();
         }
 
-        public string RegisterSensorData(HomeAssistatnSensors senzor)
+        public string RegisterSensorData(ApiSensor senzor)
         {
-            HomeAssistantRequest request = new HomeAssistantRequest();
+            ApiRequest request = new ApiRequest();
             request.SetData(senzor);
             request.SetType("register_sensor");
 
@@ -169,7 +152,7 @@ namespace HA.Class.HomeAssistant
             return jObject.ToString();
         }
 
-        public void AddSensorData(HomeAssistatnSensors senzor)
+        public void AddSensorData(ApiSensor senzor)
         {
             sensorsBuffer.Add(senzor);
         }
@@ -178,11 +161,11 @@ namespace HA.Class.HomeAssistant
         {
             if (sensorsBuffer.Count < 1)
             {
-                Logger.write("No data to send!");
+                App.log.writeLine("No data to send!");
                 return "";
             }
 
-            HomeAssistantRequest request = new HomeAssistantRequest();
+            ApiRequest request = new ApiRequest();
 
             request.SetData(sensorsBuffer);
             request.SetType("update_sensor_states");
@@ -198,10 +181,22 @@ namespace HA.Class.HomeAssistant
             catch (Exception ex)
             {
                 failedAttempts++;
-                Logger.write(ex.Message);
+                App.log.writeLine("[API] " + ex.Message);
             }
-            
+
             return jObject.ToString();
+        }
+
+        private void inicialize(){
+            if (client == null)
+            {
+                return;
+            }
+
+            client = new HttpClient();
+            client.BaseAddress = new Uri(url);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));            
         }
     }
 }
