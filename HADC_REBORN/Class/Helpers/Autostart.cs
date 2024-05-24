@@ -13,7 +13,7 @@ namespace HADC_REBORN.Class.Helpers
 #if DEBUG
         private static string appDir = Directory.GetCurrentDirectory();
 #else
-        private static string appDir = AppDomain.CurrentDomain.BaseDirectory();
+        private static string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
 
         public static void register()

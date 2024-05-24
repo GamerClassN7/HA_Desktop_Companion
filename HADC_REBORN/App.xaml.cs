@@ -40,7 +40,7 @@ namespace HADC_REBORN
 #if DEBUG
         private string appDir = Directory.GetCurrentDirectory();
 #else
-        private string appDir = AppDomain.CurrentDomain.BaseDirectory();
+        private string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
 
         public static NotifyIcon? icon = null;

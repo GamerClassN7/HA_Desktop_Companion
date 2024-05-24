@@ -257,10 +257,10 @@ namespace HADC_REBORN.Class.HomeAssistant
             {
 
                 string prefix = "";
-                if (App.yamlLoader.getConfigurationData().ContainsKey("debug"))
+                /*if (App.yamlLoader.getConfigurationData().ContainsKey("debug"))
                 {
                     prefix = "DEBUG_";
-                }
+                }*/
 
                 ApiDevice devideForRegistration = new ApiDevice()
                 {

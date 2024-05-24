@@ -15,7 +15,7 @@ namespace HADC_REBORN.Class.Helpers
 #if DEBUG
         private string appDir = Directory.GetCurrentDirectory();
 #else
-        private string appDir = AppDomain.CurrentDomain.BaseDirectory();
+        private string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
         private string logFilePath;
         private DateTime lastInitializeDateTime;

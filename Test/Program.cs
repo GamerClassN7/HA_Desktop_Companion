@@ -1,11 +1,6 @@
-﻿
-
-using HADC_REBORN.Class.Helpers;
+﻿using HADC_REBORN.Class.Helpers;
 
 YamlLoader yaml = new YamlLoader("./configuration.yaml");
-
-
-
 
 // See https://aka.ms/new-console-template for more information
 Console.WriteLine("Hello, World!");
