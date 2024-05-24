@@ -1,6 +1,6 @@
 > Most of the time new version introduce new bugs so please if you are using working version keep using it until some stable release come out :)
 
-# HA_Desktop_Companion
+# HA Desktop Companion - Reborn
 [![Github All Releases](https://img.shields.io/github/downloads/GamerClassN7/HA_Desktop_Companion/total.svg)]()
 
 Why did I make this app ? 
@@ -9,7 +9,15 @@ Cause I don't like existing implementations using MQTT and I took inspiration fr
 
 Feel free to contribute any time :)
 
-[HomeAssistant Comunity Forum Thread](https://community.home-assistant.io/t/ha-desktop-companion/)
+### Looking for linux version ?
+[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
+
+### Comunity Contact
+[HomeAssistant Comunity Forum](https://community.home-assistant.io/t/ha-desktop-companion/)
+
+[![Join our Discord server!](https://invidget.switchblade.xyz/Kth2GyZMU7)](http://discord.gg/Kth2GyZMU7)
+
+[Discord](https://discord.com/invite/Kth2GyZMU7)
 
 ## Installation
 1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
@@ -48,8 +56,7 @@ App which is using native HA Api to comunicate and report data to HA
 ![image](https://user-images.githubusercontent.com/22167469/184820849-c2932b91-a4ee-4c0d-a220-58ab01444c29.png)
 ![image](https://user-images.githubusercontent.com/22167469/185061529-9868070a-cf1e-4531-877e-443c1b1be1e4.png)
 
-## Future plans:
-- Simple configuration of sensors in YAML
+## Future plans [TODO](./HADC_REBORN/TODO.md):
 - Improved debug mode
 - Encryption
 
@@ -61,6 +68,11 @@ Example Basic Notification:
 Example Inline Image Notification:
 ![image](https://user-images.githubusercontent.com/22167469/231706977-89879e9c-8ac9-43ce-8e66-0fb073925238.png)
 ![image](https://user-images.githubusercontent.com/22167469/231706759-1cc1aaa2-2f08-41ce-8799-adf5a01d22c5.png)
+```json
+{
+  "image":"https://upload.wikimedia.org/wikipedia/commons/9/9f/Old_wikipedia_logo.png"
+}
+```
 
 Example Audio Notification:
 ![image](https://user-images.githubusercontent.com/22167469/231707164-9b0cda16-5257-4edc-b275-8fbcac7dfcbf.png)
@@ -68,7 +80,7 @@ Example Audio Notification:
 Example Emulate Send Key Notification:
 * Require `keys:` in your `configuration.yaml`
 ![image](https://github.com/GamerClassN7/HA_Desktop_Companion/assets/22167469/730fdbf4-4744-48a5-9b19-379978e81ef5)
-* Keys Codes can be found [Here](//https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes) in Colum: __Value__
+* Keys Codes can be found [Here](https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes) in Colum: __Value__
 
 ## Automation Ideas:
 Pause TTS when camera is in use (usefull when working from home) credits: [Hellis81](https://community.home-assistant.io/u/Hellis81)
