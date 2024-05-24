@@ -5,7 +5,9 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HA", "HA\HA.csproj", "{F4675A4D-373E-4C21-B77D-529E88181E5F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HADC_REBORN", "HADC_REBORN\HADC_REBORN.csproj", "{3C0F1F5F-1ADE-4CF2-A5B5-348A41ABCD84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HADC_REBORN", "HADC_REBORN\HADC_REBORN.csproj", "{3C0F1F5F-1ADE-4CF2-A5B5-348A41ABCD84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{8FC5E1BA-0D50-4D77-B6F9-B395ABCD6259}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{3C0F1F5F-1ADE-4CF2-A5B5-348A41ABCD84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C0F1F5F-1ADE-4CF2-A5B5-348A41ABCD84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C0F1F5F-1ADE-4CF2-A5B5-348A41ABCD84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FC5E1BA-0D50-4D77-B6F9-B395ABCD6259}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FC5E1BA-0D50-4D77-B6F9-B395ABCD6259}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FC5E1BA-0D50-4D77-B6F9-B395ABCD6259}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FC5E1BA-0D50-4D77-B6F9-B395ABCD6259}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

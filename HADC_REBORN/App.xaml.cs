@@ -58,12 +58,15 @@ namespace HADC_REBORN
         protected override void OnStartup(StartupEventArgs e)
         {
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
-
+         
             App.icon = new NotifyIcon();
 
             icon.DoubleClick += new EventHandler(icon_Click);
-
             icon.Icon = HADC_REBORN.Resource.ha_icon;
+
+            //Count for icon dakt mode change
+            Theme.setTheme(Theme.isLightTheme());
+           
             icon.Text = System.AppDomain.CurrentDomain.FriendlyName;
             icon.Visible = true;
 
@@ -73,13 +76,40 @@ namespace HADC_REBORN
             icon.ContextMenuStrip.Items.Add("Send Test Notification", null, OnTestNotification_Click);
             icon.ContextMenuStrip.Items.Add("Quit", null, OnQuit_Click);
 
+            base.OnStartup(e);
+
+            //On Color mode 
             UISettings settings = new UISettings();
             Theme.setTheme(Theme.isColorLight(settings.GetColorValue(UIColorType.Background)));
             settings.ColorValuesChanged += theme_Changed;
 
-            base.OnStartup(e);
-
             log.writeLine("starting version: " + version);
+        }
+
+        public void loadYAMLComfig(bool force = false)
+        {
+            if (yamlLoader != null && !force)
+            {
+                return;
+            }
+
+            log.writeLine("looking for 'configuration.yaml'");
+            string configFilePath = Path.Combine(appDir, "configuration.yaml");
+            if (!File.Exists(configFilePath))
+            {
+                log.writeLine("'configuration.yaml' not found creating new one!");
+                File.WriteAllBytes(configFilePath, HADC_REBORN.Resource.configuration);
+            }
+            else
+            {
+                log.writeLine("'configuration.yaml' found!");
+            }
+            yamlLoader = new YamlLoader(configFilePath);
+        }
+
+        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> getYAMLComfig()
+        {
+            return yamlLoader.getConfigurationData();
         }
 
         private void theme_Changed(UISettings sender, object args)
@@ -106,24 +136,13 @@ namespace HADC_REBORN
 
         public bool Start()
         {
-            log.writeLine("looking for 'configuration.yaml'");
-            string configFilePath = Path.Combine(appDir, "configuration.yaml");
-            if (!File.Exists(configFilePath))
-            {
-                log.writeLine("'configuration.yaml' not found creating new one!");
-                File.WriteAllBytes(configFilePath, HADC_REBORN.Resource.configuration);
-            }
-            else
-            {
-                log.writeLine("'configuration.yaml' found!");
-            }
+            loadYAMLComfig(true);
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string url = config.AppSettings.Settings["url"].Value;
             string token = config.AppSettings.Settings["token"].Value;
             log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", "")});
 
-            yamlLoader = new YamlLoader(configFilePath);
 
             if (String.IsNullOrEmpty(url) || String.IsNullOrEmpty(token))
             {

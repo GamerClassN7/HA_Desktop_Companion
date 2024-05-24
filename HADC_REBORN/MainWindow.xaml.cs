@@ -36,6 +36,8 @@ namespace HADC_REBORN
 
             statusTimer.Interval = TimeSpan.FromSeconds(5);
             statusTimer.Tick += statusTimer_Tick;
+
+            app.loadYAMLComfig();
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -117,8 +119,8 @@ namespace HADC_REBORN
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Title += (" - " + App.version);
-
-            if (App.yamlLoader.getConfigurationData().ContainsKey("debug"))
+    
+            if (true)
             {
                 Title += " - DEBUG";
             }
