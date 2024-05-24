@@ -73,6 +73,11 @@ namespace HADC_REBORN
                 File.Delete(f);
             }
 
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.xml"))
+            {
+                File.Delete(f);
+            }
+
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
          
             App.icon = new NotifyIcon();
