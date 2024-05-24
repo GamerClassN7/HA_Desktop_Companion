@@ -57,6 +57,22 @@ namespace HADC_REBORN
         public static string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         protected override void OnStartup(StartupEventArgs e)
         {
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "HA.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "ha.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.log"))
+            {
+                File.Delete(f);
+            }
+
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
          
             App.icon = new NotifyIcon();
@@ -132,7 +148,7 @@ namespace HADC_REBORN
             AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
             AutoUpdater.Synchronous = true;
             AutoUpdater.ShowRemindLaterButton = false;
-            AutoUpdater.ExecutablePath = "HADC_REBORN.exe";
+            AutoUpdater.ClearAppDirectory = false;
         }
 
         public bool Start()
