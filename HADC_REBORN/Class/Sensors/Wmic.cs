@@ -64,15 +64,6 @@ namespace HADC_REBORN.Class.Sensors
             try
             {
                 scope.Connect();
-            }
-            catch (ManagementException e)
-            {
-                App.log.writeLine("ERROR: Unable to connect to namespace " + wmic_namespace + ": " + e.Message);
-                return "";
-            }
-
-            try
-            {
 
                 // Check if the class exists in the specified namespace
                 var classQuery = new SelectQuery("SELECT * FROM meta_class WHERE __class = '" + wmic_class + "'");
@@ -87,7 +78,6 @@ namespace HADC_REBORN.Class.Sensors
                 }
 
                 WqlObjectQuery query = new WqlObjectQuery(("SELECT " + wmic_selector + " FROM " + wmic_class));
-
                 ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query, null);
                 int i = 0;
 
@@ -97,8 +87,11 @@ namespace HADC_REBORN.Class.Sensors
                     {
                         if (queryObj.Properties.Count > 0 && !String.IsNullOrEmpty(queryObj[wmic_selector]?.ToString())) //TODO: Eary Return
                         {
-                            App.log.writeLine("OUTPUT: " + queryObj[wmic_selector]?.ToString());                          
-                            return queryObj[wmic_selector]?.ToString();
+                            App.log.writeLine("OUTPUT: " + queryObj[wmic_selector]?.ToString());     
+                            string wmicValue = queryObj[wmic_selector]?.ToString();
+                            scope.Clone(); 
+                            
+                            return wmicValue
                         }
                     }
 
@@ -110,7 +103,9 @@ namespace HADC_REBORN.Class.Sensors
                 App.log.writeLine("ERROR:  " + e.Message);
             }
 
-            scope.Clone();
+            if (scope.IsConnected) {
+                scope.Clone();
+            }
 
             return "";
         }
