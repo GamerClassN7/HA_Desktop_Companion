@@ -120,10 +120,10 @@ namespace HADC_REBORN
         {
             Title += (" - " + App.version);
     
-            /*if (true)
+            if (app.getYAMLComfig()["debug"])
             {
                 Title += " - DEBUG";
-            }*/
+            }
 
             updateStatus();
             statusTimer.Start();
