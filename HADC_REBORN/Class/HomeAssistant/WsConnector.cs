@@ -31,6 +31,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private Task recieveLoopObject;
         private static DispatcherTimer updatePingTimer = new DispatcherTimer();
+        private int notification_event_subscribe_id = 0;
 
         public WsConnector(string apiUrl, string apiToken, string webhookId)
         {
@@ -68,7 +69,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             subscribeObj.id = interactions;
             subscribeObj.webhook_id = webhook;
             subscribeObj.type = "mobile_app/push_notification_channel";
-
+            
+            notification_event_subscribe_id = interactions;
+            
             JObject subscription = sendAndRecieveAsync(subscribeObj);
             if (bool.Parse(subscription["success"].ToString()) != true)
             {
@@ -132,6 +135,18 @@ namespace HADC_REBORN.Class.HomeAssistant
       
         public void disconnect()
         {
+            //https://developers.home-assistant.io/docs/api/websocket#unsubscribing-from-events
+            WsUnsubscribeRequest unsubscribeObj = new WsUnsubscribeRequest { };
+            unsubscribeObj.id = interactions;
+            unsubscribeObj.type = "unsubscribe_events";
+            unsubscribeObj.subscription = notification_event_subscribe_id;
+            
+            JObject subscription = sendAndRecieveAsync(subscribeObj);
+            if (bool.Parse(subscription["success"].ToString()) != true)
+            {
+                throw new Exception("Unsubscribe Failed !!!");
+            }
+            
             if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
             {
                 if (socket.State == WebSocketState.Aborted)
