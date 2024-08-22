@@ -163,3 +163,5 @@ action:
 mode: single
 ```
 
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=GamerClassN7/HA_Desktop_Companion&type=Timeline)](https://star-history.com/#GamerClassN7/HA_Desktop_Companion&Timeline)]
