@@ -162,6 +162,10 @@ action:
           default: []
 mode: single
 ```
+## Contributors
+<a href="https://github.com/GamerClassN7/FakeDeck/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GamerClassN7/FakeDeck" />
+</a>
 
 ## Star History
 [![Star History Chart](https://api.star-history.com/svg?repos=GamerClassN7/HA_Desktop_Companion&type=Timeline)](https://star-history.com/#GamerClassN7/HA_Desktop_Companion&Timeline)]
