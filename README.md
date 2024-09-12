@@ -163,8 +163,8 @@ action:
 mode: single
 ```
 ## Contributors
-<a href="https://github.com/GamerClassN7/FakeDeck/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=GamerClassN7/FakeDeck" />
+<a href="https://github.com/GamerClassN7/HA_Desktop_Companion/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GamerClassN7/HA_Desktop_Companion" />
 </a>
 
 ## Star History
