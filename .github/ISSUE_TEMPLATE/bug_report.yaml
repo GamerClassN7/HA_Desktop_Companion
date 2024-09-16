@@ -1,0 +1,30 @@
+name: Bug Report
+description: Create a report to help us fix bugs
+labels: [":bug: Bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      placeholder:
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label:  Version
+      placeholder: (eg. 1.0.0.0)
+    validations:
+      required: true
