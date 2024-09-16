@@ -52,11 +52,7 @@ namespace HADC_REBORN.Class.Helpers
             string logFileName = "log_" + ((DateTime.Now).ToString("MM_dd_yyyy")) + ".log";
             string logFilePath = Path.Combine(logFolderPath, logFileName);
 
-            if (!File.Exists(logFilePath))
-            {
-                File.WriteAllText(logFilePath, getLogMessage("Initializing",0), System.Text.Encoding.UTF8);
-            }
-
+            writeLine("Initializing", 0);
             removeOldLogFiles(logFolderPath);
 
             lastInitializeDateTime = DateTime.Now;

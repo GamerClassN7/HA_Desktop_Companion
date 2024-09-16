@@ -150,10 +150,14 @@ namespace HADC_REBORN
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
-            AutoUpdater.Synchronous = true;
-            AutoUpdater.ShowRemindLaterButton = false;
-            AutoUpdater.ClearAppDirectory = false;
+            try
+            {
+                AutoUpdateHelper updater = new AutoUpdateHelper();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         public bool Start()
