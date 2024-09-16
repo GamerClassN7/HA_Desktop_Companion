@@ -15,9 +15,12 @@ Feel free to contribute any time :)
 ### Comunity Contact
 [HomeAssistant Comunity Forum](https://community.home-assistant.io/t/ha-desktop-companion/)
 
-[![Join our Discord server!](https://invidget.switchblade.xyz/Kth2GyZMU7)](http://discord.gg/Kth2GyZMU7)
+[![Join our Discord server!](https://invidget.switchblade.xyz/XJpT3UQ)](http://discord.gg/XJpT3UQ)
 
 [Discord](https://discord.com/invite/Kth2GyZMU7)
+
+### Looking for linux version ?
+[muniter/halinuxcompanion](https://github.com/muniter/halinuxcompanion)
 
 ## Installation
 1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
@@ -159,4 +162,10 @@ action:
           default: []
 mode: single
 ```
+## Contributors
+<a href="https://github.com/GamerClassN7/HA_Desktop_Companion/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GamerClassN7/HA_Desktop_Companion" />
+</a>
 
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=GamerClassN7/HA_Desktop_Companion&type=Timeline)](https://star-history.com/#GamerClassN7/HA_Desktop_Companion&Timeline)]
