@@ -118,3 +118,8 @@ binary_sensor:
     unique_id: restart_pending
     icon: "mdi:restart"
     entity_category: "diagnostic"
+  - platform: locked_state
+    name: Locked State
+    unique_id: locked_state
+    icon: "mdi:account-lock-outline"
+    entity_category: "diagnostic"
