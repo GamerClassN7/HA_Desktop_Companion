@@ -89,9 +89,9 @@ namespace HADC_REBORN.Class.Sensors
                         {
                             App.log.writeLine("OUTPUT: " + queryObj[wmic_selector]?.ToString());     
                             string wmicValue = queryObj[wmic_selector]?.ToString();
-                            scope.Clone(); 
-                            
-                            return wmicValue
+                            scope.Clone();
+
+                            return wmicValue;
                         }
                     }
 
