@@ -140,8 +140,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             unsubscribeObj.id = interactions;
             unsubscribeObj.type = "unsubscribe_events";
             unsubscribeObj.subscription = notification_event_subscribe_id;
-            
-            JObject subscription = sendAndRecieveAsync(subscribeObj);
+     
+            JObject subscription = sendAndRecieveAsync(unsubscribeObj);
+          
             if (bool.Parse(subscription["success"].ToString()) != true)
             {
                 throw new Exception("Unsubscribe Failed !!!");

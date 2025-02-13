@@ -119,8 +119,9 @@ namespace HADC_REBORN
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Title += (" - " + App.version);
-    
-            if (app.getYAMLComfig()["debug"])
+
+            if (app.getYAMLComfig()["debug"] == "true")
+
             {
                 Title += " - DEBUG";
             }
