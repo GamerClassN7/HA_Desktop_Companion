@@ -54,9 +54,8 @@ namespace HADC_REBORN.Class.Helpers
 
             if (!File.Exists(logFilePath))
             {
-                File.WriteAllText(logFilePath, getLogMessage("Initializing",0), System.Text.Encoding.UTF8);
+                File.WriteAllText(logFilePath, getLogMessage("Initializing", 0), System.Text.Encoding.UTF8);
             }
-
             removeOldLogFiles(logFolderPath);
 
             lastInitializeDateTime = DateTime.Now;
