@@ -121,6 +121,7 @@ namespace HADC_REBORN
             Title += (" - " + App.version);
 
             if (app.getYAMLComfig()["debug"] == "true")
+
             {
                 Title += " - DEBUG";
             }
