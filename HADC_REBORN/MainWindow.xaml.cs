@@ -119,11 +119,12 @@ namespace HADC_REBORN
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Title += (" - " + App.version);
-    
-            /*if (true)
+
+            if (app.getYAMLComfig()["debug"] == "true")
+
             {
                 Title += " - DEBUG";
-            }*/
+            }
 
             updateStatus();
             statusTimer.Start();

@@ -57,6 +57,27 @@ namespace HADC_REBORN
         public static string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         protected override void OnStartup(StartupEventArgs e)
         {
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "HA.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "ha.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.log"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.xml"))
+            {
+                File.Delete(f);
+            }
+
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
          
             App.icon = new NotifyIcon();
@@ -107,7 +128,7 @@ namespace HADC_REBORN
             yamlLoader = new YamlLoader(configFilePath);
         }
 
-        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> getYAMLComfig()
+        public Dictionary<string, dynamic> getYAMLComfig()
         {
             return yamlLoader.getConfigurationData();
         }
@@ -129,9 +150,14 @@ namespace HADC_REBORN
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
-            AutoUpdater.Synchronous = true;
-            AutoUpdater.ShowRemindLaterButton = false;
+            try
+            {
+                AutoUpdateHelper updater = new AutoUpdateHelper();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
         public bool Start()

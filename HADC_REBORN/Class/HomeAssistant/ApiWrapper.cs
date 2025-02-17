@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using Windows.Devices.Sensors;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
@@ -104,15 +105,15 @@ namespace HADC_REBORN.Class.HomeAssistant
         {
             Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
 
-            Dictionary<string, object> senzorTypes = getSensorsConfiguration();
+            Dictionary<string, dynamic> senzorTypes = getSensorsConfiguration();
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
-                foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                foreach (var platform in item.Value)
                 {
-                    foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                    foreach (var integration in platform.Value)
                     {
-                        foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                        foreach (var sensorDefinition in integration.Value)
                         {
                             string sensorUniqueId = sensorDefinition["unique_id"];
                             if (senzorsQuerys.ContainsKey(sensorUniqueId))
@@ -154,11 +155,11 @@ namespace HADC_REBORN.Class.HomeAssistant
             foreach (var item in senzorTypes)
             {
                 string senzorType = item.Key;
-                foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                foreach (var platform in senzorTypes[senzorType])
                 {
-                    foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                    foreach (var integration in platform.Value)
                     {
-                        foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                        foreach (var sensorDefinition in integration.Value)
                         {
                             string sensorUniqueId = sensorDefinition["unique_id"];
                             if (!senzorsQuerys.ContainsKey(sensorUniqueId))
@@ -281,15 +282,15 @@ namespace HADC_REBORN.Class.HomeAssistant
                 };
                 apiConnector.RegisterDevice(devideForRegistration);
 
-                Dictionary<string, object> senzorTypes = getSensorsConfiguration();
+                Dictionary<string, dynamic> senzorTypes = getSensorsConfiguration();
                 foreach (var item in senzorTypes)
                 {
                     string senzorType = item.Key;
-                    foreach (var platform in (Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>)senzorTypes[senzorType])
+                    foreach (var platform in item.Value)
                     {
-                        foreach (var integration in (Dictionary<string, List<Dictionary<string, dynamic>>>)platform.Value)
+                        foreach (var integration in platform.Value)
                         {
-                            foreach (var sensorDefinition in (List<Dictionary<string, dynamic>>)integration.Value)
+                            foreach (var sensorDefinition in integration.Value)
                             {
                                 ApiSensor senzor = new ApiSensor();
 
@@ -381,9 +382,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             return variableStr;
         }
 
-        public Dictionary<string, object> getSensorsConfiguration()
+        public Dictionary<string, dynamic> getSensorsConfiguration()
         {
-            Dictionary<string, object> senzorTypes = new Dictionary<string, object>();
+            Dictionary<string, dynamic> senzorTypes = new Dictionary<string, dynamic>();
             senzorTypes.Add("sensor", yamlLoader.getConfigurationData()["sensor"]);
 
             if (yamlLoader.getConfigurationData().ContainsKey("binary_sensor"))
@@ -417,7 +418,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
 
             ParameterInfo[] pars = method.GetParameters();
-            List<object> parameters = new List<object>();
+            List<dynamic> parameters = new List<dynamic>();
 
             foreach (ParameterInfo p in pars)
             {

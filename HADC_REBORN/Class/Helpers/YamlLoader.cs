@@ -11,7 +11,7 @@ namespace HADC_REBORN.Class.Helpers
     public class YamlLoader
     {
         private string configurationFilePath;
-        private Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configurationData;
+        private Dictionary<string, dynamic> configurationData;
 
         public YamlLoader(string configurationFileFullPath)
         {
@@ -35,11 +35,16 @@ namespace HADC_REBORN.Class.Helpers
                 string subSection = "";
                 string category = "";
                 string subArray = "";
-                Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> configurationDataTemp = new Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>>();
+                Dictionary<string, dynamic> configurationDataTemp = new Dictionary<string, dynamic>();
 
                 foreach (string line in text)
                 {
                     string localLine = line;
+
+                    if (line.StartsWith('#'))
+                    {
+                        continue;
+                    }
 
                     if (line.Contains('#') == true)
                     {
@@ -77,10 +82,8 @@ namespace HADC_REBORN.Class.Helpers
                                 subArray = parameter;
                                 continue;
                             }
-                            else
-                            {
-                                subArray = "";
-                            }
+                            subArray = "";
+
                             if (section != "")
                             {
                                 if (!configurationDataTemp.ContainsKey(section))
@@ -120,15 +123,18 @@ namespace HADC_REBORN.Class.Helpers
                                 category = value;
                                 continue;
                             }
-                            else
-                            {
-                                parameter = parameter.Replace("- ", "");
-                            }
+                            parameter = parameter.Replace("- ", "");
+                        }
+
+                        if (String.IsNullOrEmpty(section))
+                        {
+                            configurationDataTemp[parameter] = value.Replace("\"", "");
+                            continue;
                         }
 
                         if (!configurationDataTemp.ContainsKey(section))
                         {
-                            configurationDataTemp[section] = new Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>();
+                            configurationDataTemp[section] = new Dictionary<string, dynamic>();
                         }
 
                         if (!configurationDataTemp[section].ContainsKey(subSection))
@@ -170,7 +176,7 @@ namespace HADC_REBORN.Class.Helpers
             }
         }
 
-        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>>  getConfigurationData()
+        public Dictionary<string, dynamic> getConfigurationData()
         {
             return configurationData;
         }
