@@ -27,7 +27,7 @@ namespace HADC_REBORN.Class.HomeAssistant
         private string webhookId = null;
         private string secret = null;
 
-        private HttpClient client = new HttpClient();
+        private HttpClient? client = null;
 
         //Erro Handling
         private int failedAttempts = 0;
@@ -188,7 +188,7 @@ namespace HADC_REBORN.Class.HomeAssistant
         }
 
         private void inicialize(){
-            if (client == null)
+            if (client != null)
             {
                 return;
             }

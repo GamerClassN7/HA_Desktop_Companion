@@ -28,6 +28,10 @@ namespace HADC_REBORN.Class.Helpers
             return ((5 * clr.G) + (2 * clr.R) + clr.B) > (8 * 128);
         }
 
+        [DllImport("gdi32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DeleteObject(IntPtr hObject);
+
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
@@ -68,7 +72,16 @@ namespace HADC_REBORN.Class.Helpers
             MainWindow main = App.Current.Windows.OfType<MainWindow>().FirstOrDefault();
             if (main != null)
             {
-                main.Icon = Imaging.CreateBitmapSourceFromHBitmap(iconResource.ToBitmap().GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                using Bitmap bitmap = iconResource.ToBitmap();
+                IntPtr hBitmap = bitmap.GetHbitmap();
+                try
+                {
+                    main.Icon = Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+                finally
+                {
+                    DeleteObject(hBitmap);
+                }
             }
         }
     }

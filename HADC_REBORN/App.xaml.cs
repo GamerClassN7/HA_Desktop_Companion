@@ -276,7 +276,15 @@ namespace HADC_REBORN
 
         private void OnHomeAssistant_Click(object? sender, EventArgs e)
         {
-            Process.Start("explorer", "https://google.com");
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            string url = config.AppSettings.Settings["url"].Value;
+            if (String.IsNullOrEmpty(url))
+            {
+                log.writeLine("Home Assistant URL not configured!");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         private void OnQuit_Click(object? sender, EventArgs e)

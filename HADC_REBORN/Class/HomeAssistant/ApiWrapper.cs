@@ -39,6 +39,12 @@ namespace HADC_REBORN.Class.HomeAssistant
             yamlLoader = yamlLoaderDependency;
             apiConnector = apiConnectorDependency;
             config = configDependency;
+
+            // Handlers are attached only once, otherwise every restart would multiply them
+            apiWorker.DoWork += apiWorker_DoWork;
+
+            apiTimer.Interval = TimeSpan.FromSeconds(5);
+            apiTimer.Tick += updateSensors;
         }
 
         private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
@@ -56,8 +62,14 @@ namespace HADC_REBORN.Class.HomeAssistant
             if (sensorDefinition.ContainsKey("value_map"))
             {
                 string[] valueMap = sensorDefinition["value_map"].Split("|");
-                sensorData = valueMap[(Int32.Parse((sensorData).ToString()))];
-                //Logger.write(JsonConvert.SerializeObject(valueMap));
+                if (Int32.TryParse(sensorData, out int valueMapIndex) && valueMapIndex >= 0 && valueMapIndex < valueMap.Length)
+                {
+                    sensorData = valueMap[valueMapIndex];
+                }
+                else
+                {
+                    App.log.writeLine("Value '" + sensorData + "' out of value_map range for " + (string)sensorDefinition["unique_id"]);
+                }
             }
 
             if (sensorDefinition.ContainsKey("filters"))
@@ -137,7 +149,14 @@ namespace HADC_REBORN.Class.HomeAssistant
                             //   continue;
                             //}
 
-                            senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
+                            try
+                            {
+                                senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
+                            }
+                            catch (Exception ex)
+                            {
+                                App.log.writeLine("Failed to query sensor " + sensorUniqueId + ": " + ex.Message);
+                            }
                         }
                     }
                 }
@@ -145,7 +164,15 @@ namespace HADC_REBORN.Class.HomeAssistant
 
             //TODO, Create Sensor list to iterate ower when building request to server
 
-            await Task.WhenAll(senzorsQuerys.Values.ToArray());
+            try
+            {
+                await Task.WhenAll(senzorsQuerys.Values.ToArray());
+            }
+            catch (Exception)
+            {
+                // Failed sensors are logged and skipped individually below, so the rest still get sent
+            }
+
             if (senzorsQuerys.Count < 1)
             {
                 App.log.writeLine("no senzor scheduled!");
@@ -167,8 +194,23 @@ namespace HADC_REBORN.Class.HomeAssistant
                                 continue;
                             }
 
-                            string sensorData = senzorsQuerys[sensorUniqueId].Result;
-                            sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorData);
+                            Task<string> sensorQuery = senzorsQuerys[sensorUniqueId];
+                            if (!sensorQuery.IsCompletedSuccessfully)
+                            {
+                                App.log.writeLine("Failed to query sensor " + sensorUniqueId + ": " + sensorQuery.Exception?.GetBaseException().Message);
+                                continue;
+                            }
+
+                            string sensorData;
+                            try
+                            {
+                                sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorQuery.Result);
+                            }
+                            catch (Exception ex)
+                            {
+                                App.log.writeLine("Failed to apply filters to sensor " + sensorUniqueId + ": " + ex.Message);
+                                continue;
+                            }
                             App.log.writeLine("Filtered Value " + sensorUniqueId + " - " + sensorData);
 
                             if (string.IsNullOrEmpty(sensorData))
@@ -189,10 +231,10 @@ namespace HADC_REBORN.Class.HomeAssistant
                             ApiSensor senzor = new ApiSensor();
 
                             senzor.unique_id = sensorDefinition["unique_id"];
-                            senzor.icon = sensorDefinition["icon"];
+                            if (sensorDefinition.ContainsKey("icon"))
+                                senzor.icon = sensorDefinition["icon"];
                             senzor.state = convertToType(sensorData);
                             senzor.type = senzorType;
-                            senzor.unique_id = sensorDefinition["unique_id"];
 
                             apiConnector.AddSensorData(senzor);
 
@@ -314,7 +356,7 @@ namespace HADC_REBORN.Class.HomeAssistant
                                     senzor.entity_category = sensorDefinition["entity_category"];
 
                                 if (sensorDefinition.ContainsKey("disabled"))
-                                    senzor.device_class = sensorDefinition["disabled"];
+                                    senzor.disabled = bool.TryParse((string)sensorDefinition["disabled"], out bool disabled) && disabled;
 
                                 if (senzorType == "binary_sensor")
                                     senzor.state = false;
@@ -337,16 +379,20 @@ namespace HADC_REBORN.Class.HomeAssistant
             apiConnector.setWebhookID(webhookId);
             apiConnector.setSecret(secret);
 
-            apiWorker.DoWork += apiWorker_DoWork;
-
-            apiTimer.Interval = TimeSpan.FromSeconds(5);
-            apiTimer.Tick += updateSensors;
             apiTimer.Start();
         }
 
         private void apiWorker_DoWork(object? sender, DoWorkEventArgs e)
         {
-            queryAndSendSenzorData();
+            // Block until done, so IsBusy really prevents overlapping runs
+            try
+            {
+                queryAndSendSenzorData().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                App.log.writeLine("[API] Sensor update failed: " + ex.Message);
+            }
         }
 
         private async void updateSensors(object? sender, EventArgs e)

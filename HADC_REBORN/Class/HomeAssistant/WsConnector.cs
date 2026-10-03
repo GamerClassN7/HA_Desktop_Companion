@@ -43,7 +43,7 @@ namespace HADC_REBORN.Class.HomeAssistant
         public void register()
         {
             Uri wsAddress = new Uri(url + "/api/websocket");
-            ManualResetEvent exitEvent = new ManualResetEvent(false);
+            isConnected = false;
             socket = new ClientWebSocket();
             socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
@@ -135,36 +135,49 @@ namespace HADC_REBORN.Class.HomeAssistant
       
         public void disconnect()
         {
-            //https://developers.home-assistant.io/docs/api/websocket#unsubscribing-from-events
-            WsUnsubscribeRequest unsubscribeObj = new WsUnsubscribeRequest { };
-            unsubscribeObj.id = interactions;
-            unsubscribeObj.type = "unsubscribe_events";
-            unsubscribeObj.subscription = notification_event_subscribe_id;
-     
-            JObject subscription = sendAndRecieveAsync(unsubscribeObj);
-          
-            if (bool.Parse(subscription["success"].ToString()) != true)
+            isConnected = false;
+
+            if (socket == null)
             {
-                throw new Exception("Unsubscribe Failed !!!");
+                return;
             }
-            
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
+
+            try
             {
-                if (socket.State == WebSocketState.Aborted)
+                if (socket.State == WebSocketState.Open)
                 {
-                    socket.Abort();
+                    //https://developers.home-assistant.io/docs/api/websocket#unsubscribing-from-events
+                    // Send only, the response is consumed by the running receive loop
+                    WsUnsubscribeRequest unsubscribeObj = new WsUnsubscribeRequest { };
+                    unsubscribeObj.id = interactions;
+                    unsubscribeObj.type = "unsubscribe_events";
+                    unsubscribeObj.subscription = notification_event_subscribe_id;
+                    Send(unsubscribeObj).Wait(TimeSpan.FromSeconds(2));
+                }
+            }
+            catch (Exception e)
+            {
+                App.log.writeLine("[WS] Unsubscribe failed: " + e.Message);
+            }
+
+            try
+            {
+                if (socket.State == WebSocketState.Open)
+                {
+                    socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).Wait(TimeSpan.FromSeconds(2));
                 }
                 else
                 {
-                    socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                }
-
-                if (socket != null)
-                {
-                    socket.Dispose();
-                    socket = null;
+                    socket.Abort();
                 }
             }
+            catch (Exception e)
+            {
+                App.log.writeLine("[WS] Close failed: " + e.Message);
+            }
+
+            socket.Dispose();
+            socket = null;
         }
 
         public bool connected()
