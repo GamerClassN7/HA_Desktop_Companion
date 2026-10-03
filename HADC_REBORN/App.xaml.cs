@@ -78,6 +78,8 @@ namespace HADC_REBORN
                 File.Delete(f);
             }
 
+            ensureAppSettings();
+
             AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
          
             App.icon = new NotifyIcon();
@@ -105,6 +107,34 @@ namespace HADC_REBORN
             settings.ColorValuesChanged += theme_Changed;
 
             log.writeLine("starting version: " + version);
+        }
+
+        // Release zips don't contain HADC_REBORN.dll.config so updates keep the user's settings,
+        // create missing keys (e.g. on a fresh install) so the rest of the app can rely on them
+        private static void ensureAppSettings()
+        {
+            try
+            {
+                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                bool changed = false;
+                foreach (string key in new string[] { "url", "token", "webhook_id", "remote_url", "cloud_url", "secret" })
+                {
+                    if (config.AppSettings.Settings[key] == null)
+                    {
+                        config.AppSettings.Settings.Add(key, "");
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    config.Save(ConfigurationSaveMode.Modified);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.writeLine("Failed to initialize app settings: " + ex.Message);
+            }
         }
 
         public void loadYAMLComfig(bool force = false)

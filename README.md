@@ -24,8 +24,8 @@ Feel free to contribute any time :)
 
 ## Installation
 1) Download latest release [HERE](https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest)
-2) Extract the zip file to some folder on your system, 
-3) Run `HA.exe`
+2) Extract `HA_Self_Contained.zip` to some folder on your system, 
+3) Run `HADC_REBORN.exe`
 4) Fill in "URL" & "API Token"
 5) Click "Save"
 

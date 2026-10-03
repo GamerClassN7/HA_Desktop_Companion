@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+env:
+  PROJECT_PATH: HADC_REBORN/HADC_REBORN.csproj
+  PUBLISH_DIR: publish
+  ZIP_NAME: HA_Self_Contained.zip
+  EXECUTABLE: HADC_REBORN.exe
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $raw = $tag.TrimStart('v')
+          $numeric = ($raw -split '-')[0]
+          $parts = @($numeric.Split('.'))
+          if ($parts.Count -gt 4 -or ($parts | Where-Object { $_ -notmatch '^\d+$' })) {
+            throw "Tag '$tag' is not a valid version (expected e.g. 1.0.0.5 or v1.0.0.5-dev)"
+          }
+          while ($parts.Count -lt 4) { $parts += '0' }
+          $version = $parts -join '.'
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$(($raw -ne $numeric).ToString().ToLower())" >> $env:GITHUB_OUTPUT
+
+      - name: Publish
+        shell: pwsh
+        run: >
+          dotnet publish ${{ env.PROJECT_PATH }}
+          -c Release -r win-x64 --self-contained
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:Version=${{ steps.version.outputs.version }}
+          -p:AssemblyVersion=${{ steps.version.outputs.version }}
+          -p:FileVersion=${{ steps.version.outputs.version }}
+          -o ${{ env.PUBLISH_DIR }}
+
+      - name: Create zip
+        shell: pwsh
+        run: |
+          # Debug symbols are not needed and the user's settings (url, token, ...) live in
+          # HADC_REBORN.dll.config, which must not be overwritten when the updater extracts the zip.
+          # The app creates the file with empty values on first start.
+          Remove-Item "${{ env.PUBLISH_DIR }}/*.pdb", "${{ env.PUBLISH_DIR }}/*.dll.config" -ErrorAction SilentlyContinue
+          if (-not (Test-Path "${{ env.PUBLISH_DIR }}/${{ env.EXECUTABLE }}")) { throw "${{ env.EXECUTABLE }} not found in publish output" }
+          Compress-Archive -Path "${{ env.PUBLISH_DIR }}/*" -DestinationPath "${{ env.ZIP_NAME }}"
+
+      - name: Generate meta.xml
+        shell: pwsh
+        run: |
+          $repo = "https://github.com/${{ github.repository }}"
+          $tag = "${{ github.ref_name }}"
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <item>
+          	<version>${{ steps.version.outputs.version }}</version>
+          	<url>$repo/releases/download/$tag/${{ env.ZIP_NAME }}</url>
+          	<changelog>$repo/releases/tag/$tag</changelog>
+          	<mandatory>false</mandatory>
+          	<executable>${{ env.EXECUTABLE }}</executable>
+          </item>
+          "@ | Set-Content -Path meta.xml -Encoding utf8
+          Get-Content meta.xml
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            ${{ env.ZIP_NAME }}
+            meta.xml
