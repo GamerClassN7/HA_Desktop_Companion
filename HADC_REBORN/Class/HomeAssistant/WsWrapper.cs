@@ -29,6 +29,7 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         private DispatcherTimer updatePingTimer = new DispatcherTimer();
         private DispatcherTimer reconnectTimer = new DispatcherTimer();
+        private volatile bool stopped = false;
 
         public WsWrapper(YamlLoader yamlLoaderDependency, WsConnector wsConnectorDependency)
         {
@@ -50,6 +51,8 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         public void Connect()
         {
+            stopped = false;
+
             if (!wsConnector.connected())
             {
                 if (wsWorkerRecieverer.IsBusy)
@@ -70,30 +73,47 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
         {
             Disconnect();
 
+            if (stopped)
+            {
+                return;
+            }
+
             App.log.writeLine("[WS] Connection lost, reconnecting in " + reconnectTimer.Interval.TotalSeconds + "s");
             reconnectTimer.Start();
         }
 
-        private void Reconnect_Tick(object? sender, EventArgs e)
+        private async void Reconnect_Tick(object? sender, EventArgs e)
         {
             reconnectTimer.Stop();
 
-            if (wsConnector.connected())
+            if (stopped || wsConnector.connected())
             {
                 return;
             }
 
             try
             {
-                Connect();
+                // Connecting blocks until the server answers, keep it off the UI thread
+                await Task.Run(Connect);
                 App.log.writeLine("[WS] Reconnected");
             }
             catch (Exception ex)
             {
                 App.log.writeLine("[WS] Reconnect failed: " + ex.Message);
                 wsConnector.disconnect();
-                reconnectTimer.Start();
+                if (!stopped)
+                {
+                    reconnectTimer.Start();
+                }
             }
+        }
+
+        // Disconnect for good, e.g. before connecting with new settings
+        public void Stop()
+        {
+            stopped = true;
+            reconnectTimer.Stop();
+            Disconnect();
         }
 
         public void Disconnect()

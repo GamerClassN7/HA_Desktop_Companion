@@ -1,110 +1,77 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Management;
-using System.Xml.Linq;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace HADC_REBORN.Class.Sensors
 {
     class Wmic
     {
-        private static Dictionary<string,string[]> wmicClasses = new Dictionary<string, string[]>() { };
+        // Connecting to a namespace and checking a class is expensive, sensors are queried every few seconds
+        private static ConcurrentDictionary<string, ManagementScope> scopes = new ConcurrentDictionary<string, ManagementScope>(StringComparer.OrdinalIgnoreCase);
+        private static ConcurrentDictionary<string, bool> existingClasses = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-        private static string[] getClasses(string wmic_namespace = @"root\\wmi")
+        private static ManagementScope getScope(string wmic_namespace)
         {
-            if (!Wmic.wmicClasses.ContainsKey(wmic_namespace))
+            return scopes.GetOrAdd(wmic_namespace, ns =>
             {
-                Dictionary<string, string[]> class_list = Wmic.wmicClasses;
-                class_list[wmic_namespace] = new string[] { };
-                Wmic.wmicClasses = class_list;
-            }
-
-            if (Wmic.wmicClasses[wmic_namespace].Length > 0)
-            {
-                return Wmic.wmicClasses[wmic_namespace];
-            }
-
-            ManagementClass nsClass = new ManagementClass(new ManagementScope(wmic_namespace), new ManagementPath("__namespace"), null);
-            string[] classList = new string[] { };
-
-            foreach (ManagementObject ns in nsClass.GetInstances())
-            {
-                if (ns["Name"] == null)
-                {
-                    continue;
-                }
-
-                Array.Resize(ref classList, classList.Length + 1);
-                classList[(classList.Length - 1)] = (string) ns["Name"];
-            }
-
-            Wmic.wmicClasses[wmic_namespace] = classList;
-            App.log.writeLine(String.Join(",", classList));
-
-            return Wmic.wmicClasses[wmic_namespace];
+                ManagementScope scope = new ManagementScope(ns);
+                scope.Connect();
+                return scope;
+            });
         }
 
-        public static string GetValue(string wmic_class, string wmic_selector, string wmic_namespace = @"root\\wmi", int wmic_iterator_index = 0)
+        private static bool classExists(ManagementScope scope, string wmic_namespace, string wmic_class)
         {
-            //string result = getClasses(wmic_namespace).FirstOrDefault(x => x == wmic_class);
-            //if (result == null)
-            //{
-             //   App.log.writeLine("Wmic Class '" + wmic_class + "' not found! in namespace " + wmic_namespace);
-           //     return "";
-            //}
+            return existingClasses.GetOrAdd(wmic_namespace + ":" + wmic_class, _ =>
+            {
+                SelectQuery classQuery = new SelectQuery("SELECT * FROM meta_class WHERE __class = '" + wmic_class + "'");
+                using ManagementObjectSearcher classSearcher = new ManagementObjectSearcher(scope, classQuery);
+                using ManagementObjectCollection classes = classSearcher.Get();
+                return classes.Count > 0;
+            });
+        }
 
-            App.log.writeLine("NAMESPACE " + wmic_namespace);
-            App.log.writeLine("SELECT " + wmic_selector + " FROM " + wmic_class + "[" + wmic_iterator_index + "]");
-            App.log.writeLine("ITERATOR " + wmic_iterator_index);
-
-            ManagementScope scope = new ManagementScope(wmic_namespace);
+        public static string GetValue(string wmic_class, string wmic_selector, string wmic_namespace = @"root\wmi", int wmic_iterator_index = 0)
+        {
             try
             {
-                scope.Connect();
+                ManagementScope scope = getScope(wmic_namespace);
 
-                // Check if the class exists in the specified namespace
-                var classQuery = new SelectQuery("SELECT * FROM meta_class WHERE __class = '" + wmic_class + "'");
-                using (var classSearcher = new ManagementObjectSearcher(scope, classQuery))
+                if (!classExists(scope, wmic_namespace, wmic_class))
                 {
-                    if (!classSearcher.Get().Cast<ManagementObject>().Any())
-                    {
-                        App.log.writeLine("Wmic Class '" + wmic_class + "' not found in namespace " + wmic_namespace);
-                        scope.Clone();
-                        return "";
-                    }
+                    App.log.writeLine("Wmic Class '" + wmic_class + "' not found in namespace " + wmic_namespace);
+                    return "";
                 }
 
-                WqlObjectQuery query = new WqlObjectQuery(("SELECT " + wmic_selector + " FROM " + wmic_class));
-                ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query, null);
+                WqlObjectQuery query = new WqlObjectQuery("SELECT " + wmic_selector + " FROM " + wmic_class);
+                using ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query, null);
+                using ManagementObjectCollection results = searcher.Get();
+
                 int i = 0;
-
-                foreach (ManagementObject queryObj in searcher.Get())
+                foreach (ManagementBaseObject queryObj in results)
                 {
-                    if (queryObj != null && wmic_iterator_index == i)
+                    using (queryObj)
                     {
-                        if (queryObj.Properties.Count > 0 && !String.IsNullOrEmpty(queryObj[wmic_selector]?.ToString())) //TODO: Eary Return
+                        if (wmic_iterator_index == i)
                         {
-                            App.log.writeLine("OUTPUT: " + queryObj[wmic_selector]?.ToString());     
-                            string wmicValue = queryObj[wmic_selector]?.ToString();
-                            scope.Clone();
-
-                            return wmicValue;
+                            string? wmicValue = queryObj[wmic_selector]?.ToString();
+                            App.log.writeLine("WMIC " + wmic_namespace + " SELECT " + wmic_selector + " FROM " + wmic_class + "[" + wmic_iterator_index + "] = " + wmicValue);
+                            return wmicValue ?? "";
                         }
                     }
 
                     i++;
                 }
             }
-            catch (ManagementException e)
+            catch (Exception e) when (e is ManagementException || e is System.Runtime.InteropServices.COMException || e is UnauthorizedAccessException)
             {
-                App.log.writeLine("ERROR:  " + e.Message);
-            }
-
-            if (scope.IsConnected) {
-                scope.Clone();
+                App.log.writeLine("WMIC " + wmic_namespace + " SELECT " + wmic_selector + " FROM " + wmic_class + " ERROR: " + e.Message);
+                // Drop the cached connection, it may be broken (e.g. after the WMI service restarted)
+                scopes.TryRemove(wmic_namespace, out _);
             }
 
             return "";

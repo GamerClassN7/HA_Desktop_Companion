@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Printing;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,26 +11,27 @@ namespace HADC_REBORN.Class.Helpers
 {
     public class Logger
     {
-        private static bool isInistialized = false;
+        private const int keepLogDays = 3;
+        private static readonly object writeLock = new object();
+
 #if DEBUG
         private string appDir = Directory.GetCurrentDirectory();
 #else
         private string appDir = AppDomain.CurrentDomain.BaseDirectory;
 #endif
         private string logFilePath;
-        private DateTime lastInitializeDateTime;
+        private DateTime logFileDate;
         private static string[] secreetsStrings = new string[] { };
 
         public Logger() {
-            logFilePath = initialize();
+            lock (writeLock)
+            {
+                logFilePath = initialize();
+            }
         }
 
         public void setSecreets(string[] strings)
         {
-            if (!isInistialized)
-            {
-                logFilePath = initialize();
-            }
             secreetsStrings = strings.Where(x => !string.IsNullOrEmpty(x)).ToArray();
         }
 
@@ -49,7 +50,8 @@ namespace HADC_REBORN.Class.Helpers
                 Directory.CreateDirectory(logFolderPath);
             }
 
-            string logFileName = "log_" + ((DateTime.Now).ToString("MM_dd_yyyy")) + ".log";
+            logFileDate = DateTime.Today;
+            string logFileName = "log_" + logFileDate.ToString("MM_dd_yyyy") + ".log";
             string logFilePath = Path.Combine(logFolderPath, logFileName);
 
             if (!File.Exists(logFilePath))
@@ -58,31 +60,35 @@ namespace HADC_REBORN.Class.Helpers
             }
             removeOldLogFiles(logFolderPath);
 
-            lastInitializeDateTime = DateTime.Now;
-            isInistialized = true;
-
             return logFilePath;
         }
 
-        private void removeOldLogFiles(string rootLogFolderPath, int daysBack = -3)
+        private void removeOldLogFiles(string rootLogFolderPath)
         {
-            string logFileName = "log_"+((DateTime.Now).AddDays(daysBack).ToString("MM_dd_yyyy"))+".log";
-            string LogFileToDelete = Path.Combine(rootLogFolderPath, logFileName);
-            if (File.Exists(LogFileToDelete))
+            DateTime oldestKept = DateTime.Today.AddDays(-keepLogDays);
+            foreach (string file in Directory.EnumerateFiles(rootLogFolderPath, "log_*.log"))
             {
-                File.Delete(LogFileToDelete);
+                string datePart = Path.GetFileNameWithoutExtension(file).Substring("log_".Length);
+                if (DateTime.TryParseExact(datePart, "MM_dd_yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fileDate) && fileDate <= oldestKept)
+                {
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (IOException)
+                    {
+                        // File is in use, try again next day
+                    }
+                }
             }
         }
 
         private string getLogMessage(string text, int type = 0)
         {
             string parsedText = text;
-            if (secreetsStrings.Length > 0)
+            foreach (string secret in secreetsStrings)
             {
-                foreach (string secret in secreetsStrings)
-                {
-                    parsedText = parsedText.Replace(secret, "***SECRET****");
-                }
+                parsedText = parsedText.Replace(secret, "***SECRET****");
             }
 
             return DateTime.Now.ToString("[MM/dd/yyyy-HH:mm.ss]") + "[" + type + "]" + parsedText + "\n";
@@ -90,19 +96,27 @@ namespace HADC_REBORN.Class.Helpers
 
         public void writeLine(string msg, int type = 0)
         {
-            int InitilizedBeforeNumberOfDays = (int)(DateTime.Now - lastInitializeDateTime).TotalDays;
-            if (!isInistialized || InitilizedBeforeNumberOfDays > 0)
-            {
-                logFilePath = initialize();
-            }
-
             Debug.WriteLine(msg);
 
-            FileStream fileStream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-            StreamWriter streamWriter = new StreamWriter(fileStream);
-            streamWriter.Write(getLogMessage(msg, type));
-            streamWriter.Dispose();
-            fileStream.Dispose();
+            // Called from the UI thread, background workers and sensor tasks at the same time
+            lock (writeLock)
+            {
+                try
+                {
+                    if (logFileDate != DateTime.Today)
+                    {
+                        logFilePath = initialize();
+                    }
+
+                    using FileStream fileStream = new FileStream(logFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                    using StreamWriter streamWriter = new StreamWriter(fileStream);
+                    streamWriter.Write(getLogMessage(msg, type));
+                }
+                catch (IOException e)
+                {
+                    Debug.WriteLine("Failed to write log: " + e.Message);
+                }
+            }
         }
     }
 }
