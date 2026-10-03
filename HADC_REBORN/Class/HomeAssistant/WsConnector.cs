@@ -41,6 +41,12 @@ namespace HADC_REBORN.Class.HomeAssistant
             webhook = webhookId;
         }
 
+        // Used for the next register() call
+        public void setWebhookID(string webhookId)
+        {
+            webhook = webhookId;
+        }
+
         public void register()
         {
             Uri wsAddress = new Uri(url + "/api/websocket");

@@ -43,16 +43,35 @@ Feel free to contribute any time :)
 - wmic (You can integrate any wmix query syou want :))
 ```yaml
 - platform: wmic
-  wmic_path: Win32_Battery
+  wmic_class: Win32_Battery
   wmic_selector: BatteryStatus
-  wmic_namespace: \\root\CIMV2
+  wmic_namespace: root\CIMV2
   value_map: "Discharging|On AC|Fully Charged|Low|Critical|Charging|Charging and High|Charging and Low|Undefined|Partially Charged"
   name: Battery State
   unique_id: battery_state
   icon: "mdi:battery-minus"
   entity_category: "diagnostic"
   device_class: battery
-``` 
+```
+
+### Sensor platforms
+Sensors are defined in `configuration.yaml` next to the app under `sensor:` or `binary_sensor:`.
+
+| platform | required options | optional options |
+|---|---|---|
+| `wmic` | `wmic_class`, `wmic_selector` | `wmic_namespace` (default `root\wmi`), `wmic_iterator_index` |
+| `network_interface` (alias `wifi`) | `selector` (`State`, `SSID`, `BSSID`, `Signal`, `Profile`, `Receive rate`, `Transmit rate`, `Description`) | `deselector` |
+| `consent_store` | `consent_category` (`webcam`, `microphone`, `location`, ...) | |
+| `ping` | `host` | |
+| `current_window`, `uptime`, `restart_pending`, `locked_state` | | |
+
+Every sensor needs `platform`, `name` and `unique_id`. Optional for all: `icon`, `device_class`, `unit_of_measurement`,
+`state_class`, `entity_category`, `disabled`, `update_interval` (seconds), `accuracy_decimals`, `value_map` and
+`filters` (`multiply`, `divide`, `deduct`, `add`, applied in the given order).
+
+A sensor with an invalid definition is skipped and reported in a notification and in the log, the other sensors keep working.
+Sensors added to `configuration.yaml` are registered in Home Assistant on the next start.
+
 App which is using native HA Api to comunicate and report data to HA
 
 ## Screenshots

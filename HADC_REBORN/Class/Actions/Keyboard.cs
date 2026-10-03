@@ -14,7 +14,7 @@ namespace HADC_REBORN.Class
 
         public static void SendKey(string Key)
         {
-            if (!App.yamlLoader.getConfigurationData().ContainsKey("keys"))
+            if (App.yamlLoader?.getConfigurationData().Keys != true)
             {
                 return;
             }

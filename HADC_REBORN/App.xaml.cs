@@ -1,4 +1,5 @@
-﻿using HADC_REBORN.Class.Helpers;
+﻿using HADC_REBORN.Class.Config;
+using HADC_REBORN.Class.Helpers;
 using System.Configuration;
 using System.Data;
 using System.Windows;
@@ -45,7 +46,7 @@ namespace HADC_REBORN
 
         public static NotifyIcon? icon = null;
         public static Logger log = new Logger();
-        public static YamlLoader yamlLoader;
+        public static YamlLoader? yamlLoader;
         public bool initializing = true;
 
         public ApiConnector? haApiConnector = null;
@@ -158,12 +159,49 @@ namespace HADC_REBORN
             {
                 log.writeLine("'configuration.yaml' found!");
             }
-            yamlLoader = new YamlLoader(configFilePath);
+
+            try
+            {
+                yamlLoader = new YamlLoader(configFilePath);
+                foreach (string warning in yamlLoader.Warnings)
+                {
+                    log.writeLine("[CONFIG] " + warning);
+                }
+                foreach (string error in yamlLoader.Errors)
+                {
+                    log.writeLine("[CONFIG] Sensor skipped: " + error, 3);
+                }
+                if (yamlLoader.Errors.Count > 0)
+                {
+                    notifyConfigProblem(String.Join("\n", yamlLoader.Errors), "Some sensors in configuration.yaml were skipped");
+                }
+            }
+            catch (YamlConfigurationException ex)
+            {
+                // The app can't run without valid sensor definitions, tell the user where the problem is
+                yamlLoader = null;
+                log.writeLine("[CONFIG] " + ex.Message, 3);
+                notifyConfigProblem(ex.Message, "Invalid configuration.yaml");
+            }
         }
 
-        public Dictionary<string, dynamic> getYAMLComfig()
+        private string lastConfigProblem = "";
+
+        // The configuration is loaded more than once during startup, show each problem only once
+        private void notifyConfigProblem(string message, string title)
         {
-            return yamlLoader.getConfigurationData();
+            if (message == lastConfigProblem)
+            {
+                return;
+            }
+
+            lastConfigProblem = message;
+            Notification.Spawn(message, title);
+        }
+
+        public AppConfiguration? getYAMLComfig()
+        {
+            return yamlLoader?.getConfigurationData();
         }
 
         private void theme_Changed(UISettings sender, object args)
@@ -232,6 +270,10 @@ namespace HADC_REBORN
         private async Task<bool> startInternal()
         {
             loadYAMLComfig(true);
+            if (yamlLoader == null)
+            {
+                return false;
+            }
 
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string url = config.AppSettings.Settings["url"].Value;
@@ -249,7 +291,8 @@ namespace HADC_REBORN
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
-                apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
+                apiWrapper = new ApiWrapper(yamlLoader.getConfigurationData(), haApiConnector, config);
+                apiWrapper.WebhookChanged += apiWrapper_WebhookChanged;
                 await Task.Run(() => apiWrapper.connect());
                 log.writeLine("RestAPI registered");
                 log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", ""), haApiConnector.getSecret(), haApiConnector.getWebhookID() });
@@ -271,7 +314,7 @@ namespace HADC_REBORN
                 string wsUrl = url.Replace("http", "ws");
                 log.writeLine(wsUrl);
                 haWsConnector = new WsConnector(wsUrl, token, haApiConnector.getWebhookID());
-                wsWrapper = new WsWrapper(yamlLoader, haWsConnector);
+                wsWrapper = new WsWrapper(haWsConnector);
                 await Task.Run(() => wsWrapper.Connect());
                 log.writeLine("Websocket registered");
             }
@@ -299,6 +342,32 @@ namespace HADC_REBORN
             return true;
         }
 
+        // The device was registered again in HA (it had been deleted), the websocket must subscribe with the new webhook
+        private void apiWrapper_WebhookChanged(string webhookId)
+        {
+            log.writeLine("Webhook changed, reconnecting WebSocket");
+
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            string token = config.AppSettings.Settings["token"].Value;
+            string url = config.AppSettings.Settings["url"].Value;
+            log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", ""), haApiConnector?.getSecret() ?? "", webhookId });
+
+            if (haWsConnector == null || wsWrapper == null)
+            {
+                return;
+            }
+
+            haWsConnector.setWebhookID(webhookId);
+            try
+            {
+                wsWrapper.restart();
+            }
+            catch (Exception ex)
+            {
+                log.writeLine("Failed to reconnect WebSocket: " + ex.Message);
+            }
+        }
+
         private void GetNetworkChange_NetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
         {
             if (e.IsAvailable)
@@ -320,10 +389,18 @@ namespace HADC_REBORN
             NetworkChange.NetworkAvailabilityChanged -= GetNetworkChange_NetworkAvailabilityChanged;
 
             log.writeLine("stoping RestAPI");
-            apiWrapper?.disconnect();
+            if (apiWrapper != null)
+            {
+                apiWrapper.WebhookChanged -= apiWrapper_WebhookChanged;
+                apiWrapper.disconnect();
+            }
 
             log.writeLine("stoping WebSocket");
             wsWrapper?.Stop();
+
+            // A re-registration during the next start must not touch the old connection
+            wsWrapper = null;
+            haWsConnector = null;
         }
 
         public bool isRunning()
