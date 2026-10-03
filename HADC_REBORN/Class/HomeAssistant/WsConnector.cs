@@ -24,6 +24,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private ClientWebSocket socket = new ClientWebSocket();
         private byte[] buffer = new byte[2048];
+        private static readonly TimeSpan handshakeTimeout = TimeSpan.FromSeconds(30);
         private int interactions = 1;
 
         private int failedAttempts = 0;
@@ -47,7 +48,10 @@ namespace HADC_REBORN.Class.HomeAssistant
             socket = new ClientWebSocket();
             socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
-            socket.ConnectAsync(wsAddress, CancellationToken.None).Wait();
+            using (CancellationTokenSource timeout = new CancellationTokenSource(handshakeTimeout))
+            {
+                socket.ConnectAsync(wsAddress, timeout.Token).GetAwaiter().GetResult();
+            }
             App.log.writeLine("[WS] ADDRESS:" + wsAddress);
 
             JObject initialization = RecieveAsync();
@@ -194,8 +198,21 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private JObject RecieveAsync()
         {
-            WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
-            string JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            // Messages can be split into multiple frames, read until the end of the message
+            using CancellationTokenSource timeout = new CancellationTokenSource(handshakeTimeout);
+            using MemoryStream ms = new MemoryStream();
+            WebSocketReceiveResult result;
+            do
+            {
+                result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), timeout.Token).GetAwaiter().GetResult();
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    throw new Exception("Server closed the connection");
+                }
+                ms.Write(buffer, 0, result.Count);
+            } while (!result.EndOfMessage);
+
+            string JSONRecievedpayload = Encoding.UTF8.GetString(ms.ToArray());
 
             App.log.writeLine("[WS] RECIEVED:");
             App.log.writeLine(JSONRecievedpayload);

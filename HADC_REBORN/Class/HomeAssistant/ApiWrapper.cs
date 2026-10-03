@@ -72,42 +72,36 @@ namespace HADC_REBORN.Class.HomeAssistant
                 }
             }
 
-            if (sensorDefinition.ContainsKey("filters"))
+            if (sensorDefinition.ContainsKey("filters") && tryParseNumber(sensorData, out double filteredValue))
             {
-                bool isNumeric = double.TryParse(sensorData, out _);
                 Dictionary<string, string> filters = sensorDefinition["filters"];
 
-                if (isNumeric)
+                if (filters.ContainsKey("multiply"))
                 {
-                    if (filters.ContainsKey("multiply"))
-                    {
-                        sensorData = (double.Parse(sensorData) * float.Parse(filters["multiply"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                    }
-
-                    if (filters.ContainsKey("divide"))
-                    {
-                        sensorData = (double.Parse(sensorData) / float.Parse(filters["divide"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                    }
-
-                    if (filters.ContainsKey("deduct"))
-                    {
-                        sensorData = (double.Parse(sensorData) - float.Parse(filters["deduct"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                    }
-
-                    if (filters.ContainsKey("add"))
-                    {
-                        sensorData = (double.Parse(sensorData) + float.Parse(filters["add"], CultureInfo.InvariantCulture.NumberFormat)).ToString();
-                    }
+                    filteredValue *= double.Parse(filters["multiply"], CultureInfo.InvariantCulture);
                 }
 
+                if (filters.ContainsKey("divide"))
+                {
+                    filteredValue /= double.Parse(filters["divide"], CultureInfo.InvariantCulture);
+                }
+
+                if (filters.ContainsKey("deduct"))
+                {
+                    filteredValue -= double.Parse(filters["deduct"], CultureInfo.InvariantCulture);
+                }
+
+                if (filters.ContainsKey("add"))
+                {
+                    filteredValue += double.Parse(filters["add"], CultureInfo.InvariantCulture);
+                }
+
+                sensorData = filteredValue.ToString(CultureInfo.InvariantCulture);
             }
 
-            if (sensorDefinition.ContainsKey("accuracy_decimals"))
+            if (sensorDefinition.ContainsKey("accuracy_decimals") && tryParseNumber(sensorData, out double roundedValue) && Int32.TryParse((string)sensorDefinition["accuracy_decimals"], out int decimals))
             {
-                if (Regex.IsMatch(sensorData.ToString(), @"^[0-9]+.[0-9]+$") || Regex.IsMatch(sensorData.ToString(), @"^\d$"))
-                {
-                    sensorData = Math.Round(double.Parse(sensorData), Int32.Parse(sensorDefinition["accuracy_decimals"] ?? 0)).ToString();
-                }
+                sensorData = Math.Round(roundedValue, decimals).ToString(CultureInfo.InvariantCulture);
             }
 
             return sensorData;
@@ -403,28 +397,31 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
         }
 
-        private static dynamic convertToType(dynamic variable)
+        // Values are always formatted with InvariantCulture, accept a decimal comma too (e.g. Czech locale)
+        private static bool tryParseNumber(string value, out double number)
         {
-            //ADD double 
-            string variableStr = variable.ToString();
-            // Logger.write("BEFORE CONVERSION" + variableStr);
-            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
+            number = 0;
+            if (string.IsNullOrEmpty(value) || !Regex.IsMatch(value, @"^-?\d+([.,]\d+)?$"))
             {
-                //Logger.write("AFTER CONVERSION (Bool)" + variableStr.ToString());
-                return bool.Parse(variableStr);
-            }
-            else if (Regex.IsMatch(variableStr, @"^[0-9]+.[0-9]+$") && (variableStr.Contains(".") || variableStr.Contains(",")))
-            {
-                //Logger.write("AFTER CONVERSION (double)" + variableStr.ToString());
-                return double.Parse(variableStr);
-            }
-            else if (Regex.IsMatch(variableStr, @"^\d+$"))
-            {
-                //Logger.write("AFTER CONVERSION (int)" + variableStr.ToString());
-                return double.Parse(variableStr);
+                return false;
             }
 
-            //Logger.write("AFTER CONVERSION" + variableStr.ToString());
+            return double.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out number);
+        }
+
+        private static dynamic convertToType(dynamic variable)
+        {
+            string variableStr = variable.ToString();
+            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
+            {
+                return bool.Parse(variableStr);
+            }
+
+            if (tryParseNumber(variableStr, out double number))
+            {
+                return number;
+            }
+
             return variableStr;
         }
 
@@ -484,7 +481,7 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
 
             return Task.Run<string>(() => {
-                return method.Invoke(null, parameters.ToArray()).ToString(); 
+                return Convert.ToString(method.Invoke(null, parameters.ToArray()), CultureInfo.InvariantCulture) ?? ""; 
             });
         }
     }

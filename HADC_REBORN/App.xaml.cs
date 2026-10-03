@@ -80,7 +80,10 @@ namespace HADC_REBORN
 
             ensureAppSettings();
 
-            AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
+            // Log only exceptions nobody handled, FirstChanceException also logged every caught one
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
          
             App.icon = new NotifyIcon();
 
@@ -168,9 +171,22 @@ namespace HADC_REBORN
             Theme.setTheme(Theme.isColorLight(sender.GetColorValue(UIColorType.Background)));
         }
 
-        static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 3);
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unhandled UI exception: " + e.Exception.ToString(), 3);
+            // Keep the tray app running instead of crashing
+            e.Handled = true;
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unhandled exception: " + e.ExceptionObject.ToString(), 3);
+        }
+
+        private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unobserved task exception: " + e.Exception.ToString(), 3);
+            e.SetObserved();
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
@@ -190,7 +206,30 @@ namespace HADC_REBORN
             }
         }
 
-        public bool Start()
+        private bool starting = false;
+
+        // Network heavy parts run in the background so the UI doesn't freeze while HA is unreachable.
+        // Must be called from the UI thread, the wrappers create their DispatcherTimers in their constructors.
+        public async Task<bool> StartAsync()
+        {
+            if (starting)
+            {
+                log.writeLine("Start already in progress");
+                return false;
+            }
+
+            starting = true;
+            try
+            {
+                return await startInternal();
+            }
+            finally
+            {
+                starting = false;
+            }
+        }
+
+        private async Task<bool> startInternal()
         {
             loadYAMLComfig(true);
 
@@ -206,19 +245,12 @@ namespace HADC_REBORN
                 return false;
             }
 
-            //int pingLoopIndex = 0;
-            //do
-            //{
-            //    log.writeLine("Waiting ntil server response!");
-            //    pingLoopIndex++;
-            //} while (!Network.PingHost((new Uri(url)).Host) && pingLoopIndex < 5);
-
             try
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
-                apiWrapper.connect();
+                await Task.Run(() => apiWrapper.connect());
                 log.writeLine("RestAPI registered");
                 log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", ""), haApiConnector.getSecret(), haApiConnector.getWebhookID() });
             }
@@ -240,7 +272,7 @@ namespace HADC_REBORN
                 log.writeLine(wsUrl);
                 haWsConnector = new WsConnector(wsUrl, token, haApiConnector.getWebhookID());
                 wsWrapper = new WsWrapper(yamlLoader, haWsConnector);
-                wsWrapper.Connect();
+                await Task.Run(() => wsWrapper.Connect());
                 log.writeLine("Websocket registered");
             }
             catch (Exception ex)
@@ -249,6 +281,7 @@ namespace HADC_REBORN
                 return false;
             }
 
+            NetworkChange.NetworkAvailabilityChanged -= GetNetworkChange_NetworkAvailabilityChanged;
             NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
 
             try
@@ -284,7 +317,13 @@ namespace HADC_REBORN
 
         public void Stop()
         {
+            NetworkChange.NetworkAvailabilityChanged -= GetNetworkChange_NetworkAvailabilityChanged;
+
             log.writeLine("stoping RestAPI");
+            apiWrapper?.disconnect();
+
+            log.writeLine("stoping WebSocket");
+            wsWrapper?.Stop();
         }
 
         public bool isRunning()
