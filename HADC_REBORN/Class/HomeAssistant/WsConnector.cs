@@ -24,6 +24,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private ClientWebSocket socket = new ClientWebSocket();
         private byte[] buffer = new byte[2048];
+        private static readonly TimeSpan handshakeTimeout = TimeSpan.FromSeconds(30);
         private int interactions = 1;
 
         private int failedAttempts = 0;
@@ -31,6 +32,7 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private Task recieveLoopObject;
         private static DispatcherTimer updatePingTimer = new DispatcherTimer();
+        private int notification_event_subscribe_id = 0;
 
         public WsConnector(string apiUrl, string apiToken, string webhookId)
         {
@@ -42,11 +44,14 @@ namespace HADC_REBORN.Class.HomeAssistant
         public void register()
         {
             Uri wsAddress = new Uri(url + "/api/websocket");
-            ManualResetEvent exitEvent = new ManualResetEvent(false);
+            isConnected = false;
             socket = new ClientWebSocket();
             socket.Options.KeepAliveInterval = TimeSpan.Zero;
 
-            socket.ConnectAsync(wsAddress, CancellationToken.None).Wait();
+            using (CancellationTokenSource timeout = new CancellationTokenSource(handshakeTimeout))
+            {
+                socket.ConnectAsync(wsAddress, timeout.Token).GetAwaiter().GetResult();
+            }
             App.log.writeLine("[WS] ADDRESS:" + wsAddress);
 
             JObject initialization = RecieveAsync();
@@ -68,7 +73,9 @@ namespace HADC_REBORN.Class.HomeAssistant
             subscribeObj.id = interactions;
             subscribeObj.webhook_id = webhook;
             subscribeObj.type = "mobile_app/push_notification_channel";
-
+            
+            notification_event_subscribe_id = interactions;
+            
             JObject subscription = sendAndRecieveAsync(subscribeObj);
             if (bool.Parse(subscription["success"].ToString()) != true)
             {
@@ -132,23 +139,49 @@ namespace HADC_REBORN.Class.HomeAssistant
       
         public void disconnect()
         {
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseSent || socket.State == WebSocketState.Aborted)
+            isConnected = false;
+
+            if (socket == null)
             {
-                if (socket.State == WebSocketState.Aborted)
+                return;
+            }
+
+            try
+            {
+                if (socket.State == WebSocketState.Open)
                 {
-                    socket.Abort();
+                    //https://developers.home-assistant.io/docs/api/websocket#unsubscribing-from-events
+                    // Send only, the response is consumed by the running receive loop
+                    WsUnsubscribeRequest unsubscribeObj = new WsUnsubscribeRequest { };
+                    unsubscribeObj.id = interactions;
+                    unsubscribeObj.type = "unsubscribe_events";
+                    unsubscribeObj.subscription = notification_event_subscribe_id;
+                    Send(unsubscribeObj).Wait(TimeSpan.FromSeconds(2));
+                }
+            }
+            catch (Exception e)
+            {
+                App.log.writeLine("[WS] Unsubscribe failed: " + e.Message);
+            }
+
+            try
+            {
+                if (socket.State == WebSocketState.Open)
+                {
+                    socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None).Wait(TimeSpan.FromSeconds(2));
                 }
                 else
                 {
-                    socket.CloseAsync(WebSocketCloseStatus.NormalClosure, string.Empty, CancellationToken.None);
-                }
-
-                if (socket != null)
-                {
-                    socket.Dispose();
-                    socket = null;
+                    socket.Abort();
                 }
             }
+            catch (Exception e)
+            {
+                App.log.writeLine("[WS] Close failed: " + e.Message);
+            }
+
+            socket.Dispose();
+            socket = null;
         }
 
         public bool connected()
@@ -165,8 +198,21 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private JObject RecieveAsync()
         {
-            WebSocketReceiveResult result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None).Result;
-            string JSONRecievedpayload = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            // Messages can be split into multiple frames, read until the end of the message
+            using CancellationTokenSource timeout = new CancellationTokenSource(handshakeTimeout);
+            using MemoryStream ms = new MemoryStream();
+            WebSocketReceiveResult result;
+            do
+            {
+                result = socket.ReceiveAsync(new ArraySegment<byte>(buffer), timeout.Token).GetAwaiter().GetResult();
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    throw new Exception("Server closed the connection");
+                }
+                ms.Write(buffer, 0, result.Count);
+            } while (!result.EndOfMessage);
+
+            string JSONRecievedpayload = Encoding.UTF8.GetString(ms.ToArray());
 
             App.log.writeLine("[WS] RECIEVED:");
             App.log.writeLine(JSONRecievedpayload);

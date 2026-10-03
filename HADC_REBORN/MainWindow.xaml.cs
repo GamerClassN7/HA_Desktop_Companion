@@ -51,7 +51,7 @@ namespace HADC_REBORN
         }
 
 
-        private void loadingScreen_Loaded(object sender, RoutedEventArgs e)
+        private async void loadingScreen_Loaded(object sender, RoutedEventArgs e)
         {
             this.ShowInTaskbar = true;
 
@@ -66,14 +66,19 @@ namespace HADC_REBORN
             }
 
             App.log.writeLine("Initial Loading Done");
-            loadingScreen.Visibility = Visibility.Hidden;
 
-            if (app.initializing == true && app.Start())
+            if (app.initializing == true)
             {
-                Close();
+                app.initializing = false;
+                loadingScreenStatus.Content = "Connecting...";
+                if (await app.StartAsync())
+                {
+                    Close();
+                    return;
+                }
             }
 
-            app.initializing = false;
+            loadingScreen.Visibility = Visibility.Hidden;
         }
 
         private void statusTimer_Tick(object? sender, EventArgs e)
@@ -81,7 +86,7 @@ namespace HADC_REBORN
             updateStatus();
         }
 
-        private void save_MouseClick(object sender, RoutedEventArgs e)
+        private async void save_MouseClick(object sender, RoutedEventArgs e)
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -98,9 +103,18 @@ namespace HADC_REBORN
             Notification.Spawn("Settings Saved");
 
             app.Stop();
-            if (app.Start())
+
+            save.IsEnabled = false;
+            try
             {
-                Close();
+                if (await app.StartAsync())
+                {
+                    Close();
+                }
+            }
+            finally
+            {
+                save.IsEnabled = true;
             }
         }
 
@@ -119,11 +133,12 @@ namespace HADC_REBORN
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             Title += (" - " + App.version);
-    
-            /*if (true)
+
+            if (app.getYAMLComfig()["debug"] == "true")
+
             {
                 Title += " - DEBUG";
-            }*/
+            }
 
             updateStatus();
             statusTimer.Start();

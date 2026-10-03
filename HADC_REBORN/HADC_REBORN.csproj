@@ -8,8 +8,9 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>True</UseWindowsForms>
     <ApplicationIcon>Resource\ha_icon.ico</ApplicationIcon>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.4</AssemblyVersion>
+    <FileVersion>1.0.0.4</FileVersion>
+    <PackageIcon>ha_logo.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +27,13 @@
 
   <ItemGroup>
     <Content Include="Resource\ha_icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\ha_logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

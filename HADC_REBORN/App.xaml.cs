@@ -57,7 +57,33 @@ namespace HADC_REBORN
         public static string version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
         protected override void OnStartup(StartupEventArgs e)
         {
-            AppDomain.CurrentDomain.FirstChanceException += GlobalExceptionFunction;
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "HA.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "ha.*"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.log"))
+            {
+                File.Delete(f);
+            }
+
+            foreach (string f in Directory.EnumerateFiles(appDir, "*.xml"))
+            {
+                File.Delete(f);
+            }
+
+            ensureAppSettings();
+
+            // Log only exceptions nobody handled, FirstChanceException also logged every caught one
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
          
             App.icon = new NotifyIcon();
 
@@ -86,6 +112,34 @@ namespace HADC_REBORN
             log.writeLine("starting version: " + version);
         }
 
+        // Release zips don't contain HADC_REBORN.dll.config so updates keep the user's settings,
+        // create missing keys (e.g. on a fresh install) so the rest of the app can rely on them
+        private static void ensureAppSettings()
+        {
+            try
+            {
+                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                bool changed = false;
+                foreach (string key in new string[] { "url", "token", "webhook_id", "remote_url", "cloud_url", "secret" })
+                {
+                    if (config.AppSettings.Settings[key] == null)
+                    {
+                        config.AppSettings.Settings.Add(key, "");
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    config.Save(ConfigurationSaveMode.Modified);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.writeLine("Failed to initialize app settings: " + ex.Message);
+            }
+        }
+
         public void loadYAMLComfig(bool force = false)
         {
             if (yamlLoader != null && !force)
@@ -107,7 +161,7 @@ namespace HADC_REBORN
             yamlLoader = new YamlLoader(configFilePath);
         }
 
-        public Dictionary<string, Dictionary<string, Dictionary<string, List<Dictionary<string, dynamic>>>>> getYAMLComfig()
+        public Dictionary<string, dynamic> getYAMLComfig()
         {
             return yamlLoader.getConfigurationData();
         }
@@ -117,9 +171,22 @@ namespace HADC_REBORN
             Theme.setTheme(Theme.isColorLight(sender.GetColorValue(UIColorType.Background)));
         }
 
-        static void GlobalExceptionFunction(object source, FirstChanceExceptionEventArgs eventArgs)
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "]" + eventArgs.Exception.ToString(), 3);
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unhandled UI exception: " + e.Exception.ToString(), 3);
+            // Keep the tray app running instead of crashing
+            e.Handled = true;
+        }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unhandled exception: " + e.ExceptionObject.ToString(), 3);
+        }
+
+        private static void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            log.writeLine("[" + AppDomain.CurrentDomain.FriendlyName + "] Unobserved task exception: " + e.Exception.ToString(), 3);
+            e.SetObserved();
         }
 
         private void Application_Exit(object sender, ExitEventArgs e)
@@ -129,12 +196,40 @@ namespace HADC_REBORN
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            AutoUpdater.Start("https://github.com/GamerClassN7/HA_Desktop_Companion/releases/latest/download/meta.xml");
-            AutoUpdater.Synchronous = true;
-            AutoUpdater.ShowRemindLaterButton = false;
+            try
+            {
+                AutoUpdateHelper updater = new AutoUpdateHelper();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
 
-        public bool Start()
+        private bool starting = false;
+
+        // Network heavy parts run in the background so the UI doesn't freeze while HA is unreachable.
+        // Must be called from the UI thread, the wrappers create their DispatcherTimers in their constructors.
+        public async Task<bool> StartAsync()
+        {
+            if (starting)
+            {
+                log.writeLine("Start already in progress");
+                return false;
+            }
+
+            starting = true;
+            try
+            {
+                return await startInternal();
+            }
+            finally
+            {
+                starting = false;
+            }
+        }
+
+        private async Task<bool> startInternal()
         {
             loadYAMLComfig(true);
 
@@ -150,19 +245,12 @@ namespace HADC_REBORN
                 return false;
             }
 
-            //int pingLoopIndex = 0;
-            //do
-            //{
-            //    log.writeLine("Waiting ntil server response!");
-            //    pingLoopIndex++;
-            //} while (!Network.PingHost((new Uri(url)).Host) && pingLoopIndex < 5);
-
             try
             {
                 log.writeLine(url);
                 haApiConnector = new ApiConnector(url, token);
                 apiWrapper = new ApiWrapper(yamlLoader, haApiConnector, config);
-                apiWrapper.connect();
+                await Task.Run(() => apiWrapper.connect());
                 log.writeLine("RestAPI registered");
                 log.setSecreets(new string[] { token, url.Replace("http://", "").Replace("https://", ""), haApiConnector.getSecret(), haApiConnector.getWebhookID() });
             }
@@ -184,7 +272,7 @@ namespace HADC_REBORN
                 log.writeLine(wsUrl);
                 haWsConnector = new WsConnector(wsUrl, token, haApiConnector.getWebhookID());
                 wsWrapper = new WsWrapper(yamlLoader, haWsConnector);
-                wsWrapper.Connect();
+                await Task.Run(() => wsWrapper.Connect());
                 log.writeLine("Websocket registered");
             }
             catch (Exception ex)
@@ -193,6 +281,7 @@ namespace HADC_REBORN
                 return false;
             }
 
+            NetworkChange.NetworkAvailabilityChanged -= GetNetworkChange_NetworkAvailabilityChanged;
             NetworkChange.NetworkAvailabilityChanged += GetNetworkChange_NetworkAvailabilityChanged;
 
             try
@@ -228,7 +317,13 @@ namespace HADC_REBORN
 
         public void Stop()
         {
+            NetworkChange.NetworkAvailabilityChanged -= GetNetworkChange_NetworkAvailabilityChanged;
+
             log.writeLine("stoping RestAPI");
+            apiWrapper?.disconnect();
+
+            log.writeLine("stoping WebSocket");
+            wsWrapper?.Stop();
         }
 
         public bool isRunning()
@@ -250,7 +345,15 @@ namespace HADC_REBORN
 
         private void OnHomeAssistant_Click(object? sender, EventArgs e)
         {
-            Process.Start("explorer", "https://google.com");
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            string url = config.AppSettings.Settings["url"].Value;
+            if (String.IsNullOrEmpty(url))
+            {
+                log.writeLine("Home Assistant URL not configured!");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
 
         private void OnQuit_Click(object? sender, EventArgs e)

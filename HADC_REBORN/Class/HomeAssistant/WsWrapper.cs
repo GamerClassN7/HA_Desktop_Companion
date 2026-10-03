@@ -28,32 +28,41 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
         private BackgroundWorker wsWorkerPinger = new BackgroundWorker();
 
         private DispatcherTimer updatePingTimer = new DispatcherTimer();
+        private DispatcherTimer reconnectTimer = new DispatcherTimer();
+        private volatile bool stopped = false;
+
         public WsWrapper(YamlLoader yamlLoaderDependency, WsConnector wsConnectorDependency)
         {
             yamlLoader = yamlLoaderDependency;
             wsConnector = wsConnectorDependency;
+
+            // Handlers are attached only once, otherwise every reconnect would multiply them
+            wsWorkerRecieverer.DoWork += wsWorkerReciever_DoWork;
+            wsWorkerRecieverer.RunWorkerCompleted += wsWorkerReciever_Completed;
+
+            wsWorkerPinger.DoWork += wsWorkePinger_DoWork;
+
+            updatePingTimer.Interval = TimeSpan.FromMinutes(5);
+            updatePingTimer.Tick += UpdatePing_Tick;
+
+            reconnectTimer.Interval = TimeSpan.FromSeconds(30);
+            reconnectTimer.Tick += Reconnect_Tick;
         }
 
         public void Connect()
         {
+            stopped = false;
 
             if (!wsConnector.connected())
             {
-                wsConnector.register();
                 if (wsWorkerRecieverer.IsBusy)
                 {
                     throw new Exception("Already Registered !!!");
                 }
 
-                wsWorkerRecieverer.DoWork += wsWorkerReciever_DoWork;
-                wsWorkerRecieverer.RunWorkerCompleted += wsWorkerReciever_Completed;
-
+                wsConnector.register();
                 wsWorkerRecieverer.RunWorkerAsync();
 
-                wsWorkerPinger.DoWork += wsWorkePinger_DoWork;
-
-                updatePingTimer.Interval = TimeSpan.FromMinutes(5);
-                updatePingTimer.Tick += UpdatePing_Tick;
                 updatePingTimer.Start();
 
                 App.log.writeLine("[WS] Ping Initialized");
@@ -62,6 +71,48 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         private void wsWorkerReciever_Completed(object? sender, RunWorkerCompletedEventArgs e)
         {
+            Disconnect();
+
+            if (stopped)
+            {
+                return;
+            }
+
+            App.log.writeLine("[WS] Connection lost, reconnecting in " + reconnectTimer.Interval.TotalSeconds + "s");
+            reconnectTimer.Start();
+        }
+
+        private async void Reconnect_Tick(object? sender, EventArgs e)
+        {
+            reconnectTimer.Stop();
+
+            if (stopped || wsConnector.connected())
+            {
+                return;
+            }
+
+            try
+            {
+                // Connecting blocks until the server answers, keep it off the UI thread
+                await Task.Run(Connect);
+                App.log.writeLine("[WS] Reconnected");
+            }
+            catch (Exception ex)
+            {
+                App.log.writeLine("[WS] Reconnect failed: " + ex.Message);
+                wsConnector.disconnect();
+                if (!stopped)
+                {
+                    reconnectTimer.Start();
+                }
+            }
+        }
+
+        // Disconnect for good, e.g. before connecting with new settings
+        public void Stop()
+        {
+            stopped = true;
+            reconnectTimer.Stop();
             Disconnect();
         }
 
@@ -144,7 +195,7 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
             if (eventPayloadData.ContainsKey("data") && eventPayloadData["data"].ToObject<JObject>().ContainsKey("key"))
             {
-                Keyboard.SendKey(eventData["data"].ToObject<JObject>()["key"].ToString());
+                Keyboard.SendKey(eventPayloadData["data"].ToObject<JObject>()["key"].ToString());
             }
         }
 
@@ -162,10 +213,8 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 
         public void restart()
         {
-            do
-            {
-                Disconnect();
-            } while (wsWorkerRecieverer.IsBusy);
+            Disconnect();
+            SpinWait.SpinUntil(() => !wsWorkerRecieverer.IsBusy, TimeSpan.FromSeconds(10));
             Connect();
         }
     }
