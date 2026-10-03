@@ -18,6 +18,12 @@ using System.Security.Policy;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
+    // HA answers 410 Gone when the device (mobile_app integration entry) was deleted
+    public class WebhookGoneException : Exception
+    {
+        public WebhookGoneException() : base("Webhook no longer exists, the device was removed from Home Assistant") { }
+    }
+
     public class ApiConnector
     {
         private string url;
@@ -114,6 +120,10 @@ namespace HADC_REBORN.Class.HomeAssistant
                 failedAttempts = 0;
                 return response.Content;
             }
+            if (response.StatusCode == HttpStatusCode.Gone)
+            {
+                throw new WebhookGoneException();
+            }
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 failedAttempts = 6;
@@ -154,29 +164,40 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         public void AddSensorData(ApiSensor senzor)
         {
+            // Keep only the latest value per sensor while HA is unreachable
+            sensorsBuffer.RemoveAll(x => x.unique_id == senzor.unique_id);
             sensorsBuffer.Add(senzor);
         }
 
-        public string sendSensorBuffer()
+        public void clearSensorBuffer()
+        {
+            sensorsBuffer.Clear();
+        }
+
+        // Returns HA's response with the result per sensor, null when nothing was sent or the request failed
+        public JObject? sendSensorBuffer()
         {
             if (sensorsBuffer.Count < 1)
             {
                 App.log.writeLine("No data to send!");
-                return "";
+                return null;
             }
 
             ApiRequest request = new ApiRequest();
 
             request.SetData(sensorsBuffer);
             request.SetType("update_sensor_states");
-            JObject jObject = new JObject();
 
             try
             {
-                jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
-                Debug.Write(jObject.ToString());
+                JObject jObject = JObject.Parse(sendApiPOSTRequest("/api/webhook/" + webhookId, request).ReadAsStringAsync().Result);
                 sensorsBuffer.Clear();
                 failedAttempts = 0;
+                return jObject;
+            }
+            catch (WebhookGoneException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -184,7 +205,7 @@ namespace HADC_REBORN.Class.HomeAssistant
                 App.log.writeLine("[API] " + ex.Message);
             }
 
-            return jObject.ToString();
+            return null;
         }
 
         private void inicialize(){

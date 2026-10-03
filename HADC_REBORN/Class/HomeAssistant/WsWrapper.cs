@@ -21,7 +21,6 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
 {
     public class WsWrapper
     {
-        private YamlLoader yamlLoader;
         private WsConnector wsConnector;
 
         private BackgroundWorker wsWorkerRecieverer = new BackgroundWorker();
@@ -31,9 +30,8 @@ namespace HADC_REBORN.Class.HomeAssistant.Objects
         private DispatcherTimer reconnectTimer = new DispatcherTimer();
         private volatile bool stopped = false;
 
-        public WsWrapper(YamlLoader yamlLoaderDependency, WsConnector wsConnectorDependency)
+        public WsWrapper(WsConnector wsConnectorDependency)
         {
-            yamlLoader = yamlLoaderDependency;
             wsConnector = wsConnectorDependency;
 
             // Handlers are attached only once, otherwise every reconnect would multiply them

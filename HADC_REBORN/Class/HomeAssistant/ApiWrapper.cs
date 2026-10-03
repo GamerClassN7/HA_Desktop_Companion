@@ -1,33 +1,27 @@
-﻿using HADC_REBORN.Class.Helpers;
+﻿using HADC_REBORN.Class.Config;
+using HADC_REBORN.Class.Helpers;
 using HADC_REBORN.Class.HomeAssistant.Objects;
 using HADC_REBORN.Class.Sensors;
-using Microsoft.VisualBasic.Logging;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
-using System.Globalization;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Security.Policy;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using Windows.Devices.Sensors;
 
 namespace HADC_REBORN.Class.HomeAssistant
 {
     public class ApiWrapper
     {
-        static Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
-        static Dictionary<string, dynamic> sensorLastValues = new Dictionary<string, dynamic>();
-        //static Dictionary<string, bool> sensorFailed= new Dictionary<string, bool>();
+        private readonly Dictionary<string, DateTime> sensorUpdatedAtList = new Dictionary<string, DateTime>();
+        private readonly Dictionary<string, string> sensorLastValues = new Dictionary<string, string>();
+        // Registration (connect / re-registration) and the update worker run on different threads
+        private readonly object stateLock = new object();
 
-        private YamlLoader yamlLoader;
+        private AppConfiguration configuration;
         private ApiConnector apiConnector;
         private Configuration config;
 
@@ -35,8 +29,11 @@ namespace HADC_REBORN.Class.HomeAssistant
 
         private DispatcherTimer apiTimer = new DispatcherTimer();
 
-        public ApiWrapper(YamlLoader yamlLoaderDependency, ApiConnector apiConnectorDependency, Configuration configDependency) {
-            yamlLoader = yamlLoaderDependency;
+        // Raised with the new webhook_id after the device had to be registered again
+        public event Action<string>? WebhookChanged;
+
+        public ApiWrapper(AppConfiguration configurationDependency, ApiConnector apiConnectorDependency, Configuration configDependency) {
+            configuration = configurationDependency;
             apiConnector = apiConnectorDependency;
             config = configDependency;
 
@@ -47,116 +44,35 @@ namespace HADC_REBORN.Class.HomeAssistant
             apiTimer.Tick += updateSensors;
         }
 
-        private static string applySenzorValueFilters(string senzorType, Dictionary<string, dynamic> sensorDefinition, string sensorData)
-        {
-            if (senzorType == "binary_sensor")
-            {
-                return sensorData;
-            }
-
-            if (string.IsNullOrEmpty(sensorData))
-            {
-                sensorData = "0";
-            }
-
-            if (sensorDefinition.ContainsKey("value_map"))
-            {
-                string[] valueMap = sensorDefinition["value_map"].Split("|");
-                if (Int32.TryParse(sensorData, out int valueMapIndex) && valueMapIndex >= 0 && valueMapIndex < valueMap.Length)
-                {
-                    sensorData = valueMap[valueMapIndex];
-                }
-                else
-                {
-                    App.log.writeLine("Value '" + sensorData + "' out of value_map range for " + (string)sensorDefinition["unique_id"]);
-                }
-            }
-
-            if (sensorDefinition.ContainsKey("filters") && tryParseNumber(sensorData, out double filteredValue))
-            {
-                Dictionary<string, string> filters = sensorDefinition["filters"];
-
-                if (filters.ContainsKey("multiply"))
-                {
-                    filteredValue *= double.Parse(filters["multiply"], CultureInfo.InvariantCulture);
-                }
-
-                if (filters.ContainsKey("divide"))
-                {
-                    filteredValue /= double.Parse(filters["divide"], CultureInfo.InvariantCulture);
-                }
-
-                if (filters.ContainsKey("deduct"))
-                {
-                    filteredValue -= double.Parse(filters["deduct"], CultureInfo.InvariantCulture);
-                }
-
-                if (filters.ContainsKey("add"))
-                {
-                    filteredValue += double.Parse(filters["add"], CultureInfo.InvariantCulture);
-                }
-
-                sensorData = filteredValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            if (sensorDefinition.ContainsKey("accuracy_decimals") && tryParseNumber(sensorData, out double roundedValue) && Int32.TryParse((string)sensorDefinition["accuracy_decimals"], out int decimals))
-            {
-                sensorData = Math.Round(roundedValue, decimals).ToString(CultureInfo.InvariantCulture);
-            }
-
-            return sensorData;
-        }
-
         public async Task queryAndSendSenzorData()
         {
-            Dictionary<string, Task<string>> senzorsQuerys = new Dictionary<string, Task<string>>();
-
-            Dictionary<string, dynamic> senzorTypes = getSensorsConfiguration();
-            foreach (var item in senzorTypes)
+            DateTime now = DateTime.Now;
+            List<SensorConfig> dueSensors;
+            lock (stateLock)
             {
-                string senzorType = item.Key;
-                foreach (var platform in item.Value)
-                {
-                    foreach (var integration in platform.Value)
-                    {
-                        foreach (var sensorDefinition in integration.Value)
-                        {
-                            string sensorUniqueId = sensorDefinition["unique_id"];
-                            if (senzorsQuerys.ContainsKey(sensorUniqueId))
-                            {
-                                continue;
-                            }
-
-                            if (sensorUpdatedAtList.ContainsKey(sensorUniqueId) && sensorDefinition.ContainsKey("update_interval"))
-                            {
-                                TimeSpan difference = DateTime.Now.Subtract(sensorUpdatedAtList[sensorUniqueId]);
-                                if (difference.TotalSeconds < Double.Parse(sensorDefinition["update_interval"]))
-                                {
-                                    App.log.writeLine("Skiping: " + sensorUniqueId + " sensor Update time not Reached");
-                                    continue;
-                                }
-                            }
-
-                            //if (sensorFailed.ContainsKey(sensorUniqueId) && sensorFailed[sensorUniqueId] != false)
-                            //{
-                            //   App.log.writeLine("Skiping previouselly failed: " + sensorUniqueId + " sensor");
-                            //   continue;
-                            //}
-
-                            try
-                            {
-                                senzorsQuerys.Add(sensorUniqueId, getSenzorValue(integration, sensorDefinition));
-                            }
-                            catch (Exception ex)
-                            {
-                                App.log.writeLine("Failed to query sensor " + sensorUniqueId + ": " + ex.Message);
-                            }
-                        }
-                    }
-                }
+                dueSensors = configuration.AllSensors.Where(sensor =>
+                    sensor.UpdateInterval == null
+                    || !sensorUpdatedAtList.ContainsKey(sensor.UniqueId)
+                    || (now - sensorUpdatedAtList[sensor.UniqueId]).TotalSeconds >= sensor.UpdateInterval
+                ).ToList();
             }
 
-            //TODO, Create Sensor list to iterate ower when building request to server
+            if (dueSensors.Count < 1)
+            {
+                return;
+            }
+
+            Dictionary<SensorConfig, Task<string>> senzorsQuerys = new Dictionary<SensorConfig, Task<string>>();
+            foreach (SensorConfig sensor in dueSensors)
+            {
+                if (!SensorPlatforms.TryGet(sensor.Platform, out ISensorPlatform platform))
+                {
+                    App.log.writeLine("Unknown platform '" + sensor.Platform + "' of sensor " + sensor.UniqueId);
+                    continue;
+                }
+
+                senzorsQuerys.Add(sensor, Task.Run(() => platform.GetValue(sensor)));
+            }
 
             try
             {
@@ -167,94 +83,102 @@ namespace HADC_REBORN.Class.HomeAssistant
                 // Failed sensors are logged and skipped individually below, so the rest still get sent
             }
 
-            if (senzorsQuerys.Count < 1)
+            lock (stateLock)
             {
-                App.log.writeLine("no senzor scheduled!");
-            }
-            App.log.writeLine("all task query Done!");
-
-            foreach (var item in senzorTypes)
-            {
-                string senzorType = item.Key;
-                foreach (var platform in senzorTypes[senzorType])
+                foreach (KeyValuePair<SensorConfig, Task<string>> query in senzorsQuerys)
                 {
-                    foreach (var integration in platform.Value)
+                    SensorConfig sensor = query.Key;
+                    if (!query.Value.IsCompletedSuccessfully)
                     {
-                        foreach (var sensorDefinition in integration.Value)
-                        {
-                            string sensorUniqueId = sensorDefinition["unique_id"];
-                            if (!senzorsQuerys.ContainsKey(sensorUniqueId))
-                            {
-                                continue;
-                            }
-
-                            Task<string> sensorQuery = senzorsQuerys[sensorUniqueId];
-                            if (!sensorQuery.IsCompletedSuccessfully)
-                            {
-                                App.log.writeLine("Failed to query sensor " + sensorUniqueId + ": " + sensorQuery.Exception?.GetBaseException().Message);
-                                continue;
-                            }
-
-                            string sensorData;
-                            try
-                            {
-                                sensorData = applySenzorValueFilters(senzorType, sensorDefinition, sensorQuery.Result);
-                            }
-                            catch (Exception ex)
-                            {
-                                App.log.writeLine("Failed to apply filters to sensor " + sensorUniqueId + ": " + ex.Message);
-                                continue;
-                            }
-                            App.log.writeLine("Filtered Value " + sensorUniqueId + " - " + sensorData);
-
-                            if (string.IsNullOrEmpty(sensorData))
-                            {
-                                App.log.writeLine("No Data Returned to sensor " + sensorUniqueId);
-                                continue;
-                            }
-
-                            if (sensorLastValues.ContainsKey(sensorDefinition["unique_id"]))
-                            {
-                                if (sensorData == sensorLastValues[sensorDefinition["unique_id"]])
-                                {
-                                    //App.log.writeLine("Skiping! Same Data Already Send " + sensorData);
-                                    continue;
-                                }
-                            }
-
-                            ApiSensor senzor = new ApiSensor();
-
-                            senzor.unique_id = sensorDefinition["unique_id"];
-                            if (sensorDefinition.ContainsKey("icon"))
-                                senzor.icon = sensorDefinition["icon"];
-                            senzor.state = convertToType(sensorData);
-                            senzor.type = senzorType;
-
-                            apiConnector.AddSensorData(senzor);
-
-                            if (sensorUpdatedAtList.ContainsKey(sensorDefinition["unique_id"]))
-                            {
-                                sensorUpdatedAtList[sensorDefinition["unique_id"]] = DateTime.Now;
-                            }
-                            else
-                            {
-                                sensorUpdatedAtList.Add(sensorDefinition["unique_id"], DateTime.Now);
-                            }
-
-                            if (sensorLastValues.ContainsKey(sensorDefinition["unique_id"]))
-                            {
-                                sensorLastValues[sensorDefinition["unique_id"]] = sensorData;
-                            }
-                            else
-                            {
-                                sensorLastValues.Add(sensorDefinition["unique_id"], sensorData);
-                            }
-                        }
+                        App.log.writeLine("Failed to query sensor " + sensor.UniqueId + ": " + query.Value.Exception?.GetBaseException().Message);
+                        continue;
                     }
+
+                    string sensorData;
+                    try
+                    {
+                        sensorData = SensorValueProcessor.Process(sensor, query.Value.Result, message => App.log.writeLine(message));
+                    }
+                    catch (Exception ex)
+                    {
+                        App.log.writeLine("Failed to apply filters to sensor " + sensor.UniqueId + ": " + ex.Message);
+                        continue;
+                    }
+
+                    if (string.IsNullOrEmpty(sensorData))
+                    {
+                        App.log.writeLine("No Data Returned to sensor " + sensor.UniqueId);
+                        continue;
+                    }
+
+                    // update_interval counts from the last read, also when the value didn't change
+                    sensorUpdatedAtList[sensor.UniqueId] = now;
+
+                    if (sensorLastValues.TryGetValue(sensor.UniqueId, out string? lastValue) && lastValue == sensorData)
+                    {
+                        continue;
+                    }
+
+                    App.log.writeLine("Filtered Value " + sensor.UniqueId + " - " + sensorData);
+
+                    ApiSensor senzor = new ApiSensor();
+                    senzor.unique_id = sensor.UniqueId;
+                    if (sensor.Icon != null)
+                        senzor.icon = sensor.Icon;
+                    senzor.state = SensorValueProcessor.ConvertToType(sensorData);
+                    senzor.type = sensor.Type;
+
+                    apiConnector.AddSensorData(senzor);
+                    sensorLastValues[sensor.UniqueId] = sensorData;
                 }
             }
 
-            apiConnector.sendSensorBuffer();
+            JObject? response;
+            try
+            {
+                response = apiConnector.sendSensorBuffer();
+            }
+            catch (WebhookGoneException ex)
+            {
+                App.log.writeLine("[API] " + ex.Message);
+                registerDeviceAgain();
+                return;
+            }
+
+            registerMissingSensors(response);
+        }
+
+        // HA answers per sensor, re-register those it doesn't know (e.g. removed in HA)
+        private void registerMissingSensors(JObject? response)
+        {
+            if (response == null)
+            {
+                return;
+            }
+
+            List<string> notRegistered = response.Properties()
+                .Where(x => x.Value is JObject result && result["success"]?.Value<bool>() == false && result["error"]?["code"]?.ToString() == "not_registered")
+                .Select(x => x.Name)
+                .ToList();
+
+            if (notRegistered.Count < 1)
+            {
+                return;
+            }
+
+            App.log.writeLine("[API] Sensors not registered in HA: " + String.Join(", ", notRegistered));
+            List<SensorConfig> sensors = configuration.AllSensors.Where(x => notRegistered.Contains(x.UniqueId)).ToList();
+            registerSensors(sensors);
+
+            lock (stateLock)
+            {
+                // Send their values again in the next cycle
+                foreach (string uniqueId in notRegistered)
+                {
+                    sensorLastValues.Remove(uniqueId);
+                    sensorUpdatedAtList.Remove(uniqueId);
+                }
+            }
         }
 
         public void restart()
@@ -292,88 +216,115 @@ namespace HADC_REBORN.Class.HomeAssistant
 
             if (String.IsNullOrEmpty(webhookId))
             {
-
-                string prefix = "";
-                /*if (App.yamlLoader.getConfigurationData().ContainsKey("debug"))
-                {
-                    prefix = "DEBUG_";
-                }*/
-
-                ApiDevice devideForRegistration = new ApiDevice()
-                {
-                    device_name = (prefix + Environment.MachineName),
-                    device_id = (prefix + Environment.MachineName).ToLower(),
-                    app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
-                    app_name = Assembly.GetExecutingAssembly().GetName().Name,
-                    app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
-                    manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
-                    model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
-                    os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
-                    os_version = Environment.OSVersion.ToString(),
-                    app_data = new
-                    {
-                        push_websocket_channel = true,
-                    },
-                    supports_encryption = false
-                };
-                apiConnector.RegisterDevice(devideForRegistration);
-
-                Dictionary<string, dynamic> senzorTypes = getSensorsConfiguration();
-                foreach (var item in senzorTypes)
-                {
-                    string senzorType = item.Key;
-                    foreach (var platform in item.Value)
-                    {
-                        foreach (var integration in platform.Value)
-                        {
-                            foreach (var sensorDefinition in integration.Value)
-                            {
-                                ApiSensor senzor = new ApiSensor();
-
-                                senzor.type = senzorType;
-                                senzor.name = sensorDefinition["name"];
-                                senzor.unique_id = sensorDefinition["unique_id"];
-
-                                if (sensorDefinition.ContainsKey("device_class"))
-                                    senzor.device_class = sensorDefinition["device_class"];
-
-                                if (sensorDefinition.ContainsKey("icon"))
-                                    senzor.icon = sensorDefinition["icon"];
-
-                                if (sensorDefinition.ContainsKey("unit_of_measurement"))
-                                    senzor.unit_of_measurement = sensorDefinition["unit_of_measurement"];
-
-                                if (sensorDefinition.ContainsKey("state_class"))
-                                    senzor.state_class = sensorDefinition["state_class"];
-
-                                if (sensorDefinition.ContainsKey("entity_category"))
-                                    senzor.entity_category = sensorDefinition["entity_category"];
-
-                                if (sensorDefinition.ContainsKey("disabled"))
-                                    senzor.disabled = bool.TryParse((string)sensorDefinition["disabled"], out bool disabled) && disabled;
-
-                                if (senzorType == "binary_sensor")
-                                    senzor.state = false;
-
-                                apiConnector.RegisterSensorData(senzor);
-                            }
-                        }
-                    }
-                }
-
-                webhookId = apiConnector.getWebhookID();
-                secret = apiConnector.getSecret();
-
-                config.AppSettings.Settings["webhook_id"].Value = webhookId;
-                config.AppSettings.Settings["secret"].Value = secret;
-
-                config.Save(ConfigurationSaveMode.Modified);
+                registerDevice();
+            }
+            else
+            {
+                apiConnector.setWebhookID(webhookId);
+                apiConnector.setSecret(secret);
             }
 
-            apiConnector.setWebhookID(webhookId);
-            apiConnector.setSecret(secret);
+            // register_sensor also updates already registered sensors, so sensors added to
+            // configuration.yaml later get registered and changed names/icons get applied
+            try
+            {
+                registerSensors(configuration.AllSensors);
+            }
+            catch (WebhookGoneException ex)
+            {
+                App.log.writeLine("[API] " + ex.Message);
+                registerDeviceAgain();
+            }
 
             apiTimer.Start();
+        }
+
+        private void registerDevice()
+        {
+            ApiDevice devideForRegistration = new ApiDevice()
+            {
+                device_name = Environment.MachineName,
+                device_id = Environment.MachineName.ToLower(),
+                app_id = Assembly.GetEntryAssembly().GetName().Version.ToString().ToLower(),
+                app_name = Assembly.GetExecutingAssembly().GetName().Name,
+                app_version = Assembly.GetEntryAssembly().GetName().Version.ToString(),
+                manufacturer = Wmic.GetValue("Win32_ComputerSystem", "Manufacturer", "root\\CIMV2"),
+                model = Wmic.GetValue("Win32_ComputerSystem", "Model", "root\\CIMV2"),
+                os_name = Wmic.GetValue("Win32_OperatingSystem", "Caption", "root\\CIMV2"),
+                os_version = Environment.OSVersion.ToString(),
+                app_data = new
+                {
+                    push_websocket_channel = true,
+                },
+                supports_encryption = false
+            };
+            apiConnector.RegisterDevice(devideForRegistration);
+
+            config.AppSettings.Settings["webhook_id"].Value = apiConnector.getWebhookID();
+            config.AppSettings.Settings["secret"].Value = apiConnector.getSecret();
+            config.Save(ConfigurationSaveMode.Modified);
+
+            App.log.writeLine("[API] Device registered");
+        }
+
+        // The device was removed from HA, register it again so the app keeps working without user action
+        private void registerDeviceAgain()
+        {
+            App.log.writeLine("[API] Registering device again");
+            try
+            {
+                registerDevice();
+                registerSensors(configuration.AllSensors);
+            }
+            catch (Exception ex)
+            {
+                App.log.writeLine("[API] Device registration failed: " + ex.Message);
+                return;
+            }
+
+            lock (stateLock)
+            {
+                apiConnector.clearSensorBuffer();
+                sensorLastValues.Clear();
+                sensorUpdatedAtList.Clear();
+            }
+
+            WebhookChanged?.Invoke(apiConnector.getWebhookID());
+        }
+
+        private void registerSensors(IEnumerable<SensorConfig> sensors)
+        {
+            foreach (SensorConfig sensor in sensors)
+            {
+                ApiSensor senzor = new ApiSensor();
+
+                senzor.type = sensor.Type;
+                senzor.name = sensor.Name;
+                senzor.unique_id = sensor.UniqueId;
+                senzor.device_class = sensor.DeviceClass;
+                if (sensor.Icon != null)
+                    senzor.icon = sensor.Icon;
+                senzor.unit_of_measurement = sensor.UnitOfMeasurement;
+                senzor.state_class = sensor.StateClass;
+                senzor.entity_category = sensor.EntityCategory;
+                senzor.disabled = sensor.Disabled;
+
+                if (sensor.Type == SensorConfig.TypeBinarySensor)
+                    senzor.state = false;
+
+                try
+                {
+                    apiConnector.RegisterSensorData(senzor);
+                }
+                catch (WebhookGoneException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    App.log.writeLine("[API] Failed to register sensor " + sensor.UniqueId + ": " + ex.Message);
+                }
+            }
         }
 
         private void apiWorker_DoWork(object? sender, DoWorkEventArgs e)
@@ -389,100 +340,12 @@ namespace HADC_REBORN.Class.HomeAssistant
             }
         }
 
-        private async void updateSensors(object? sender, EventArgs e)
+        private void updateSensors(object? sender, EventArgs e)
         {
             if (apiWorker.IsBusy != true)
             {
                 apiWorker.RunWorkerAsync();
             }
-        }
-
-        // Values are always formatted with InvariantCulture, accept a decimal comma too (e.g. Czech locale)
-        private static bool tryParseNumber(string value, out double number)
-        {
-            number = 0;
-            if (string.IsNullOrEmpty(value) || !Regex.IsMatch(value, @"^-?\d+([.,]\d+)?$"))
-            {
-                return false;
-            }
-
-            return double.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out number);
-        }
-
-        private static dynamic convertToType(dynamic variable)
-        {
-            string variableStr = variable.ToString();
-            if (Regex.IsMatch(variableStr, "^(?:tru|fals)e$", RegexOptions.IgnoreCase))
-            {
-                return bool.Parse(variableStr);
-            }
-
-            if (tryParseNumber(variableStr, out double number))
-            {
-                return number;
-            }
-
-            return variableStr;
-        }
-
-        public Dictionary<string, dynamic> getSensorsConfiguration()
-        {
-            Dictionary<string, dynamic> senzorTypes = new Dictionary<string, dynamic>();
-            senzorTypes.Add("sensor", yamlLoader.getConfigurationData()["sensor"]);
-
-            if (yamlLoader.getConfigurationData().ContainsKey("binary_sensor"))
-                senzorTypes.Add("binary_sensor", yamlLoader.getConfigurationData()["binary_sensor"]);
-
-            return senzorTypes;
-        }
-
-        private static Task<string> getSenzorValue(KeyValuePair<string, List<Dictionary<string, dynamic>>> integration, Dictionary<string, dynamic> sensorDefinition)
-        {
-            string className = "HADC_REBORN.Class.Sensors.";
-            string sensorUniqueId = sensorDefinition["unique_id"];
-
-            foreach (var methodNameSegment in integration.Key.Split("_"))
-            {
-                className += methodNameSegment[0].ToString().ToUpper() + methodNameSegment.Substring(1);
-            }
-
-            Type SensorTypeClass = Type.GetType(className);
-            if (SensorTypeClass == null)
-            {
-                App.log.writeLine(className + " Class Not Found");
-                throw new Exception(className + " Class Not Found");
-            }
-
-            MethodInfo method = SensorTypeClass.GetMethod("GetValue");
-            if (method == null)
-            {
-                App.log.writeLine("GetValue Method Not Found on " + className);
-                throw new Exception("GetValue Method Not Found on " + className);
-            }
-
-            ParameterInfo[] pars = method.GetParameters();
-            List<dynamic> parameters = new List<dynamic>();
-
-            foreach (ParameterInfo p in pars)
-            {
-                if (p == null)
-                {
-                    continue;
-                }
-
-                if (p.Name != null && sensorDefinition.ContainsKey(p.Name))
-                {
-                    parameters.Insert(p.Position, sensorDefinition[p.Name]);
-                }
-                else if (p.IsOptional && p.DefaultValue != null)
-                {
-                    parameters.Insert(p.Position, p.DefaultValue);
-                }
-            }
-
-            return Task.Run<string>(() => {
-                return Convert.ToString(method.Invoke(null, parameters.ToArray()), CultureInfo.InvariantCulture) ?? ""; 
-            });
         }
     }
 }
